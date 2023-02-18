@@ -1,3 +1,9 @@
+using Brobot.Contexts;
+using Brobot.Services;
+using Discord.Interactions;
+using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
+
 namespace Brobot;
 
 class Program
@@ -13,13 +19,17 @@ class Program
             app.UseSwaggerUI();
         }
 
-        var client = app.Services.GetRequiredService<BrobotClient>();
+        var client = app.Services.GetRequiredService<DiscordSocketClient>();
         if (string.IsNullOrWhiteSpace(app.Configuration["BrobotToken"]))
         {
             Console.WriteLine("No token provided");
             return;
         }
-        await client.StartClientAsync(app.Configuration["BrobotToken"] ?? "");
+        await client.LoginAsync(Discord.TokenType.Bot, app.Configuration["BrobotToken"] ?? "");
+        await client.StartAsync();
+
+        var eventHandler = app.Services.GetRequiredService<DiscordEventHandler>();
+        await eventHandler.StartAsync();
         app.UseHttpsRedirection();
         app.UseAuthorization();
         app.MapControllers();
@@ -31,7 +41,16 @@ class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
-        builder.Services.AddSingleton<BrobotClient>();
+        builder.Services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
+        {
+            GatewayIntents = Discord.GatewayIntents.All
+        }));
+        builder.Services.AddSingleton<InteractionService>();
+        builder.Services.AddSingleton<DiscordEventHandler>();
+        builder.Services.AddDbContext<BrobotDbContext>(options =>
+        {
+            options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
+        });
     }
 }
 
