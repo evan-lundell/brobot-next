@@ -9,8 +9,8 @@ public class ChannelModel
     public ulong GuildId { get; set; }
     public required GuildModel Guild { get; set; }
 
-    public ICollection<ChannelUserModel> ChannelUsers { get; set; }
-    public ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
+    public virtual ICollection<ChannelUserModel> ChannelUsers { get; set; }
+    public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
 
     public ChannelModel()
     {

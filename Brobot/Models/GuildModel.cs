@@ -6,8 +6,8 @@ public class GuildModel
     public required string Name { get; set; }
     public bool Archived { get; set; }
 
-    public ICollection<ChannelModel> Channels { get; set; }
-    public ICollection<GuildUserModel> GuildUsers { get; set; }
+    public virtual ICollection<ChannelModel> Channels { get; set; }
+    public virtual ICollection<GuildUserModel> GuildUsers { get; set; }
 
     public GuildModel()
     {

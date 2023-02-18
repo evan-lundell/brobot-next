@@ -1,4 +1,5 @@
 using Brobot.Contexts;
+using Brobot.Repositories;
 using Brobot.Services;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -25,8 +26,12 @@ class Program
             Console.WriteLine("No token provided");
             return;
         }
-        await client.LoginAsync(Discord.TokenType.Bot, app.Configuration["BrobotToken"] ?? "");
-        await client.StartAsync();
+
+        if (!args.Contains("--no-bot"))
+        {
+            await client.LoginAsync(Discord.TokenType.Bot, app.Configuration["BrobotToken"] ?? "");
+            await client.StartAsync();
+        }
 
         var eventHandler = app.Services.GetRequiredService<DiscordEventHandler>();
         await eventHandler.StartAsync();
@@ -51,6 +56,7 @@ class Program
         {
             options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
         });
+        builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
     }
 }
 

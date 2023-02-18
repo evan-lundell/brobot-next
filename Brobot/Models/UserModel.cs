@@ -9,9 +9,9 @@ public class UserModel
     public DateTime? LastOnline { get; set; }
     public bool Archived { get; set; }
 
-    public ICollection<GuildUserModel> GuildUsers { get; set; }
-    public ICollection<ChannelUserModel> ChannelUsers { get; set; }
-    public ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
+    public virtual ICollection<GuildUserModel> GuildUsers { get; set; }
+    public virtual ICollection<ChannelUserModel> ChannelUsers { get; set; }
+    public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
 
     public UserModel()
     {
