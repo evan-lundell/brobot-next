@@ -1,7 +1,6 @@
 using Brobot.Contexts;
 using Brobot.Repositories;
 using Brobot.Services;
-using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,7 +33,6 @@ class Program
         }
 
         var eventHandler = app.Services.GetRequiredService<DiscordEventHandler>();
-        await eventHandler.StartAsync();
         app.UseHttpsRedirection();
         app.UseAuthorization();
         app.MapControllers();
@@ -50,13 +48,24 @@ class Program
         {
             GatewayIntents = Discord.GatewayIntents.All
         }));
-        builder.Services.AddSingleton<InteractionService>();
         builder.Services.AddSingleton<DiscordEventHandler>();
-        builder.Services.AddDbContext<BrobotDbContext>(options =>
-        {
-            options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
-        });
+        builder.Services.AddDbContext<BrobotDbContext>(
+            options => options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+        );
         builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
+        builder.Services.AddSingleton<Random>();
+        builder.Services.AddHttpClient<IGiphyService, GiphyService>((configure) =>
+        {
+            configure.BaseAddress = new Uri(builder.Configuration["GiphyBaseUrl"] ?? "");
+        });
+        builder.Services.AddHttpClient<IRandomFactService, RandomFactService>((configure) =>
+        {
+            configure.BaseAddress = new Uri(builder.Configuration["RandomFactBaseUrl"] ?? "");
+        });
+        builder.Services.AddHttpClient<IDictionaryService, DictionaryService>((configure) =>
+        {
+            configure.BaseAddress = new Uri(builder.Configuration["DictionaryBaseUrl"] ?? "");
+        });
     }
 }
 
