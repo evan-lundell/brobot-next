@@ -1,0 +1,18 @@
+version: '3.0'
+services:
+  brobot-db:
+    container_name: brobot-db
+    image: postgres:alpine
+    volumes:
+      - ${BROBOT_DB_DATA_PATH}:/var/lib/postgresql/data:rw
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  brobot:
+    container_name: brobot
+    build: ./Brobot
+    env_file:
+      - ./Brobot/.env
+    depends_on:
+      - brobot-db

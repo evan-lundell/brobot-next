@@ -14,7 +14,6 @@ public class BrobotModule : InteractionModuleBase
     private readonly IGiphyService _giphyService;
     private readonly IRandomFactService _randomFactService;
     private readonly IDictionaryService _dictionaryService;
-    private readonly ILogger _logger;
 
     private string[] _emojiLookup = new string[]
     {
@@ -34,15 +33,13 @@ public class BrobotModule : InteractionModuleBase
         Random random,
         IGiphyService giphyService,
         IRandomFactService randomFactService,
-        IDictionaryService dictionaryService,
-        ILogger<BrobotModule> logger)
+        IDictionaryService dictionaryService)
     {
         _uow = uow;
         _random = random;
         _giphyService = giphyService;
         _randomFactService = randomFactService;
         _dictionaryService = dictionaryService;
-        _logger = logger;
     }
     [SlashCommand("info", "Returns guild, channel, and user ids")]
     public async Task Info()
@@ -177,7 +174,7 @@ public class BrobotModule : InteractionModuleBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute 'gif' command");
+            Console.WriteLine($"Failed to execute 'gif' command\n{ex.Message}");
             await RespondAsync("An error occurred");
         }
     }
@@ -192,7 +189,7 @@ public class BrobotModule : InteractionModuleBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute 'fact' command");
+            Console.WriteLine($"Failed to execute 'fact' command\n{ex.Message}");
             await RespondAsync("An error occurred");
         }
     }
@@ -219,7 +216,7 @@ public class BrobotModule : InteractionModuleBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute 'define' command");
+            Console.WriteLine($"Failed to execute 'define' command\n{ex.Message}");
             await RespondAsync("An error occurred");
         }
     }

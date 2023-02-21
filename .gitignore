@@ -2,3 +2,5 @@
 **/obj
 **/bin
 **/Properties
+.env
+**/build

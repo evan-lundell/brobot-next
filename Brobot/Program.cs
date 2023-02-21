@@ -1,6 +1,7 @@
 using Brobot.Contexts;
 using Brobot.Repositories;
 using Brobot.Services;
+using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,11 +29,12 @@ class Program
 
         if (!args.Contains("--no-bot"))
         {
+            var eventHandler = app.Services.GetRequiredService<DiscordEventHandler>();
+            eventHandler.Start();
             await client.LoginAsync(Discord.TokenType.Bot, app.Configuration["BrobotToken"] ?? "");
             await client.StartAsync();
         }
 
-        var eventHandler = app.Services.GetRequiredService<DiscordEventHandler>();
         app.UseHttpsRedirection();
         app.UseAuthorization();
         app.MapControllers();
@@ -46,9 +48,9 @@ class Program
         builder.Services.AddSwaggerGen();
         builder.Services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
         {
-            GatewayIntents = Discord.GatewayIntents.All
+            GatewayIntents = Discord.GatewayIntents.All,
+            MessageCacheSize = 100
         }));
-        builder.Services.AddSingleton<DiscordEventHandler>();
         builder.Services.AddDbContext<BrobotDbContext>(
             options => options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
         );
@@ -66,6 +68,8 @@ class Program
         {
             configure.BaseAddress = new Uri(builder.Configuration["DictionaryBaseUrl"] ?? "");
         });
+        builder.Services.AddSingleton<DiscordEventHandler>();
+        builder.Services.AddSingleton<ISyncService, SyncService>();
     }
 }
 
