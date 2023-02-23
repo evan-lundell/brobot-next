@@ -4,3 +4,5 @@
 **/Properties
 .env
 **/build
+
+appsettings.Production.json

@@ -4,6 +4,7 @@ using Brobot.Services;
 using Discord.Interactions;
 using TimeZoneConverter;
 using System.Text;
+using Discord;
 
 namespace Brobot.Modules;
 
@@ -319,5 +320,49 @@ public class BrobotModule : InteractionModuleBase
         await _uow.ScheduledMessages.Add(reminder);
         await _uow.CompleteAsync();
         await RespondAsync("Reminder has been created");
+    }
+
+    [SlashCommand("hotop", "Gets the scores for the active hot ops")]
+    public async Task HotOp()
+    {
+        try
+        {
+            var scoreboards = await _uow.HotOps.GetActiveHotOpScoreboards();
+            if (scoreboards.Count() == 0)
+            {
+                await RespondAsync("No active hot ops");
+                return;
+            }
+
+            var embeds = new List<Embed>();
+            foreach (var scoreboard in scoreboards)
+            {
+                var builder = new EmbedBuilder
+                {
+                    Color = new Color(114, 137, 218),
+                    Description = $"Operation Hot {scoreboard.OwnerUsername}"
+
+                };
+
+                foreach (var score in scoreboard.Scores)
+                {
+                    builder.AddField((x) =>
+                    {
+                        x.Name = score.Username;
+                        x.Value = score.Score;
+                        x.IsInline = false;
+                    });
+                }
+
+                embeds.Add(builder.Build());
+            }
+
+            await RespondAsync(embeds: embeds.ToArray());
+
+        }
+        catch (Exception)
+        {
+            await RespondAsync(text: "Failed to get hot op scores", ephemeral: true);
+        }
     }
 }

@@ -11,10 +11,12 @@ public class ChannelModel
 
     public virtual ICollection<ChannelUserModel> ChannelUsers { get; set; }
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
+    public virtual ICollection<HotOpModel> HotOps { get; set; }
 
     public ChannelModel()
     {
         ChannelUsers = new HashSet<ChannelUserModel>();
         ScheduledMessages = new HashSet<ScheduledMessageModel>();
+        HotOps = new HashSet<HotOpModel>();
     }
 }

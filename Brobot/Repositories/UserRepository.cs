@@ -33,7 +33,6 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
         entity.Archived = true;
         entity.GuildUsers.Clear();
         entity.ChannelUsers.Clear();
-        entity.ScheduledMessages.Clear();
     }
 
     public override void RemoveRange(IEnumerable<UserModel> entities)

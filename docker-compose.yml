@@ -12,7 +12,7 @@ services:
   brobot:
     container_name: brobot
     build: ./Brobot
-    env_file:
-      - ./Brobot/.env
+    environment:
+      - DOTNETCORE_ENVIRONMENT=Production
     depends_on:
       - brobot-db

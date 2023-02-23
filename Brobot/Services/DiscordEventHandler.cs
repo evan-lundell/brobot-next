@@ -11,17 +11,20 @@ public class DiscordEventHandler : IDisposable
     private readonly IServiceProvider _services;
     private readonly ISyncService _sync;
     private readonly InteractionService _commands;
+    private readonly HotOpService _hotOpService;
 
     public DiscordEventHandler(
         DiscordSocketClient client,
         IServiceProvider services,
-        ISyncService sync
+        ISyncService sync,
+        HotOpService hotOpService
     )
     {
         _client = client;
         _services = services;
         _sync = sync;
         _commands = new InteractionService(client);
+        _hotOpService = hotOpService;
     }
 
     public void Start()
@@ -37,6 +40,7 @@ public class DiscordEventHandler : IDisposable
         _client.ChannelUpdated += ChannelUpdated;
         _client.MessageReceived += MessageReceived;
         _client.MessageDeleted += MessageDeleted;
+        _client.UserVoiceStateUpdated += UserVoiceStateUpdated;
     }
 
     public void Dispose()
@@ -51,6 +55,14 @@ public class DiscordEventHandler : IDisposable
         _client.ChannelUpdated -= ChannelUpdated;
         _client.MessageReceived -= MessageReceived;
         _client.MessageDeleted -= MessageDeleted;
+    }
+
+    private Task UserVoiceStateUpdated(
+        SocketUser socketUser,
+        SocketVoiceState previousVoiceState,
+        SocketVoiceState currentVoiceState)
+    {
+        return _hotOpService.UserVoiceStateUpdated(socketUser, previousVoiceState, currentVoiceState);
     }
 
     private Task MessageReceived(SocketMessage socketMessage)
@@ -166,7 +178,7 @@ public class DiscordEventHandler : IDisposable
         using (var scope = _services.CreateScope())
         {
             tasks.Add(_commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider));
-            tasks.Add(_commands.RegisterCommandsToGuildAsync(421404457599762433));
+            tasks.Add(_commands.RegisterCommandsGloballyAsync());
             tasks.Add(_sync.SyncOnStartup());
         }
 

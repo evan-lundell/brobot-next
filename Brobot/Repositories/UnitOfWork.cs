@@ -13,12 +13,18 @@ public class UnitOfWork : IUnitOfWork
         Channels = new ChannelRepository(context);
         Guilds = new GuildRepository(context, Channels);
         ScheduledMessages = new ScheduledMessageRepository(context);
+        HotOps = new HotOpRepository(context);
+        HotOpSessions = new HotOpSessionRepository(context);
     }
 
     public IUserRepository Users { get; }
     public IChannelRepository Channels { get; }
     public IGuildRepository Guilds { get; }
     public IScheduledMessageRepository ScheduledMessages { get; }
+
+    public IHotOpRepository HotOps { get; }
+
+    public IHotOpSessionRepository HotOpSessions { get; }
 
     public Task<int> CompleteAsync()
     {

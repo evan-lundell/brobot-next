@@ -47,7 +47,6 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
     {
         entity.Archived = true;
         entity.ChannelUsers.Clear();
-        entity.ScheduledMessages.Clear();
     }
 
     public override void RemoveRange(IEnumerable<ChannelModel> entities)

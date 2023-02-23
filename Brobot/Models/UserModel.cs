@@ -12,11 +12,15 @@ public class UserModel
     public virtual ICollection<GuildUserModel> GuildUsers { get; set; }
     public virtual ICollection<ChannelUserModel> ChannelUsers { get; set; }
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
+    public virtual ICollection<HotOpModel> HotOps { get; set; }
+    public ICollection<HotOpSessionModel> HotOpSessions { get; set; }
 
     public UserModel()
     {
         GuildUsers = new HashSet<GuildUserModel>();
         ChannelUsers = new HashSet<ChannelUserModel>();
         ScheduledMessages = new HashSet<ScheduledMessageModel>();
+        HotOps = new HashSet<HotOpModel>();
+        HotOpSessions = new HashSet<HotOpSessionModel>();
     }
 }

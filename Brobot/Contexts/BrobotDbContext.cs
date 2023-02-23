@@ -9,6 +9,8 @@ public class BrobotDbContext : DbContext
     public DbSet<ChannelModel> Channels => Set<ChannelModel>();
     public DbSet<UserModel> Users => Set<UserModel>();
     public DbSet<ScheduledMessageModel> ScheduledMessages => Set<ScheduledMessageModel>();
+    public DbSet<HotOpModel> HotOps => Set<HotOpModel>();
+    public DbSet<HotOpSessionModel> HotOpSessions => Set<HotOpSessionModel>();
 
     public BrobotDbContext(DbContextOptions<BrobotDbContext> options)
         : base(options)
@@ -160,5 +162,67 @@ public class BrobotDbContext : DbContext
             .HasOne((sm) => sm.CreatedBy)
             .WithMany((u) => u.ScheduledMessages)
             .HasForeignKey((sm) => sm.CreatedById);
+
+        builder.Entity<HotOpModel>()
+            .ToTable(name: "hot_op", schema: "brobot")
+            .HasKey((ho) => ho.Id);
+        builder.Entity<HotOpModel>()
+            .Property((ho) => ho.Id)
+            .HasColumnName("id");
+        builder.Entity<HotOpModel>()
+            .Property((ho) => ho.ChannelId)
+            .HasColumnName("channel_id")
+            .IsRequired(true);
+        builder.Entity<HotOpModel>()
+            .Property((ho) => ho.UserId)
+            .HasColumnName("user_id")
+            .IsRequired(true);
+        builder.Entity<HotOpModel>()
+            .Property((ho) => ho.StartDate)
+            .HasColumnName("start_date")
+            .IsRequired(true);
+        builder.Entity<HotOpModel>()
+            .Property((ho) => ho.EndDate)
+            .HasColumnName("end_date")
+            .IsRequired(true);
+        builder.Entity<HotOpModel>()
+            .HasOne((ho) => ho.Channel)
+            .WithMany((c) => c.HotOps)
+            .HasForeignKey((ho) => ho.ChannelId);
+        builder.Entity<HotOpModel>()
+            .HasOne((ho) => ho.User)
+            .WithMany((u) => u.HotOps)
+            .HasForeignKey((ho) => ho.UserId);
+
+        builder.Entity<HotOpSessionModel>()
+            .ToTable(name: "hot_op_session", schema: "brobot")
+            .HasKey((hos) => hos.Id);
+        builder.Entity<HotOpSessionModel>()
+            .Property((hos) => hos.Id)
+            .HasColumnName("id");
+        builder.Entity<HotOpSessionModel>()
+            .Property((hos) => hos.UserId)
+            .HasColumnName("user_id")
+            .IsRequired(true);
+        builder.Entity<HotOpSessionModel>()
+            .Property((hos) => hos.StartDateTime)
+            .HasColumnName("start_date_time")
+            .IsRequired(true);
+        builder.Entity<HotOpSessionModel>()
+            .Property((hos) => hos.EndDateTime)
+            .HasColumnName("end_date_time")
+            .IsRequired(false);
+        builder.Entity<HotOpSessionModel>()
+            .Property((hos) => hos.HotOpId)
+            .HasColumnName("hot_op_id")
+            .IsRequired(true);
+        builder.Entity<HotOpSessionModel>()
+            .HasOne((hos) => hos.User)
+            .WithMany((hos) => hos.HotOpSessions)
+            .HasForeignKey((ho) => ho.UserId);
+        builder.Entity<HotOpSessionModel>()
+            .HasOne((hos) => hos.HotOp)
+            .WithMany((ho) => ho.HotOpSessions)
+            .HasForeignKey((hos) => hos.HotOpId);
     }
 }

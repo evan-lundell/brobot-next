@@ -20,6 +20,12 @@ class Program
             app.UseSwaggerUI();
         }
 
+        if (app.Environment.IsProduction())
+        {
+            var context = app.Services.GetRequiredService<BrobotDbContext>();
+            await context.Database.MigrateAsync();
+        }
+
         var client = app.Services.GetRequiredService<DiscordSocketClient>();
         if (string.IsNullOrWhiteSpace(app.Configuration["BrobotToken"]))
         {
@@ -43,6 +49,7 @@ class Program
 
     private static void CreateServices(WebApplicationBuilder builder)
     {
+        Console.WriteLine(builder.Configuration["BrobotToken"] ?? "not defined");
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
@@ -70,6 +77,7 @@ class Program
         });
         builder.Services.AddSingleton<DiscordEventHandler>();
         builder.Services.AddSingleton<ISyncService, SyncService>();
+        builder.Services.AddSingleton<HotOpService>();
     }
 }
 
