@@ -1,6 +1,7 @@
 using Brobot.Contexts;
 using Brobot.Repositories;
 using Brobot.Services;
+using Brobot.Workers;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
@@ -49,7 +50,6 @@ class Program
 
     private static void CreateServices(WebApplicationBuilder builder)
     {
-        Console.WriteLine(builder.Configuration["BrobotToken"] ?? "not defined");
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
@@ -78,6 +78,10 @@ class Program
         builder.Services.AddSingleton<DiscordEventHandler>();
         builder.Services.AddSingleton<ISyncService, SyncService>();
         builder.Services.AddSingleton<HotOpService>();
+        builder.Services.AddCronJob<ReminderWorker>((options) =>
+        {
+            options.CronExpression = "* * * * *";
+        });
     }
 }
 
