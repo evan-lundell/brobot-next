@@ -347,10 +347,10 @@ public class BrobotModule : InteractionModuleBase
             {
                 var timezone = TZConvert.GetTimeZoneInfo(callingUser.Timezone);
                 var offset = timezone.GetUtcOffset(DateTime.Now);
-                lastOnline = lastOnline - offset;
+                lastOnline = lastOnline + offset;
             }
 
-            await RespondAsync(text: $"{user.Username} was last online at {user.LastOnline.Value.ToString()}", ephemeral: true);
+            await RespondAsync(text: $"{user.Username} was last online at {lastOnline.ToString("yyyy-MM-dd hh:mm tt")}", ephemeral: true);
         }
         catch (Exception)
         {
