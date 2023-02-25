@@ -330,7 +330,7 @@ public class BrobotModule : InteractionModuleBase
         {
             if (socketUser.Status == UserStatus.Online)
             {
-                await RespondAsync($"{socketUser.Username} is online now!");
+                await RespondAsync(text: $"{socketUser.Username} is online now!", ephemeral: true);
                 return;
             }
 
