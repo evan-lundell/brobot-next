@@ -338,6 +338,7 @@ public class BrobotModule : InteractionModuleBase
             var callingUser = await _uow.Users.GetById(Context.User.Id);
             if (user == null || user.LastOnline == null)
             {
+                Console.WriteLine(user == null ? "user is null" : "user.LastOnline is null");
                 await RespondAsync(text: "Failed to get last online", ephemeral: true);
                 return;
             }
@@ -352,8 +353,9 @@ public class BrobotModule : InteractionModuleBase
 
             await RespondAsync(text: $"{user.Username} was last online at {user.LastOnline.Value.ToString()}", ephemeral: true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex);
             await RespondAsync(text: "Failed to get last online", ephemeral: true);
         }
     }
