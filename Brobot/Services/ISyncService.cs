@@ -11,4 +11,5 @@ public interface ISyncService
     Task ChannelCreated(SocketTextChannel channel);
     Task ChannelDestroyed(SocketTextChannel channel);
     Task ChannelUpdated(SocketTextChannel previous, SocketTextChannel current);
+    Task PresenceUpdated(SocketUser socketUser, SocketPresence formerSocketPresence, SocketPresence currentSocketPresence);
 }

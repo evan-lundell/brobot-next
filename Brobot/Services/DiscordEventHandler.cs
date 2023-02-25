@@ -41,6 +41,7 @@ public class DiscordEventHandler : IDisposable
         _client.MessageReceived += MessageReceived;
         _client.MessageDeleted += MessageDeleted;
         _client.UserVoiceStateUpdated += UserVoiceStateUpdated;
+        _client.PresenceUpdated += PresenceUpdated;
     }
 
     public void Dispose()
@@ -55,6 +56,12 @@ public class DiscordEventHandler : IDisposable
         _client.ChannelUpdated -= ChannelUpdated;
         _client.MessageReceived -= MessageReceived;
         _client.MessageDeleted -= MessageDeleted;
+        _client.PresenceUpdated -= PresenceUpdated;
+    }
+
+    private Task PresenceUpdated(SocketUser socketUser, SocketPresence formerPresence, SocketPresence currentPresence)
+    {
+        return _sync.PresenceUpdated(socketUser, formerPresence, currentPresence);
     }
 
     private Task UserVoiceStateUpdated(
@@ -179,8 +186,9 @@ public class DiscordEventHandler : IDisposable
         {
             tasks.Add(_commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider));
             tasks.Add(_commands.RegisterCommandsGloballyAsync());
-            tasks.Add(_sync.SyncOnStartup());
         }
+
+        _sync.SyncOnStartup();
 
         return Task.WhenAll(tasks);
     }

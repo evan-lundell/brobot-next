@@ -43,7 +43,7 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
         }
     }
 
-    public async Task<IEnumerable<UserModel>> GetAllWithIncludes()
+    public async Task<IEnumerable<UserModel>> GetAllWithGuildsAndChannels()
     {
         return await _context.Users
             .Include((u) => u.GuildUsers)
@@ -51,6 +51,7 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
             .Include((u) => u.ChannelUsers)
             .ThenInclude((cu) => cu.Channel)
             .Include((u) => u.ScheduledMessages)
+            .AsSplitQuery()
             .ToListAsync();
     }
 
@@ -62,6 +63,7 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
             .Include((u) => u.ChannelUsers)
             .ThenInclude((cu) => cu.Channel)
             .Include((u) => u.ScheduledMessages)
+            .AsSplitQuery()
             .SingleOrDefaultAsync((u) => u.Id == id);
     }
 }

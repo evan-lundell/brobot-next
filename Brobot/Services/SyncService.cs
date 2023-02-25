@@ -26,7 +26,7 @@ public class SyncService : ISyncService
             {
                 return;
             }
-            var userModels = (await uow.Users.GetAllWithIncludes())
+            var userModels = (await uow.Users.GetAllWithGuildsAndChannels())
                 .Where((u) => u.Archived == false)
                 .ToDictionary((u) => u.Id);
             var newChannel = new ChannelModel
@@ -117,7 +117,7 @@ public class SyncService : ISyncService
                 return;
             }
 
-            var userIds = (await uow.Users.GetAllWithIncludes())
+            var userIds = (await uow.Users.GetAllWithGuildsAndChannels())
                 .Where((u) => u.Archived == false)
                 .ToDictionary((u) => u.Id);
             var newGuild = new GuildModel
@@ -220,7 +220,7 @@ public class SyncService : ISyncService
             var client = _services.GetRequiredService<DiscordSocketClient>();
             var guildModels = (await uow.Guilds.Find((g) => g.Archived == false)).ToDictionary((g) => g.Id);
             var channelModels = (await uow.Channels.Find((c) => c.Archived == false)).ToDictionary((c) => c.Id);
-            var userModels = (await uow.Users.GetAllWithIncludes()).Where((u) => u.Archived == false).ToDictionary((u) => u.Id);
+            var userModels = (await uow.Users.GetAllWithGuildsAndChannels()).Where((u) => u.Archived == false).ToDictionary((u) => u.Id);
 
             var guildIds = new HashSet<ulong>();
             var channelIds = new HashSet<ulong>();
@@ -335,6 +335,26 @@ public class SyncService : ISyncService
                 uow.Users.Remove(user);
             }
 
+            await uow.CompleteAsync();
+        }
+    }
+
+    public async Task PresenceUpdated(SocketUser socketUser, SocketPresence formerSocketPresence, SocketPresence currentSocketPresence)
+    {
+        if (currentSocketPresence.Status == UserStatus.Online || socketUser.IsBot)
+        {
+            return;
+        }
+        using (var scope = _services.CreateScope())
+        {
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var user = await uow.Users.GetById(socketUser.Id);
+            if (user == null)
+            {
+                return;
+            }
+
+            user.LastOnline = DateTime.UtcNow;
             await uow.CompleteAsync();
         }
     }

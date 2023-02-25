@@ -4,6 +4,6 @@ namespace Brobot.Repositories;
 
 public interface IUserRepository : IRepository<UserModel, ulong>
 {
-    Task<IEnumerable<UserModel>> GetAllWithIncludes();
+    Task<IEnumerable<UserModel>> GetAllWithGuildsAndChannels();
     Task<UserModel?> GetByIdWithIncludes(ulong id);
 }
