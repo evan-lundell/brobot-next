@@ -17,7 +17,6 @@ public class ReminderWorker : CronWorkerBase
 
     public async override Task DoWork(CancellationToken cancellationToken)
     {
-        Console.WriteLine($"Checking reminders at {DateTime.Now.ToString()}");
         using (var scope = _services.CreateScope())
         {
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();

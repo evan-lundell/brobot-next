@@ -42,7 +42,8 @@ public abstract class CronWorkerBase : IHostedService, IDisposable
             {
                 await ScheduleJob(cancellationToken);
             }
-            _timer = new System.Timers.Timer(delay.TotalMilliseconds);
+            // Sometimes the minutely cron job fires a second early, so adding a second to the timer to offset
+            _timer = new System.Timers.Timer(delay.TotalMilliseconds + 1000);
             _timer.Elapsed += async (sender, args) =>
             {
                 _timer.Dispose();

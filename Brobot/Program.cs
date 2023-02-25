@@ -2,7 +2,6 @@ using Brobot.Contexts;
 using Brobot.Repositories;
 using Brobot.Services;
 using Brobot.Workers;
-using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 
@@ -82,9 +81,9 @@ class Program
         {
             options.CronExpression = "* * * * *";
         });
+        builder.Services.AddCronJob<BirthdayWorker>((options) =>
+        {
+            options.CronExpression = "0 12 * * *";
+        });
     }
 }
-
-
-
-

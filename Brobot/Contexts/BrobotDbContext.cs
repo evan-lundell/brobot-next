@@ -87,9 +87,18 @@ public class BrobotDbContext : DbContext
             .HasDefaultValue(false)
             .IsRequired(true);
         builder.Entity<UserModel>()
+            .Property((u) => u.PrimaryChannelId)
+            .HasColumnName("primary_channel_id")
+            .IsRequired(false)
+            .HasDefaultValue(null);
+        builder.Entity<UserModel>()
             .Property((u) => u.LastOnline)
             .HasColumnName("last_online")
             .IsRequired(false);
+        builder.Entity<UserModel>()
+            .HasOne((u) => u.PrimaryChannel)
+            .WithMany((c) => c.Users)
+            .HasForeignKey((u) => u.PrimaryChannelId);
 
         builder.Entity<GuildUserModel>()
             .ToTable(name: "guild_user", schema: "brobot")
