@@ -6,3 +6,4 @@
 **/build
 
 appsettings.Production.json
+scripts/

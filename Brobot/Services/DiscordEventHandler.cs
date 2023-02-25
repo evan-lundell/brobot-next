@@ -179,18 +179,17 @@ public class DiscordEventHandler : IDisposable
         await _commands.ExecuteCommandAsync(ctx, _services);
     }
 
-    private Task Ready()
+    private async Task Ready()
     {
-        var tasks = new List<Task>();
+
         using (var scope = _services.CreateScope())
         {
-            tasks.Add(_commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider));
-            tasks.Add(_commands.RegisterCommandsGloballyAsync());
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
+
         }
 
-        _sync.SyncOnStartup();
-
-        return Task.WhenAll(tasks);
+        _ = _commands.RegisterCommandsGloballyAsync();
+        _ = _sync.SyncOnStartup();
     }
 
     private Task Log(LogMessage logMessage)

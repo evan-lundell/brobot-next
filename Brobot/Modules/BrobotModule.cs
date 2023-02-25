@@ -323,6 +323,41 @@ public class BrobotModule : InteractionModuleBase
         await RespondAsync("Reminder has been created");
     }
 
+    [SlashCommand("lastonline", "Get last online times")]
+    public async Task LastOnline([Summary("user")] SocketUser socketUser)
+    {
+        try
+        {
+            if (socketUser.Status == UserStatus.Online)
+            {
+                await RespondAsync($"{socketUser.Username} is online now!");
+                return;
+            }
+
+            var user = await _uow.Users.GetById(socketUser.Id);
+            var callingUser = await _uow.Users.GetById(Context.User.Id);
+            if (user == null || user.LastOnline == null)
+            {
+                await RespondAsync(text: "Failed to get last online", ephemeral: true);
+                return;
+            }
+
+            var lastOnline = user.LastOnline.Value;
+            if (!string.IsNullOrWhiteSpace(callingUser?.Timezone))
+            {
+                var timezone = TZConvert.GetTimeZoneInfo(callingUser.Timezone);
+                var offset = timezone.GetUtcOffset(DateTime.Now);
+                lastOnline = lastOnline + offset;
+            }
+
+            await RespondAsync(text: $"{user.Username} was last online at {user.LastOnline.Value.ToString()}", ephemeral: true);
+        }
+        catch (Exception)
+        {
+            await RespondAsync(text: "Failed to get last online", ephemeral: true);
+        }
+    }
+
     [SlashCommand("hotop", "Gets the scores for the active hot ops")]
     public async Task HotOp()
     {
@@ -364,42 +399,6 @@ public class BrobotModule : InteractionModuleBase
         catch (Exception)
         {
             await RespondAsync(text: "Failed to get hot op scores", ephemeral: true);
-        }
-    }
-
-    [SlashCommand("lastOnline", "Get last online times")]
-    public async Task LastOnline([Summary("user")] SocketUser socketUser)
-    {
-        try
-        {
-            if (socketUser.Status == UserStatus.Online)
-            {
-                await RespondAsync($"{socketUser.Username} is online now!");
-                return;
-            }
-
-            var user = await _uow.Users.GetById(socketUser.Id);
-            var callingUser = await _uow.Users.GetById(Context.User.Id);
-            if (user == null || user.LastOnline == null)
-            {
-                await RespondAsync(text: "Failed to get last online", ephemeral: true);
-                return;
-            }
-
-            var lastOnline = user.LastOnline.Value;
-            if (!string.IsNullOrWhiteSpace(callingUser?.Timezone))
-            {
-                var timezone = TZConvert.GetTimeZoneInfo(callingUser.Timezone);
-                var offset = timezone.GetUtcOffset(DateTime.Now);
-                lastOnline = lastOnline + offset;
-
-            }
-
-            await RespondAsync(text: $"{user.Username} was last online at {user.LastOnline.Value.ToString()}");
-        }
-        catch (Exception)
-        {
-            await RespondAsync(text: "Failed to get last online", ephemeral: true);
         }
     }
 }
