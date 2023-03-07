@@ -19,6 +19,7 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="TimeZoneConverter" Version="6.1.0" />
+    <PackageReference Include="Victoria" Version="6.0.1026" />
   </ItemGroup>
 
   <ItemGroup>

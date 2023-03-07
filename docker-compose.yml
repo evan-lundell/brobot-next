@@ -9,10 +9,18 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  lavalink:
+    container_name: lavalink
+    image: fredboat/lavalink
+    volumes:
+      - ./Lavalink:/opt/Lavalink:ro
   brobot:
     container_name: brobot
     build: ./Brobot
     environment:
       - DOTNETCORE_ENVIRONMENT=Production
     depends_on:
-      - brobot-db
+      brobot-db:
+        condition: service_started
+      lavalink:
+        condition: service_started

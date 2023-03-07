@@ -1,23 +1,31 @@
 using System.Reflection;
+using Brobot.Modules;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Victoria.Node;
+using Victoria.Node.EventArgs;
+using Victoria.Player;
 
 namespace Brobot.Services;
 
-public class DiscordEventHandler : IDisposable
+public class DiscordEventHandler : IDisposable, IAsyncDisposable
 {
     private readonly DiscordSocketClient _client;
     private readonly IServiceProvider _services;
     private readonly ISyncService _sync;
     private readonly InteractionService _commands;
     private readonly HotOpService _hotOpService;
+    private readonly LavaNode _node;
+    private readonly IConfiguration _configuration;
 
     public DiscordEventHandler(
         DiscordSocketClient client,
         IServiceProvider services,
         ISyncService sync,
-        HotOpService hotOpService
+        HotOpService hotOpService,
+        LavaNode node,
+        IConfiguration configuration
     )
     {
         _client = client;
@@ -25,6 +33,8 @@ public class DiscordEventHandler : IDisposable
         _sync = sync;
         _commands = new InteractionService(client);
         _hotOpService = hotOpService;
+        _node = node;
+        _configuration = configuration;
     }
 
     public void Start()
@@ -42,6 +52,7 @@ public class DiscordEventHandler : IDisposable
         _client.MessageDeleted += MessageDeleted;
         _client.UserVoiceStateUpdated += UserVoiceStateUpdated;
         _client.PresenceUpdated += PresenceUpdated;
+        _node.OnTrackEnd += OnTrackEnd;
     }
 
     public void Dispose()
@@ -57,6 +68,7 @@ public class DiscordEventHandler : IDisposable
         _client.MessageReceived -= MessageReceived;
         _client.MessageDeleted -= MessageDeleted;
         _client.PresenceUpdated -= PresenceUpdated;
+        _node.OnTrackEnd -= OnTrackEnd;
     }
 
     private Task PresenceUpdated(SocketUser socketUser, SocketPresence formerPresence, SocketPresence currentPresence)
@@ -185,11 +197,23 @@ public class DiscordEventHandler : IDisposable
         using (var scope = _services.CreateScope())
         {
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
-
         }
 
         _ = _commands.RegisterCommandsGloballyAsync();
-        _ = _sync.SyncOnStartup();
+
+        if (!bool.TryParse(_configuration["NoSync"], out bool noSync) || !noSync)
+        {
+            _ = _sync.SyncOnStartup();
+        }
+
+        try
+        {
+            await _node.ConnectAsync();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
     }
 
     private Task Log(LogMessage logMessage)
@@ -200,5 +224,34 @@ public class DiscordEventHandler : IDisposable
             Console.WriteLine(logMessage.Exception.Message);
         }
         return Task.CompletedTask;
+    }
+
+    private async Task OnTrackEnd(TrackEndEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
+    {
+        if (arg.Reason != TrackEndReason.Finished)
+        {
+            return;
+        }
+
+        var player = arg.Player;
+        if (!player.Vueue.TryDequeue(out LavaTrack nextTrack))
+        {
+            return;
+        }
+
+        await player.PlayAsync(nextTrack);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var player in _node.Players)
+        {
+            if (player.VoiceChannel != null)
+            {
+                await _node.LeaveAsync(player.VoiceChannel);
+            }
+        }
+        await _node.DisconnectAsync();
+        Dispose();
     }
 }

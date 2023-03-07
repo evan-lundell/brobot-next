@@ -4,6 +4,7 @@ using Brobot.Services;
 using Brobot.Workers;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
+using Victoria.Node;
 
 namespace Brobot;
 
@@ -12,7 +13,7 @@ class Program
     static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        CreateServices(builder);
+        CreateServices(builder, args);
         var app = builder.Build();
         if (app.Environment.IsDevelopment())
         {
@@ -33,6 +34,8 @@ class Program
             return;
         }
 
+        app.Configuration["NoSync"] = args.Contains("--no-sync").ToString();
+
         if (!args.Contains("--no-bot"))
         {
             var eventHandler = app.Services.GetRequiredService<DiscordEventHandler>();
@@ -47,7 +50,7 @@ class Program
         app.Run();
     }
 
-    private static void CreateServices(WebApplicationBuilder builder)
+    private static void CreateServices(WebApplicationBuilder builder, string[] args)
     {
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
@@ -77,13 +80,26 @@ class Program
         builder.Services.AddSingleton<DiscordEventHandler>();
         builder.Services.AddSingleton<ISyncService, SyncService>();
         builder.Services.AddSingleton<HotOpService>();
-        builder.Services.AddCronJob<ReminderWorker>((options) =>
+
+        if (!args.Contains("--no-jobs"))
         {
-            options.CronExpression = "* * * * *";
-        });
-        builder.Services.AddCronJob<BirthdayWorker>((options) =>
+            builder.Services.AddCronJob<ReminderWorker>((options) =>
+            {
+                options.CronExpression = "* * * * *";
+            });
+            builder.Services.AddCronJob<BirthdayWorker>((options) =>
+            {
+                options.CronExpression = "0 12 * * *";
+            });
+        }
+
+        builder.Services.AddLogging();
+        var nodeConfig = new NodeConfiguration
         {
-            options.CronExpression = "0 12 * * *";
-        });
+            Authorization = builder.Configuration["LavalinkPassword"],
+            Hostname = builder.Configuration["LavalinkHost"]
+        };
+        builder.Services.AddSingleton<NodeConfiguration>(nodeConfig);
+        builder.Services.AddSingleton<LavaNode>();
     }
 }
