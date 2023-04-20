@@ -9,15 +9,14 @@
 
   <ItemGroup>
     <PackageReference Include="Cronos" Version="0.7.1" />
-    <PackageReference Include="Discord.Net" Version="3.9.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.3">
+    <PackageReference Include="Discord.Net" Version="3.10.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.3" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="TimeZoneConverter" Version="6.1.0" />
     <PackageReference Include="Victoria" Version="6.0.1026" />
   </ItemGroup>
