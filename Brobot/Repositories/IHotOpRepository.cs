@@ -5,5 +5,5 @@ namespace Brobot.Repositories;
 
 public interface IHotOpRepository : IRepository<HotOpModel, int>
 {
-    Task<IEnumerable<ScoreboardDto>> GetActiveHotOpScoreboards();
+    Task<IEnumerable<HotOpModel>> GetActiveHotOpsWithSessions(ulong channelId);
 }

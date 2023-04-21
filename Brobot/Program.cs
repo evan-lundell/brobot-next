@@ -91,6 +91,10 @@ class Program
             {
                 options.CronExpression = "0 12 * * *";
             });
+            builder.Services.AddCronJob<HotOpWorker>((options) =>
+            {
+                options.CronExpression = "* * * * *";
+            });
         }
 
         builder.Services.AddLogging();

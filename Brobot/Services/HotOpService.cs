@@ -1,11 +1,15 @@
+using Brobot.Dtos;
 using Brobot.Models;
 using Brobot.Repositories;
+using Discord;
 using Discord.WebSocket;
 
 namespace Brobot.Services;
 
 public class HotOpService
 {
+    private const int MINUTE_MULTIPLIER = 10;
+
     IServiceProvider _services;
     public HotOpService(IServiceProvider services)
     {
@@ -36,51 +40,128 @@ public class HotOpService
             foreach (var hotOp in activeHotOps)
             {
                 var isHotOpOwner = hotOp.UserId == socketUser.Id;
-                if (isHotOpOwner && currentVoiceState.VoiceChannel != null)
-                {
 
-                    var sessions = currentVoiceState.VoiceChannel.ConnectedUsers
-                        .Where((u) => u.IsBot == false && u.Id != socketUser.Id)
-                        .Select((u) => new HotOpSessionModel
+                // if the user that connected is the hot op owner
+                if (hotOp.UserId == socketUser.Id)
+                {
+                    // if the hot op owner joined a voice channel, create session for everyone else in the channel
+                    if (currentVoiceState.VoiceChannel != null)
+                    {
+                        var sessions = currentVoiceState.VoiceChannel.ConnectedUsers
+                            .Where((u) => u.IsBot == false && u.Id != socketUser.Id)
+                            .Select((u) => new HotOpSessionModel
+                            {
+                                HotOp = hotOp,
+                                HotOpId = hotOp.Id,
+                                User = users[u.Id],
+                                UserId = u.Id,
+                                StartDateTime = utcNow
+                            });
+                        await uow.HotOpSessions.AddRange(sessions);
+                    }
+                    // if the hot op owner left the voice channel, add end date to each session
+                    else
+                    {
+                        var existingSessions = await uow.HotOpSessions.Find((hos) => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
+                        foreach (var existingSession in existingSessions)
+                        {
+                            existingSession.EndDateTime = utcNow;
+                        }
+                    }
+                }
+                // user that connect is not the hot op owner
+                else
+                {
+                    // if the user joined the channel
+                    if (currentVoiceState.VoiceChannel != null)
+                    {
+                        // if the owner isn't in the channel, do nothing
+                        if (!currentVoiceState.VoiceChannel.ConnectedUsers.Any((cu) => cu.Id == hotOp.UserId))
+                        {
+                            continue;
+                        }
+
+                        await uow.HotOpSessions.Add(new HotOpSessionModel
                         {
                             HotOp = hotOp,
                             HotOpId = hotOp.Id,
-                            User = users[u.Id],
-                            UserId = u.Id,
+                            User = users[socketUser.Id],
+                            UserId = socketUser.Id,
                             StartDateTime = utcNow
                         });
-                    await uow.HotOpSessions.AddRange(sessions);
-                }
-                else if (isHotOpOwner && previousVoiceState.VoiceChannel != null)
-                {
-                    var existingSessions = await uow.HotOpSessions.Find((hos) => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
-                    foreach (var existingSession in existingSessions)
-                    {
-                        existingSession.EndDateTime = utcNow;
                     }
-                }
-                else if (!isHotOpOwner && currentVoiceState.VoiceChannel != null)
-                {
-                    await uow.HotOpSessions.Add(new HotOpSessionModel
+                    // if the user left the channel
+                    else if (previousVoiceState.VoiceChannel != null)
                     {
-                        HotOp = hotOp,
-                        HotOpId = hotOp.Id,
-                        User = users[socketUser.Id],
-                        UserId = socketUser.Id,
-                        StartDateTime = utcNow
-                    });
-                }
-                else if (!isHotOpOwner && previousVoiceState.VoiceChannel != null)
-                {
-                    var session = (await uow.HotOpSessions.Find((hos) => hos.HotOpId == hotOp.Id && hos.UserId == socketUser.Id && hos.EndDateTime == null)).First();
-                    if (session != null)
-                    {
-                        session.EndDateTime = utcNow;
+                        // if the owner isn't in the channel, do nothing
+                        if (!previousVoiceState.VoiceChannel.ConnectedUsers.Any((cu) => cu.Id == hotOp.UserId))
+                        {
+                            continue;
+                        }
+
+                        var session = (await uow.HotOpSessions.Find((hos) => hos.HotOpId == hotOp.Id && hos.UserId == socketUser.Id && hos.EndDateTime == null)).First();
+                        if (session != null)
+                        {
+                            session.EndDateTime = utcNow;
+                        }
                     }
                 }
             }
 
             await uow.CompleteAsync();
         }
+    }
+
+    public Embed CreateScoreboardEmbed(HotOpModel hotOp)
+    {
+        var scores = hotOp.Channel.ChannelUsers.Select((cu) => new ScoreboardItemDto
+        {
+            UserId = cu.UserId,
+            Username = cu.User.Username,
+            Score = 0
+        }).ToDictionary((s) => s.UserId);
+
+        foreach (var session in hotOp.HotOpSessions)
+        {
+            if (!scores.ContainsKey(session.UserId))
+            {
+                continue;
+            }
+
+            if (session.EndDateTime.HasValue)
+            {
+                scores[session.UserId].Score += (int)(Math.Round((session.EndDateTime.Value - session.StartDateTime).TotalMinutes, 0) * MINUTE_MULTIPLIER);
+            }
+            else
+            {
+                scores[session.UserId].Score += (int)(Math.Round((DateTime.UtcNow - session.StartDateTime).TotalMinutes, 0) * MINUTE_MULTIPLIER);
+            }
+        }
+
+        var scoreboard = new ScoreboardDto
+        {
+            HotOpId = hotOp.Id,
+            Scores = scores.Values,
+            OwnerUsername = hotOp.User.Username
+        };
+
+        var builder = new EmbedBuilder
+        {
+            Color = new Color(114, 137, 218),
+            Description = $"Operation Hot {scoreboard.OwnerUsername}"
+
+        };
+
+        foreach (var score in scoreboard.Scores)
+        {
+            builder.AddField((x) =>
+            {
+                x.Name = score.Username;
+                x.Value = score.Score;
+                x.IsInline = false;
+            });
+        }
+
+        return builder.Build();
     }
 }

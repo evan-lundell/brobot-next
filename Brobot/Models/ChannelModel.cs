@@ -12,6 +12,8 @@ public class ChannelModel
     public virtual ICollection<ChannelUserModel> ChannelUsers { get; set; }
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
     public virtual ICollection<HotOpModel> HotOps { get; set; }
+
+    // This is a collection of users where the given channel is their primary channel
     public ICollection<UserModel> Users { get; set; }
     public ChannelModel()
     {

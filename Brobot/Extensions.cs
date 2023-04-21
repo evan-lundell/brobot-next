@@ -10,6 +10,14 @@ public static class Extensions
         }
     }
 
+    public static void AddIfNotNull<T>(this List<T> list, params T?[] range)
+    {
+        foreach (var element in range)
+        {
+            list.AddIfNotNull(element);
+        }
+    }
+
     public static IServiceCollection AddCronJob<T>(this IServiceCollection services, Action<ICronWorkerConfig<T>> options) where T : CronWorkerBase
     {
         if (options == null)

@@ -16,6 +16,7 @@ public class BrobotModule : InteractionModuleBase
     private readonly IGiphyService _giphyService;
     private readonly IRandomFactService _randomFactService;
     private readonly IDictionaryService _dictionaryService;
+    private readonly HotOpService _hotOpService;
 
     private string[] _emojiLookup = new string[]
     {
@@ -35,13 +36,15 @@ public class BrobotModule : InteractionModuleBase
         Random random,
         IGiphyService giphyService,
         IRandomFactService randomFactService,
-        IDictionaryService dictionaryService)
+        IDictionaryService dictionaryService,
+        HotOpService hotOpService)
     {
         _uow = uow;
         _random = random;
         _giphyService = giphyService;
         _randomFactService = randomFactService;
         _dictionaryService = dictionaryService;
+        _hotOpService = hotOpService;
     }
     [SlashCommand("info", "Returns guild, channel, and user ids")]
     public async Task Info()
@@ -91,17 +94,18 @@ public class BrobotModule : InteractionModuleBase
     )
     {
         var games = new List<string>();
-        games.AddIfNotNull(game1);
-        games.AddIfNotNull(game2);
-        games.AddIfNotNull(game3);
-        games.AddIfNotNull(game4);
-        games.AddIfNotNull(game5);
-        games.AddIfNotNull(game6);
-        games.AddIfNotNull(game7);
-        games.AddIfNotNull(game8);
-        games.AddIfNotNull(game9);
-        games.AddIfNotNull(game10);
-
+        games.AddIfNotNull(
+            game1,
+            game2,
+            game3,
+            game4,
+            game5,
+            game6,
+            game7,
+            game8,
+            game9,
+            game10
+        );
 
         if (games.Count < 2)
         {
@@ -127,16 +131,18 @@ public class BrobotModule : InteractionModuleBase
     )
     {
         var players = new List<string>();
-        players.AddIfNotNull(player1);
-        players.AddIfNotNull(player2);
-        players.AddIfNotNull(player3);
-        players.AddIfNotNull(player4);
-        players.AddIfNotNull(player5);
-        players.AddIfNotNull(player6);
-        players.AddIfNotNull(player7);
-        players.AddIfNotNull(player8);
-        players.AddIfNotNull(player9);
-        players.AddIfNotNull(player10);
+        players.AddIfNotNull(
+            player1,
+            player2,
+            player3,
+            player4,
+            player5,
+            player6,
+            player7,
+            player8,
+            player9,
+            player10
+        );
 
         if (players.Count < 2)
         {
@@ -242,13 +248,15 @@ public class BrobotModule : InteractionModuleBase
             option1,
             option2
         };
-        options.AddIfNotNull(option3);
-        options.AddIfNotNull(option4);
-        options.AddIfNotNull(option5);
-        options.AddIfNotNull(option6);
-        options.AddIfNotNull(option7);
-        options.AddIfNotNull(option8);
-        options.AddIfNotNull(option9);
+        options.AddIfNotNull(
+            option3,
+            option4,
+            option5,
+            option6,
+            option7,
+            option8,
+            option9
+        );
 
         var builder = new StringBuilder();
         for (int i = 0; i < options.Count; i++)
@@ -363,34 +371,17 @@ public class BrobotModule : InteractionModuleBase
     {
         try
         {
-            var scoreboards = await _uow.HotOps.GetActiveHotOpScoreboards();
-            if (scoreboards.Count() == 0)
+            var activeHotOps = await _uow.HotOps.GetActiveHotOpsWithSessions(Context.Channel.Id);
+            if (activeHotOps.Count() == 0)
             {
                 await RespondAsync("No active hot ops");
                 return;
             }
 
             var embeds = new List<Embed>();
-            foreach (var scoreboard in scoreboards)
+            foreach (var hotOp in activeHotOps)
             {
-                var builder = new EmbedBuilder
-                {
-                    Color = new Color(114, 137, 218),
-                    Description = $"Operation Hot {scoreboard.OwnerUsername}"
-
-                };
-
-                foreach (var score in scoreboard.Scores)
-                {
-                    builder.AddField((x) =>
-                    {
-                        x.Name = score.Username;
-                        x.Value = score.Score;
-                        x.IsInline = false;
-                    });
-                }
-
-                embeds.Add(builder.Build());
+                embeds.Add(_hotOpService.CreateScoreboardEmbed(hotOp));
             }
 
             await RespondAsync(embeds: embeds.ToArray());
