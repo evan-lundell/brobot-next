@@ -23,4 +23,23 @@ public class ScheduledMessageRepository : RepositoryBase<ScheduledMessageModel, 
 
         return messages;
     }
+
+    public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(ulong userId, int limit = 10, int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
+    {
+        IQueryable<ScheduledMessageModel> query = _context.ScheduledMessages
+            .Take(limit)
+            .Skip(skip);
+
+        if (scheduledBefore.HasValue)
+        {
+            query = query.Where((sm) => sm.SendDate.HasValue && sm.SendDate.Value < scheduledBefore);
+        }
+
+        if (scheduledAfter.HasValue)
+        {
+            query = query.Where((sm) => sm.SendDate.HasValue && sm.SendDate >= scheduledAfter);
+        }
+
+        return await query.ToListAsync();
+    }
 }

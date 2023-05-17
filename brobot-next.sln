@@ -5,6 +5,10 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brobot", "Brobot\Brobot.csproj", "{5278E9EE-50AF-4C87-8B3B-50FF9018FFD0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brobot.Frontend", "Brobot.Frontend\Brobot.Frontend.csproj", "{13311AAA-B371-4810-A799-7158D95D7C46}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brobot.Shared", "Brobot.Shared\Brobot.Shared.csproj", "{5DD910A2-463F-41F2-BD7A-D182B26C5D7B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,13 @@ Global
 		{5278E9EE-50AF-4C87-8B3B-50FF9018FFD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5278E9EE-50AF-4C87-8B3B-50FF9018FFD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5278E9EE-50AF-4C87-8B3B-50FF9018FFD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13311AAA-B371-4810-A799-7158D95D7C46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13311AAA-B371-4810-A799-7158D95D7C46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13311AAA-B371-4810-A799-7158D95D7C46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13311AAA-B371-4810-A799-7158D95D7C46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DD910A2-463F-41F2-BD7A-D182B26C5D7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DD910A2-463F-41F2-BD7A-D182B26C5D7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DD910A2-463F-41F2-BD7A-D182B26C5D7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DD910A2-463F-41F2-BD7A-D182B26C5D7B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

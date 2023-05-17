@@ -99,6 +99,17 @@ public class BrobotDbContext : DbContext
             .HasOne((u) => u.PrimaryChannel)
             .WithMany((c) => c.Users)
             .HasForeignKey((u) => u.PrimaryChannelId);
+        builder.Entity<UserModel>()
+            .Property((u) => u.IdentityUserId)
+            .HasColumnName("identity_user_id")
+            .IsRequired(false);
+        builder.Entity<UserModel>()
+            .HasIndex((u) => u.IdentityUserId)
+            .IsUnique(true);
+        builder.Entity<UserModel>()
+            .HasOne((u) => u.IdentityUser)
+            .WithMany()
+            .HasForeignKey((u) => u.IdentityUserId);
 
         builder.Entity<GuildUserModel>()
             .ToTable(name: "guild_user", schema: "brobot")

@@ -1,0 +1,43 @@
+﻿@inherits LayoutComponentBase
+@inject JwtAuthenticationStateProvider JwtAuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <AuthorizeView>
+                <Authorized>
+                    <a href="" @onclick="Logout">Logout</a>
+                </Authorized>
+                <NotAuthorized>
+                    @if (JwtAuthenticationStateProvider.IsLoggedIn)
+                    {
+                        <a href="" @onclick="Logout">Logout</a>
+                    }
+                    else
+                    {
+                        <a href="/login">Login</a>
+                    }
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private string? DisplayName => JwtAuthenticationStateProvider.DisplayName;
+
+    private async Task Logout()
+    {
+        await JwtAuthenticationStateProvider.Logout();
+        NavigationManager.NavigateTo("/");
+    }
+}

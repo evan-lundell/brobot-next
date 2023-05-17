@@ -66,4 +66,11 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
             .AsSplitQuery()
             .SingleOrDefaultAsync((u) => u.Id == id);
     }
+
+    public Task<UserModel?> GetFromIdentityUserId(string identityUserId)
+    {
+        var user = _context.Users
+            .SingleOrDefaultAsync((u) => u.IdentityUserId == identityUserId);
+        return user;
+    }
 }

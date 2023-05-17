@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace Brobot.Models;
 
 public class UserModel
@@ -17,6 +19,9 @@ public class UserModel
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
     public virtual ICollection<HotOpModel> HotOps { get; set; }
     public ICollection<HotOpSessionModel> HotOpSessions { get; set; }
+
+    public IdentityUser? IdentityUser { get; set; }
+    public string? IdentityUserId { get; set; }
 
     public UserModel()
     {

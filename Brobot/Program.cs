@@ -1,9 +1,17 @@
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using Brobot.Contexts;
 using Brobot.Repositories;
 using Brobot.Services;
 using Brobot.Workers;
 using Discord.WebSocket;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Victoria.Node;
 
 namespace Brobot;
@@ -19,6 +27,12 @@ class Program
         {
             app.UseSwagger();
             app.UseSwaggerUI();
+            app.UseWebAssemblyDebugging();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Error");
+            app.UseHsts();
         }
 
         if (app.Environment.IsProduction())
@@ -45,16 +59,49 @@ class Program
         }
 
         app.UseHttpsRedirection();
+        app.UseBlazorFrameworkFiles();
+        app.UseStaticFiles();
+        app.UseRouting();
+        app.UseAuthentication();
         app.UseAuthorization();
+        app.MapRazorPages();
+        app.UseDiscordUser();
         app.MapControllers();
+        app.MapFallbackToFile("index.html");
         app.Run();
     }
 
     private static void CreateServices(WebApplicationBuilder builder, string[] args)
     {
-        builder.Services.AddControllers();
+        builder.Services.AddControllersWithViews();
+        builder.Services.AddRazorPages();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen((options) =>
+        {
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                In = ParameterLocation.Header,
+                Description = "Please enter a valid token",
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                BearerFormat = "JWT",
+                Scheme = "Bearer"
+            });
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new string[]{}
+                }
+            });
+        });
         builder.Services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
         {
             GatewayIntents = Discord.GatewayIntents.All,
@@ -105,5 +152,38 @@ class Program
         };
         builder.Services.AddSingleton<NodeConfiguration>(nodeConfig);
         builder.Services.AddSingleton<LavaNode>();
+        builder.Services.AddAuthentication()
+        .AddJwtBearer((options) =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = true,
+                ValidateIssuer = true,
+                ValidAudience = builder.Configuration["ValidAudience"] ?? "",
+                ValidIssuer = builder.Configuration["ValidIssuer"] ?? "",
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSigningKey"] ?? ""))
+            };
+        });
+        builder.Services.AddDbContext<UsersDbContext>((options) =>
+        {
+            options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
+        });
+        builder.Services.AddIdentityCore<IdentityUser>((options) =>
+        {
+            options.User.RequireUniqueEmail = true;
+            options.Password.RequireDigit = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequiredLength = 8;
+            options.SignIn.RequireConfirmedEmail = false;
+        })
+        .AddRoles<IdentityRole>()
+        .AddEntityFrameworkStores<UsersDbContext>()
+        .AddDefaultTokenProviders();
+        builder.Services.AddSingleton<JwtService>();
+        builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+        builder.Services.AddHttpClient<DiscordOauthService>();
     }
 }

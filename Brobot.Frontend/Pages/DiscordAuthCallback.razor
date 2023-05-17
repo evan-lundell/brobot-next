@@ -1,0 +1,46 @@
+@page "/discord-cb"
+@inject ApiService ApiService
+@inject NavigationManager NavigationManager
+@inject JwtService JwtService
+
+<PageTitle>Discord Auth Callback</PageTitle>
+
+@if (Syncing)
+{
+    <p><em>Syncing user data...</em></p>
+}
+
+<p>@Message</p>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Code { get; set; } = "";
+
+    private bool Syncing = true;
+
+    private string Message = "";
+
+    protected async override Task OnInitializedAsync()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(Code))
+            {
+                Message = "Unable to sync user. Please logout and try again.";
+            }
+            else
+            {
+                await ApiService.SyncDiscordUser(Code);
+                await JwtService.RefreshJwtToken();
+                NavigationManager.NavigateTo("/");
+            }
+            Syncing = false;
+        }
+        catch (Exception)
+        {
+            Syncing = false;
+            Message = "Unable to sync user. Please logout and try again.";
+        }
+    }
+}

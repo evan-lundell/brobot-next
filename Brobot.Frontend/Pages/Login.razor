@@ -1,0 +1,13 @@
+@page "/login"
+@inject JwtAuthenticationStateProvider JwtAuthenticationStateProvider
+
+<PageTitle>Login</PageTitle>
+
+@if (!JwtAuthenticationStateProvider.IsLoggedIn)
+{
+    <LoginForm />
+}
+else
+{
+    <SyncDiscordButton />
+}
