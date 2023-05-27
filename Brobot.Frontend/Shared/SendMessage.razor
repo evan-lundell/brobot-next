@@ -1,0 +1,61 @@
+@inject ApiService ApiService
+
+<h3>Send a Message</h3>
+<form @onsubmit="SendMessageAsync">
+    <div class="row">
+        <div class="col-md-6 my-2">
+            <label class="form-label">Message</label>
+            <InputText @bind-Value="@message" class="form-control" placeholder="Enter message..." />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 my-2">
+            <label class="form-label">Channel</label>
+            <InputSelect class="form-select" @bind-Value="@selectedChannelId">
+                <option value="">Select a channel...</option>
+                @foreach (var channel in Channels ?? Array.Empty<ChannelResponse>())
+                {
+                    <option value="@channel.Id">@channel.Name</option>
+                }
+            </InputSelect>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2 offset-md-4 my-2">
+            <button disabled="@DisableSend" class="btn btn-primary form-control">Send</button>
+        </div>
+    </div>
+</form>
+
+@code {
+
+    [Parameter]
+    public ChannelResponse[]? Channels { get; set; } = Array.Empty<ChannelResponse>();
+
+    private bool DisableSend => isSending || string.IsNullOrWhiteSpace(message) || selectedChannelId == null;
+    
+    private string? message;
+
+    private ulong? selectedChannelId;
+
+    private bool isSending = false;
+    
+    private async Task SendMessageAsync()
+    {
+        if (selectedChannelId == null || message == null)
+        {
+            return;
+        }
+        var sendMessageRequest = new SendMessageRequest
+        {
+            ChannelId = selectedChannelId.Value,
+            Message = message
+        };
+
+        isSending = true;
+        await ApiService.SendMessage(sendMessageRequest);
+        isSending = false;
+        message = null;
+        selectedChannelId = null;
+    }
+}

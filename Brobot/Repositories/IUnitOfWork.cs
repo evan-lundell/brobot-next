@@ -8,5 +8,6 @@ public interface IUnitOfWork : IDisposable
     IScheduledMessageRepository ScheduledMessages { get; }
     IHotOpRepository HotOps { get; }
     IHotOpSessionRepository HotOpSessions { get; }
+    IDailyMessageCountRepository DailyMessageCounts { get; }
     Task<int> CompleteAsync();
 }

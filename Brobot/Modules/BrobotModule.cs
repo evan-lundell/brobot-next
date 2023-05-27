@@ -18,7 +18,7 @@ public class BrobotModule : InteractionModuleBase
     private readonly IDictionaryService _dictionaryService;
     private readonly HotOpService _hotOpService;
 
-    private string[] _emojiLookup = new string[]
+    private readonly string[] _emojiLookup = new string[]
     {
         ":one:",
         ":two:",
@@ -154,7 +154,7 @@ public class BrobotModule : InteractionModuleBase
         var team1 = new List<string>();
         var team2 = new List<string>();
         var numberOfPlayers = players.Count;
-        for (int i = 0; i < numberOfPlayers; i++)
+        for (var i = 0; i < numberOfPlayers; i++)
         {
             var randomPlayer = players[_random.Next(players.Count)];
             if (isTeam1)
@@ -309,11 +309,9 @@ public class BrobotModule : InteractionModuleBase
         if (!string.IsNullOrWhiteSpace(user.Timezone))
         {
             var timezone = TZConvert.GetTimeZoneInfo(user.Timezone);
-            if (timezone != null)
-            {
-                var offset = timezone.GetUtcOffset(DateTime.Now);
-                reminderDateFormatted = reminderDateFormatted - offset;
-            }
+            var offset = timezone.GetUtcOffset(DateTime.Now);
+            reminderDateFormatted = reminderDateFormatted - offset;
+
         }
 
         var reminder = new ScheduledMessageModel
@@ -344,7 +342,7 @@ public class BrobotModule : InteractionModuleBase
 
             var user = await _uow.Users.GetById(socketUser.Id);
             var callingUser = await _uow.Users.GetById(Context.User.Id);
-            if (user == null || user.LastOnline == null)
+            if (user?.LastOnline == null)
             {
                 await RespondAsync(text: "Failed to get last online", ephemeral: true);
                 return;
@@ -358,7 +356,7 @@ public class BrobotModule : InteractionModuleBase
                 lastOnline = lastOnline + offset;
             }
 
-            await RespondAsync(text: $"{user.Username} was last online at {lastOnline.ToString("yyyy-MM-dd hh:mm tt")}", ephemeral: true);
+            await RespondAsync(text: $"{user.Username} was last online at {lastOnline:yyyy-MM-dd hh:mm tt}", ephemeral: true);
         }
         catch (Exception)
         {
@@ -371,20 +369,14 @@ public class BrobotModule : InteractionModuleBase
     {
         try
         {
-            var activeHotOps = await _uow.HotOps.GetActiveHotOpsWithSessions(Context.Channel.Id);
-            if (activeHotOps.Count() == 0)
+            var activeHotOps = (await _uow.HotOps.GetActiveHotOpsWithSessions(Context.Channel.Id)).ToArray();
+            if (activeHotOps.Length == 0)
             {
                 await RespondAsync("No active hot ops");
                 return;
             }
 
-            var embeds = new List<Embed>();
-            foreach (var hotOp in activeHotOps)
-            {
-                embeds.Add(_hotOpService.CreateScoreboardEmbed(hotOp));
-            }
-
-            await RespondAsync(embeds: embeds.ToArray());
+            await RespondAsync(embeds: activeHotOps.Select(_hotOpService.CreateScoreboardEmbed).ToArray());
 
         }
         catch (Exception)

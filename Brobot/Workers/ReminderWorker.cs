@@ -1,12 +1,13 @@
 using Brobot.Repositories;
 using Discord.WebSocket;
+// ReSharper disable ClassNeverInstantiated.Global
 
 namespace Brobot.Workers;
 
 public class ReminderWorker : CronWorkerBase
 {
     private readonly IServiceProvider _services;
-    private DiscordSocketClient _client;
+    private readonly DiscordSocketClient _client;
 
     public ReminderWorker(ICronWorkerConfig<ReminderWorker> config, IServiceProvider services, DiscordSocketClient client)
         : base(config.CronExpression)
@@ -15,24 +16,22 @@ public class ReminderWorker : CronWorkerBase
         _client = client;
     }
 
-    public async override Task DoWork(CancellationToken cancellationToken)
+    protected override async Task DoWork(CancellationToken cancellationToken)
     {
-        using (var scope = _services.CreateScope())
+        using var scope = _services.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var messages = await uow.ScheduledMessages.GetActiveMessages();
+        foreach (var message in messages)
         {
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var messages = await uow.ScheduledMessages.GetActiveMessages();
-            foreach (var message in messages)
+            var channel = await _client.GetChannelAsync(message.ChannelId);
+            if (!(channel is SocketTextChannel textChannel))
             {
-                var channel = await _client.GetChannelAsync(message.ChannelId);
-                if (!(channel is SocketTextChannel textChannel))
-                {
-                    continue;
-                }
-                await textChannel.SendMessageAsync(message.MessageText);
-                message.SentDate = DateTime.UtcNow;
+                continue;
             }
-
-            await uow.CompleteAsync();
+            await textChannel.SendMessageAsync(message.MessageText);
+            message.SentDate = DateTime.UtcNow;
         }
+
+        await uow.CompleteAsync();
     }
 }

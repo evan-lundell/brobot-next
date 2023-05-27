@@ -17,7 +17,7 @@ public class HotOpRepository : RepositoryBase<HotOpModel, int>, IHotOpRepository
     {
         var utcNow = DateTime.UtcNow;
         var scoreboards = new List<ScoreboardDto>();
-        var activeHotOps = await _context.HotOps
+        var activeHotOps = await Context.HotOps
             .AsNoTracking()
             .Include((ho) => ho.User)
             .Include((ho) => ho.HotOpSessions)
@@ -31,9 +31,9 @@ public class HotOpRepository : RepositoryBase<HotOpModel, int>, IHotOpRepository
         return activeHotOps;
     }
 
-    public async override Task<IEnumerable<HotOpModel>> Find(Expression<Func<HotOpModel, bool>> expression)
+    public override async Task<IEnumerable<HotOpModel>> Find(Expression<Func<HotOpModel, bool>> expression)
     {
-        return await _context.HotOps
+        return await Context.HotOps
             .Include((ho) => ho.User)
             .Include((ho) => ho.HotOpSessions)
             .ThenInclude((hos) => hos.User)

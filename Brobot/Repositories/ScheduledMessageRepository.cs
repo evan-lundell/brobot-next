@@ -13,22 +13,25 @@ public class ScheduledMessageRepository : RepositoryBase<ScheduledMessageModel, 
 
     public async Task<IEnumerable<ScheduledMessageModel>> GetActiveMessages(DateTime? time = null)
     {
-        if (time == null)
-        {
-            time = DateTime.UtcNow;
-        }
-        var messages = await _context.ScheduledMessages
+        time ??= DateTime.UtcNow;
+        var messages = await Context.ScheduledMessages
             .Where((m) => time >= m.SendDate && time < m.SendDate.Value.AddMinutes(1) && m.SentDate == null)
             .ToListAsync();
 
         return messages;
     }
 
-    public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(ulong userId, int limit = 10, int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
+    public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(ulong userId, int limit = 10,
+        int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
-        IQueryable<ScheduledMessageModel> query = _context.ScheduledMessages
-            .Take(limit)
-            .Skip(skip);
+        var query = Context.ScheduledMessages
+            .Where((sm) => sm.CreatedById == userId)
+            .Take(limit);
+
+        if (skip > 0)
+        {
+            query = query.Skip(skip);
+        }
 
         if (scheduledBefore.HasValue)
         {
@@ -40,6 +43,7 @@ public class ScheduledMessageRepository : RepositoryBase<ScheduledMessageModel, 
             query = query.Where((sm) => sm.SendDate.HasValue && sm.SendDate >= scheduledAfter);
         }
 
+        query = query.OrderBy((sm) => sm.SendDate);
         return await query.ToListAsync();
     }
 }

@@ -5,7 +5,7 @@ namespace Brobot.Services;
 public class DiscordOauthService
 {
     private readonly HttpClient _client;
-    private IConfiguration _configuration;
+    private readonly IConfiguration _configuration;
 
     public DiscordOauthService(HttpClient client, IConfiguration configuration)
     {

@@ -8,6 +8,8 @@ using Brobot.Repositories;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Web;
 using System.Security.Claims;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Controllers;
 
@@ -20,6 +22,7 @@ public class AuthController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly IUnitOfWork _uow;
     private readonly DiscordOauthService _discordOauthService;
+    private readonly IMapper _mapper;
     private const string RefreshTokenCookieKey = "refreshCookie";
 
     public AuthController(
@@ -27,33 +30,45 @@ public class AuthController : ControllerBase
         JwtService jwtService,
         IConfiguration configuration,
         IUnitOfWork uow,
-        DiscordOauthService discordOauthService)
+        DiscordOauthService discordOauthService,
+        IMapper mapper)
     {
         _userManager = userManager;
         _jwtService = jwtService;
         _configuration = configuration;
         _uow = uow;
         _discordOauthService = discordOauthService;
+        _mapper = mapper;
     }
 
     [HttpPost("register")]
-    public async Task<RegisterResponse> Register(RegisterRequest request)
+    public async Task<ActionResult<RegisterResponse>> Register(RegisterRequest request)
     {
+        if (request.Password != request.ConfirmPassword)
+        {
+            return BadRequest("Passwords don't match");
+        }
         var user = new IdentityUser
         {
             Email = request.EmailAddress,
-            UserName = request.DisplayName
+            UserName = request.EmailAddress
         };
         var result = await _userManager.CreateAsync(user, request.Password);
-        if (result.Succeeded)
+        if (!result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(user, "Admin");
+            return BadRequest(new RegisterResponse
+            {
+                Succeeded = false,
+                Errors = result.Errors.Select((e) => e.Description)
+            });
         }
-        return new RegisterResponse
+
+        await _userManager.AddToRoleAsync(user, "User");
+        return Ok(new RegisterResponse
         {
             Succeeded = result.Succeeded,
             Errors = result.Errors.Select((e) => e.Description)
-        };
+        });
     }
 
     [HttpPost("login")]
@@ -82,17 +97,20 @@ public class AuthController : ControllerBase
         var roles = await _userManager.GetRolesAsync(user);
 
         var discordUser = await _uow.Users.GetFromIdentityUserId(user.Id);
-        string jwt = _jwtService.CreateJwt(user, roles.FirstOrDefault(), discordUser?.Id);
+        var jwt = _jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
+        // ReSharper disable once InvertIf
         if (!string.IsNullOrWhiteSpace(user.SecurityStamp))
         {
             if (!int.TryParse(_configuration["JwtExpiry"], out var expiry))
             {
                 expiry = 30;
             }
-            var options = new CookieOptions();
-            options.Secure = true;
-            options.SameSite = SameSiteMode.Strict;
-            options.Expires = DateTime.Now.AddMinutes(expiry);
+            var options = new CookieOptions
+            {
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Now.AddMinutes(expiry)
+            };
             HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, user.SecurityStamp, options);
         }
 
@@ -114,26 +132,32 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<LoginResponse>> RefreshToken()
     {
         var cookie = HttpContext.Request.Cookies[RefreshTokenCookieKey];
-        if (cookie != null)
+        if (cookie == null)
         {
-            var user = _userManager.Users.FirstOrDefault((user) => user.SecurityStamp == cookie);
-            if (user != null)
+            return Ok(new LoginResponse
             {
-                var roles = await _userManager.GetRolesAsync(user);
-                var discordUser = await _uow.Users.GetFromIdentityUserId(user.Id);
-                var jwtToken = _jwtService.CreateJwt(user, roles.FirstOrDefault(), discordUser?.Id);
-                return Ok(new LoginResponse
-                {
-                    Succeeded = true,
-                    Token = jwtToken
-                });
-            }
+                Succeeded = false
+            });
         }
 
+        var user = _userManager.Users.FirstOrDefault((user) => user.SecurityStamp == cookie);
+        if (user == null)
+        {
+            return Ok(new LoginResponse
+            {
+                Succeeded = false
+            });
+        }
+
+        var roles = await _userManager.GetRolesAsync(user);
+        var discordUser = await _uow.Users.GetFromIdentityUserId(user.Id);
+        var jwtToken = _jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
         return Ok(new LoginResponse
         {
-            Succeeded = false
+            Succeeded = true,
+            Token = jwtToken
         });
+
     }
 
     [HttpGet("discord-auth")]
@@ -173,5 +197,63 @@ public class AuthController : ControllerBase
         user.IdentityUserId = nameIdentifierClaim.Value;
         await _uow.CompleteAsync();
         return Ok();
+    }
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest changePasswordRequest)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest("Invalid password");
+        }
+        
+        var identityUser = await _userManager.GetUserAsync(HttpContext.User);
+        if (identityUser == null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await _userManager.ChangePasswordAsync(identityUser, changePasswordRequest.CurrentPassword,
+            changePasswordRequest.NewPassword);
+        if (!result.Succeeded)
+        {
+            return BadRequest(result.Errors.FirstOrDefault()?.Description ?? "Password update failed");
+        }
+        
+        if (!string.IsNullOrWhiteSpace(identityUser.SecurityStamp))
+        {
+            if (!int.TryParse(_configuration["JwtExpiry"], out var expiry))
+            {
+                expiry = 30;
+            }
+            var options = new CookieOptions
+            {
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Now.AddMinutes(expiry)
+            };
+            HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, identityUser.SecurityStamp, options);
+        }
+
+        return Ok();
+    }
+
+    [HttpGet("users")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<IdentityUserResponse>>> GetIdentityUsers()
+    {
+        var identityUsers = await _userManager.Users.ToListAsync();
+        var identityUserResponses = _mapper.Map<IEnumerable<IdentityUserResponse>>(identityUsers);
+        var discordUsers = await _uow.Users
+            .GetUsersFromIdentityUserIds(identityUsers.Select((iu) => iu.Id));
+        foreach (var identityUserResponse in identityUserResponses)
+        {
+            identityUserResponse.IsDiscordAuthenticated =
+                // ReSharper disable once PossibleMultipleEnumeration
+                discordUsers.Any((du) => du.IdentityUserId == identityUserResponse.Id);
+        }
+        
+        return Ok(identityUserResponses);
     }
 }

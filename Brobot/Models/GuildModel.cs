@@ -1,5 +1,7 @@
+// ReSharper disable VirtualMemberCallInConstructor
 namespace Brobot.Models;
 
+// ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
 public class GuildModel
 {
     public ulong Id { get; set; }

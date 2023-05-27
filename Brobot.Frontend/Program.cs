@@ -23,6 +23,7 @@ builder.Services.AddScoped((provider) => new JwtTokenMessageHandler(appUri, prov
 builder.Services.AddHttpClient<ApiService>((client) => client.BaseAddress = appUri)
     .AddHttpMessageHandler<JwtTokenMessageHandler>();
 builder.Services.AddSingleton<JwtService>();
+builder.Services.AddLogging();
 
 var app = builder.Build();
 await app.Services.GetRequiredService<JwtService>().RefreshJwtToken();

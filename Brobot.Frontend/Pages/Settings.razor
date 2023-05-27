@@ -1,0 +1,113 @@
+@page "/settings"
+@inject ApiService Api
+
+<PageTitle>Settings</PageTitle>
+
+<h1>User Settings</h1>
+
+@if (PageLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <EditForm EditContext="@EditContext" class="my-3" OnValidSubmit="OnValidSubmit">
+        <div class="row my-3">
+            <div class="form-group col-lg-6">
+                <label class="form-label">Timezone</label>
+                <InputSelect class="form-select" @bind-Value="UserSettings.Timezone">
+                    <option value="">Select a timezone...</option>
+                    <option value="Pacific/Honolulu">Pacific/Honolulu GMT-10:00</option>
+                    <option value="America/Anchorage">America/Anchorage GMT-9:00</option>
+                    <option value="America/Los_Angeles">America/Los_Angeles GMT-8:00</option>
+                    <option value="America/Boise">America/Boise GMT-7:00</option>
+                    <option value="America/Denver">America/Denver GMT-7:00</option>
+                    <option value="America/Phoenix">America/Phoenix GMT-7:00</option>
+                    <option value="America/Chicago">America/Chicago GMT-6:00</option>
+                    <option value="America/Detroit">America/Detroit GMT-5:00</option>
+                    <option value="America/New_York">America/New_York GMT-5:00</option>
+                </InputSelect>
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="form-group col-lg-6">
+                <label class="form-label">Primary Channel</label>
+                <InputSelect class="form-select" @bind-Value="UserSettings.PrimaryChannelId">
+                    <option value="">Select a channel...</option>
+                    @foreach (var channel in Channels)
+                    {
+                        <option value="@channel.Id">@channel.Name</option>
+                    }
+                </InputSelect>
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="form-group col-lg-6">
+                <label class="form-label">Birthday</label>
+                <InputDate class="form-control" @bind-Value="UserSettings.Birthdate" />
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="col-lg-2 offset-lg-2">
+                <button type="button" disabled="@(!IsModified)" class="btn btn-danger form-control" @onclick="Reset">Reset</button>
+            </div>
+            <div class="col-lg-2">
+                <button disabled="@(!IsModified)" class="btn btn-primary form-control">Save</button>
+            </div>
+        </div>
+    </EditForm>
+    
+    <ChangePassword />
+}
+
+@code {
+    private bool PageLoading = true;
+    private bool IsModified = false;
+    private ChannelResponse[] Channels = new ChannelResponse[0];
+    private UserSettingsResponse UserSettings = new UserSettingsResponse();
+    private UserSettingsResponse OriginalSettings = new UserSettingsResponse();
+    private EditContext? EditContext;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        Channels = await Api.GetChannels();
+        UserSettings = await Api.GetUserSettings();
+
+        EditContext = new EditContext(UserSettings);
+        EditContext.OnFieldChanged += (obj, args) =>
+        {
+            IsModified = true;
+        };
+        CopySettings(UserSettings, OriginalSettings);
+        PageLoading = false;
+    }
+
+    private async Task OnValidSubmit()
+    {
+        var userSettingsRequest = new UserSettingsRequest
+        {
+            BirthDate = UserSettings.Birthdate,
+            Timezone = UserSettings.Timezone,
+            PrimaryChannelId = UserSettings.PrimaryChannelId
+        };
+        var updatedSettings = await Api.SaveUserSettings(userSettingsRequest);
+        UserSettings = updatedSettings;
+        CopySettings(UserSettings, OriginalSettings);
+        EditContext?.MarkAsUnmodified();
+        IsModified = false;
+    }
+
+    private void CopySettings(UserSettingsResponse from, UserSettingsResponse to)
+    {
+        to.Birthdate = from.Birthdate;
+        to.PrimaryChannelId = from.PrimaryChannelId;
+        to.Timezone = from.Timezone;
+    }
+
+    private void Reset()
+    {
+        CopySettings(OriginalSettings, UserSettings);
+        EditContext?.MarkAsUnmodified();
+        IsModified = false;
+    }
+}

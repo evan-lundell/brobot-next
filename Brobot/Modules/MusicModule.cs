@@ -163,7 +163,7 @@ public class MusicModule : InteractionModuleBase
         }
 
         var tracksBuilder = new StringBuilder();
-        int index = 1;
+        var index = 1;
         if (player.Track != null)
         {
             tracksBuilder.AppendLine($"1. {player.Track.Title}");
@@ -174,8 +174,10 @@ public class MusicModule : InteractionModuleBase
             tracksBuilder.AppendLine($"{index}: {track.Title}");
             index++;
         }
-        var embedBuilder = new EmbedBuilder();
-        embedBuilder.Title = "Queue";
+        var embedBuilder = new EmbedBuilder
+        {
+            Title = "Queue"
+        };
         embedBuilder.AddField("Tracks", tracksBuilder.ToString());
         await RespondAsync(embed: embedBuilder.Build());
     }

@@ -69,4 +69,60 @@ public class ApiService
             throw new Exception(await response.Content.ReadAsStringAsync());
         }
     }
+
+    public async Task<RegisterResponse?> RegisterUser(RegisterRequest registerRequest)
+    {
+        var response = await _client.PostAsJsonAsync<RegisterRequest>("auth/register", registerRequest);
+        var registerResponse = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+        return registerResponse;
+    }
+
+    public async Task<ChannelResponse[]> GetChannels()
+    {
+        try
+        {
+            var response = await _client.GetAsync("channels");
+            var channels = await response.Content.ReadFromJsonAsync<ChannelResponse[]>();
+            return channels ?? Array.Empty<ChannelResponse>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            return Array.Empty<ChannelResponse>();
+        }
+    }
+
+    public async Task<UserSettingsResponse> GetUserSettings()
+    {
+        var response = await _client.GetAsync("users/settings");
+        var userSettings = await response.Content.ReadFromJsonAsync<UserSettingsResponse>();
+        return userSettings ?? new UserSettingsResponse();
+    }
+
+    public async Task<UserSettingsResponse> SaveUserSettings(UserSettingsRequest userSettingsRequest)
+    {
+        var response = await _client.PatchAsJsonAsync<UserSettingsRequest>("users/settings", userSettingsRequest);
+        var userSettingsResponse = await response.Content.ReadFromJsonAsync<UserSettingsResponse>();
+        return userSettingsResponse ?? new UserSettingsResponse();
+    }
+
+    public async Task<DailyMessageCountResponse[]> GetDailyMessageCount(int numOfDays = 10)
+    {
+        var response = await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/daily");
+        return response ?? Array.Empty<DailyMessageCountResponse>();
+    }
+
+    public async Task SendMessage(SendMessageRequest sendMessageRequest)
+    {
+        await _client.PostAsJsonAsync("Messages/send", sendMessageRequest);
+    }
+
+    public async Task ChangePassword(ChangePasswordRequest changePasswordRequest)
+    {
+        await _client.PostAsJsonAsync("auth/change-password", changePasswordRequest);
+    }
+
+    public async Task<IdentityUserResponse[]> GetIdentityUsers()
+        => await _client.GetFromJsonAsync<IdentityUserResponse[]>("Auth/users") ?? Array.Empty<IdentityUserResponse>();
+
 }

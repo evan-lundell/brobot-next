@@ -27,12 +27,14 @@ public abstract class CronWorkerBase : IHostedService, IDisposable
         return Task.CompletedTask;
     }
 
+#pragma warning disable CA1816
     public virtual void Dispose()
+#pragma warning restore CA1816
     {
         _timer?.Dispose();
     }
 
-    protected async Task ScheduleJob(CancellationToken cancellationToken)
+    private async Task ScheduleJob(CancellationToken cancellationToken)
     {
         var next = _expression.GetNextOccurrence(DateTime.UtcNow);
         if (next.HasValue)
@@ -65,6 +67,5 @@ public abstract class CronWorkerBase : IHostedService, IDisposable
         await Task.CompletedTask;
     }
 
-    public abstract Task DoWork(CancellationToken cancellationToken);
-
+    protected abstract Task DoWork(CancellationToken cancellationToken);
 }

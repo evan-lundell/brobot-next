@@ -1,5 +1,7 @@
+// ReSharper disable VirtualMemberCallInConstructor
 namespace Brobot.Models;
 
+// ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
 public class ChannelModel
 {
     public ulong Id { get; set; }
@@ -14,6 +16,7 @@ public class ChannelModel
     public virtual ICollection<HotOpModel> HotOps { get; set; }
 
     // This is a collection of users where the given channel is their primary channel
+    // ReSharper disable once CollectionNeverUpdated.Global
     public ICollection<UserModel> Users { get; set; }
     public ChannelModel()
     {

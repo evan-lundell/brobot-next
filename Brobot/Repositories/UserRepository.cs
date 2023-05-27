@@ -11,7 +11,7 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
     {
     }
 
-    public async override Task Add(UserModel entity)
+    public override async Task Add(UserModel entity)
     {
         var existingUser = await GetById(entity.Id);
         if (existingUser != null && existingUser.Archived)
@@ -45,7 +45,7 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
 
     public async Task<IEnumerable<UserModel>> GetAllWithGuildsAndChannels()
     {
-        return await _context.Users
+        return await Context.Users
             .Include((u) => u.GuildUsers)
             .ThenInclude((gu) => gu.Guild)
             .Include((u) => u.ChannelUsers)
@@ -57,7 +57,7 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
 
     public Task<UserModel?> GetByIdWithIncludes(ulong id)
     {
-        return _context.Users
+        return Context.Users
             .Include((u) => u.GuildUsers)
             .ThenInclude((gu) => gu.Guild)
             .Include((u) => u.ChannelUsers)
@@ -67,10 +67,19 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
             .SingleOrDefaultAsync((u) => u.Id == id);
     }
 
-    public Task<UserModel?> GetFromIdentityUserId(string identityUserId)
+    public async Task<UserModel?> GetFromIdentityUserId(string identityUserId)
     {
-        var user = _context.Users
+        var user = await Context.Users
             .SingleOrDefaultAsync((u) => u.IdentityUserId == identityUserId);
         return user;
+    }
+
+    public async Task<IEnumerable<UserModel>> GetUsersFromIdentityUserIds(IEnumerable<string> identityUserIds)
+    {
+        var formattedIds = identityUserIds.Select((id) => $"'{id}'");
+        return await Context.Users
+            .FromSqlRaw(
+                $"SELECT * FROM brobot.discord_user WHERE identity_user_id IN ({string.Join(", ", formattedIds)})")
+            .ToListAsync();
     }
 }

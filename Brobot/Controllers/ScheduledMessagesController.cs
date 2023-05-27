@@ -28,14 +28,14 @@ public class ScheduledMessageController : ControllerBase
         [FromQuery] DateTime? scheduledBefore = null,
         [FromQuery] DateTime? scheduledAfter = null)
     {
-        if (!(HttpContext.Items["DiscordUser"] is UserModel discordUser))
+        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
         {
             return Unauthorized();
         }
 
         if (limit > 50)
         {
-            return BadRequest("Limit cannont be greater than 50");
+            return BadRequest("Limit cannot be greater than 50");
         }
 
         var scheduledMessages = await _uow.ScheduledMessages.GetScheduledMessagesByUser(discordUser.Id, limit, skip, scheduledBefore, scheduledAfter);

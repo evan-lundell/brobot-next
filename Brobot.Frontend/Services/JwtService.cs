@@ -20,7 +20,7 @@ public class JwtService
     {
         var api = _services.GetRequiredService<ApiService>();
         var loginResponse = await api.RefreshToken();
-        if (loginResponse != null && loginResponse.Succeeded && !string.IsNullOrWhiteSpace(loginResponse.Token))
+        if (loginResponse is { Succeeded: true } && !string.IsNullOrWhiteSpace(loginResponse.Token))
         {
             using var scope = _services.CreateScope();
             var loginStateService = scope.ServiceProvider.GetRequiredService<JwtAuthenticationStateProvider>();
@@ -88,12 +88,13 @@ public class JwtService
             .Replace('-', '+')
             .Replace('_', '/');
 
-        switch (jwtSegment.Length % 4)
+        fixedBase64 += (jwtSegment.Length % 4) switch
         {
-            case 2: fixedBase64 += "=="; break;
-            case 3: fixedBase64 += "="; break;
-            default: throw new Exception("Illegal base64url string!");
-        }
+            0 => "",
+            2 => "==",
+            3 => "=",
+            _ => throw new Exception("Illegal base64url string!")
+        };
 
         return Convert.FromBase64String(fixedBase64);
     }

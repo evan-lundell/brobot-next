@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Brobot.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
@@ -14,18 +15,20 @@ public class JwtService
     {
         _configuration = configuration;
     }
-    public string CreateJwt(IdentityUser user, string? role = null, ulong? userId = null)
+    public string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null, ulong? userId = null)
     {
         var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSigningKey"] ?? ""));
         var credentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
+        var username = discordUser?.Username ?? user.UserName ?? "";
+
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.Name, user.UserName ?? ""),
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Email, user.Email ?? ""),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id)
+            new (ClaimTypes.Name, username),
+            new (ClaimTypes.NameIdentifier, user.Id),
+            new (ClaimTypes.Email, user.Email ?? ""),
+            new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new (JwtRegisteredClaimNames.Sub, user.Id)
         };
 
         if (userId.HasValue)

@@ -69,6 +69,27 @@ namespace Brobot.Migrations
                     b.ToTable("channel_user", "brobot");
                 });
 
+            modelBuilder.Entity("Brobot.Models.DailyMessageCountModel", b =>
+                {
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateOnly>("CountDate")
+                        .HasColumnType("date")
+                        .HasColumnName("count_date");
+
+                    b.Property<int>("MessageCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("message_count");
+
+                    b.HasKey("UserId", "CountDate");
+
+                    b.ToTable("daily_message_count", "brobot");
+                });
+
             modelBuilder.Entity("Brobot.Models.GuildModel", b =>
                 {
                     b.Property<decimal>("Id")
@@ -350,6 +371,17 @@ namespace Brobot.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Brobot.Models.DailyMessageCountModel", b =>
+                {
+                    b.HasOne("Brobot.Models.UserModel", "User")
+                        .WithMany("DailyCounts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Brobot.Models.GuildUserModel", b =>
                 {
                     b.HasOne("Brobot.Models.GuildModel", "Guild")
@@ -467,6 +499,8 @@ namespace Brobot.Migrations
             modelBuilder.Entity("Brobot.Models.UserModel", b =>
                 {
                     b.Navigation("ChannelUsers");
+
+                    b.Navigation("DailyCounts");
 
                     b.Navigation("GuildUsers");
 

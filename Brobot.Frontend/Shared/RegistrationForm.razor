@@ -1,0 +1,100 @@
+@inject ApiService ApiService
+@inject NavigationManager NavigationManager
+
+<div>
+    <h1>Register</h1>
+</div>
+
+@if (RegistrationSuccessful)
+{
+    <p>Registration Successful!</p>
+    <div>
+        <button type="button" class="btn btn-primary" @onclick="RedirectToLogin">
+            Login
+        </button>
+    </div>
+}
+else
+{
+    <EditForm Model="@registerRequest" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        @if (ErrorMessage.Length != 0)
+        {
+            <div class="row">
+                <em style="color: red">@ErrorMessage</em>
+            </div>
+        }
+        <div class="row my-3">
+            <div class="form-group col-lg-6">
+                <label>Email</label>
+                <InputText class="form-control" type="email" @bind-Value="registerRequest.EmailAddress" />
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="form-group col-lg-6">
+                <label>Password</label>
+                <InputText class="form-control" type="password" @bind-Value="registerRequest.Password" />
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="form-group col-lg-6">
+                <label>Confirm Password</label>
+                <InputText class="form-control" type="password" @bind-Value="registerRequest.ConfirmPassword" />
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="form-group col-lg-3 offset-lg-3">
+                <button class="btn btn-primary form-control" disabled="@Loading">
+                    @if (Loading)
+                    {
+                        <span class="spinner-border spinner-border-sm mr-1"></span>
+                    }
+                    Register
+                </button>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private bool Loading = false;
+    private string ErrorMessage = "";
+    private bool RegistrationSuccessful = false;
+    private const string GenericError = "Unable to register at this time. Please try again. If this problem persists, contact your Brobot admin";
+    private RegisterRequest registerRequest = new RegisterRequest
+    {
+        EmailAddress = "",
+        Password = "",
+        ConfirmPassword = ""
+    };
+
+    private async Task OnValidSubmit()
+    {
+        try
+        {
+            Loading = true;
+            var registrationResponse = await ApiService.RegisterUser(registerRequest);
+            Loading = false;
+            if (registrationResponse != null && registrationResponse.Succeeded)
+            {
+                RegistrationSuccessful = true;
+            }
+            else if (registrationResponse?.Errors != null && registrationResponse.Errors.Count() > 0)
+            {
+                ErrorMessage = registrationResponse?.Errors?.FirstOrDefault() ?? GenericError;
+            }
+            else
+            {
+                ErrorMessage = GenericError;
+            }
+
+        }
+        catch (Exception)
+        {
+            ErrorMessage = GenericError;
+        }
+    }
+
+    private void RedirectToLogin() => NavigationManager.NavigateTo("/login");
+}

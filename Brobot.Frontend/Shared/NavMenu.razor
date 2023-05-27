@@ -1,4 +1,7 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject JwtAuthenticationStateProvider JwtAuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Brobot</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -17,13 +20,24 @@
         <AuthorizeView>
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="counter">
-                        <span class="oi oi-plus" aria-hidden="true"></span> Counter
+                    <NavLink class="nav-link" href="settings">
+                        <span class="oi oi-cog" aria-hidden="true"></span> Settings
                     </NavLink>
                 </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="admin">
+                    <span class="oi oi-key" aria-hidden="true"></span> Admin
+                </NavLink>
+            </div>
+        </AuthorizeView>
+        <AuthorizeView>
+            <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="fetchdata">
-                        <span class="oi oi-list-rich" aria-hidden="true"></span> Fetch data
+                    <NavLink class="nav-link" href="#" @onclick="Logout">
+                        <span class="oi oi-account-logout" aria-hidden="true"></span> Logout
                     </NavLink>
                 </div>
             </Authorized>
@@ -39,5 +53,11 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    private async Task Logout()
+    {
+        await JwtAuthenticationStateProvider.Logout();
+        NavigationManager.NavigateTo("/");
     }
 }

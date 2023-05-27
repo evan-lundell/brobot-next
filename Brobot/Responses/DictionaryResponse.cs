@@ -1,3 +1,4 @@
+// ReSharper disable ClassNeverInstantiated.Global
 namespace Brobot.Responses;
 
 public class DictionaryResponse

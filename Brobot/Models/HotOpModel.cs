@@ -1,5 +1,7 @@
+// ReSharper disable VirtualMemberCallInConstructor
 namespace Brobot.Models;
 
+// ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
 public class HotOpModel
 {
     public int Id { get; set; }
@@ -9,7 +11,7 @@ public class HotOpModel
     public ulong ChannelId { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
-    public ICollection<HotOpSessionModel> HotOpSessions { get; set; }
+    public virtual ICollection<HotOpSessionModel> HotOpSessions { get; set; }
 
     public HotOpModel()
     {

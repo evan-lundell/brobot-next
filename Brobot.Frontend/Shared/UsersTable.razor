@@ -1,0 +1,47 @@
+@inject ApiService ApiService
+
+@if (userResponses == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="rz-shadow-1">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>User</th>
+                <th>Discord</th>
+                <th></th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in userResponses)
+                {
+                    <tr>
+                        <td>@(user.Email ?? user.Username ?? "unknown")</td>
+                        <td>
+                            @if (user.IsDiscordAuthenticated)
+                            {
+                                <span class="oi oi-check"></span>
+                            }
+                        </td>
+                        <td><a href="#">Edit</a></td>
+                        <td><a href="#">Delete</a></td>
+                    </tr>
+                    
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private IdentityUserResponse[]? userResponses;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userResponses = await ApiService.GetIdentityUsers();
+    }
+}

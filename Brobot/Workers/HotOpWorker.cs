@@ -3,6 +3,7 @@ using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Services;
 using Discord.WebSocket;
+// ReSharper disable ClassNeverInstantiated.Global
 
 namespace Brobot.Workers;
 
@@ -23,25 +24,23 @@ public class HotOpWorker : CronWorkerBase
         _hotOpService = hotOpService;
     }
 
-    public async override Task DoWork(CancellationToken cancellationToken)
+    protected override async Task DoWork(CancellationToken cancellationToken)
     {
-        using (var scope = _services.CreateScope())
+        using var scope = _services.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var now = DateTime.UtcNow;
+        var minuteStart = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, now.Kind);
+
+        var newHotOps = await uow.HotOps.Find((ho) => minuteStart <= ho.StartDate && minuteStart.AddMinutes(1) > ho.StartDate);
+        foreach (var newHotOp in newHotOps)
         {
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var now = DateTime.UtcNow;
-            var minuteStart = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, now.Kind);
+            await HandleNewHotOp(newHotOp);
+        }
 
-            var newHotOps = await uow.HotOps.Find((ho) => minuteStart <= ho.StartDate && minuteStart.AddMinutes(1) > ho.StartDate);
-            foreach (var newHotOp in newHotOps)
-            {
-                await HandleNewHotOp(newHotOp);
-            }
-
-            var endingHotOps = await uow.HotOps.Find((ho) => minuteStart <= ho.EndDate && minuteStart.AddMinutes(1) > ho.EndDate);
-            foreach (var endingHotOp in endingHotOps)
-            {
-                await HandleEndingHotOp(endingHotOp, uow);
-            }
+        var endingHotOps = await uow.HotOps.Find((ho) => minuteStart <= ho.EndDate && minuteStart.AddMinutes(1) > ho.EndDate);
+        foreach (var endingHotOp in endingHotOps)
+        {
+            await HandleEndingHotOp(endingHotOp, uow);
         }
     }
 

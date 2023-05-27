@@ -1,5 +1,6 @@
 using Brobot.Repositories;
 using Discord.WebSocket;
+// ReSharper disable ClassNeverInstantiated.Global
 
 namespace Brobot.Workers;
 
@@ -18,31 +19,29 @@ public class BirthdayWorker : CronWorkerBase
         _client = client;
     }
 
-    public async override Task DoWork(CancellationToken cancellationToken)
+    protected override async Task DoWork(CancellationToken cancellationToken)
     {
-        using (var scope = _services.CreateScope())
+        using var scope = _services.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var now = DateTime.UtcNow;
+        var users = await uow.Users.Find((u) =>
+            u.Birthdate.HasValue
+            && u.Birthdate.Value.Month == now.Month
+            && u.Birthdate.Value.Day == now.Day
+            && u.PrimaryChannelId.HasValue
+        );
+
+        var tasks = new List<Task>();
+        foreach (var user in users)
         {
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var now = DateTime.UtcNow;
-            var users = await uow.Users.Find((u) =>
-                u.Birthdate.HasValue
-                && u.Birthdate.Value.Month == now.Month
-                && u.Birthdate.Value.Day == now.Day
-                && u.PrimaryChannelId.HasValue
-            );
-
-            var tasks = new List<Task>();
-            foreach (var user in users)
+            var channel = (await _client.GetChannelAsync(user.PrimaryChannelId!.Value)) as SocketTextChannel;
+            if (channel == null)
             {
-                var channel = (await _client.GetChannelAsync(user.PrimaryChannelId!.Value)) as SocketTextChannel;
-                if (channel == null)
-                {
-                    continue;
-                }
-                tasks.Add(channel.SendMessageAsync($"Happy birthday {user.Username}! :birthday:"));
+                continue;
             }
-
-            await Task.WhenAll(tasks);
+            tasks.Add(channel.SendMessageAsync($"Happy birthday {user.Username}! :birthday:"));
         }
+
+        await Task.WhenAll(tasks);
     }
 }

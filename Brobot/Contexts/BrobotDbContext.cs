@@ -10,7 +10,7 @@ public class BrobotDbContext : DbContext
     public DbSet<UserModel> Users => Set<UserModel>();
     public DbSet<ScheduledMessageModel> ScheduledMessages => Set<ScheduledMessageModel>();
     public DbSet<HotOpModel> HotOps => Set<HotOpModel>();
-    public DbSet<HotOpSessionModel> HotOpSessions => Set<HotOpSessionModel>();
+    public DbSet<DailyMessageCountModel> DailyMessageCounts => Set<DailyMessageCountModel>();
 
     public BrobotDbContext(DbContextOptions<BrobotDbContext> options)
         : base(options)
@@ -28,13 +28,13 @@ public class BrobotDbContext : DbContext
         builder.Entity<GuildModel>()
             .Property((g) => g.Name)
             .HasColumnName("name")
-            .IsRequired(true)
+            .IsRequired()
             .HasMaxLength(255);
         builder.Entity<GuildModel>()
             .Property((g) => g.Archived)
             .HasColumnName("archived")
             .HasDefaultValue(false)
-            .IsRequired(true);
+            .IsRequired();
 
         builder.Entity<ChannelModel>()
             .ToTable(name: "channel", schema: "brobot")
@@ -45,17 +45,17 @@ public class BrobotDbContext : DbContext
         builder.Entity<ChannelModel>()
             .Property((c) => c.Name)
             .HasColumnName("name")
-            .IsRequired(true)
+            .IsRequired()
             .HasMaxLength(255);
         builder.Entity<ChannelModel>()
             .Property((c) => c.Archived)
             .HasColumnName("archived")
             .HasDefaultValue(false)
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<ChannelModel>()
             .Property((c) => c.GuildId)
             .HasColumnName("guild_id")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<ChannelModel>()
             .HasOne((c) => c.Guild)
             .WithMany((g) => g.Channels)
@@ -70,7 +70,7 @@ public class BrobotDbContext : DbContext
         builder.Entity<UserModel>()
             .Property((u) => u.Username)
             .HasColumnName("username")
-            .IsRequired(true)
+            .IsRequired()
             .HasMaxLength(255);
         builder.Entity<UserModel>()
             .Property((u) => u.Birthdate)
@@ -85,7 +85,7 @@ public class BrobotDbContext : DbContext
             .Property((u) => u.Archived)
             .HasColumnName("archived")
             .HasDefaultValue(false)
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<UserModel>()
             .Property((u) => u.PrimaryChannelId)
             .HasColumnName("primary_channel_id")
@@ -105,7 +105,7 @@ public class BrobotDbContext : DbContext
             .IsRequired(false);
         builder.Entity<UserModel>()
             .HasIndex((u) => u.IdentityUserId)
-            .IsUnique(true);
+            .IsUnique();
         builder.Entity<UserModel>()
             .HasOne((u) => u.IdentityUser)
             .WithMany()
@@ -156,16 +156,16 @@ public class BrobotDbContext : DbContext
         builder.Entity<ScheduledMessageModel>()
             .Property((sm) => sm.ChannelId)
             .HasColumnName("channel_id")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<ScheduledMessageModel>()
             .Property((sm) => sm.CreatedById)
             .HasColumnName("created_by_id")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<ScheduledMessageModel>()
             .Property((sm) => sm.MessageText)
             .HasColumnName("message_text")
             .HasMaxLength(1000)
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<ScheduledMessageModel>()
             .Property((sm) => sm.SendDate)
             .HasColumnName("send_date")
@@ -192,19 +192,19 @@ public class BrobotDbContext : DbContext
         builder.Entity<HotOpModel>()
             .Property((ho) => ho.ChannelId)
             .HasColumnName("channel_id")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<HotOpModel>()
             .Property((ho) => ho.UserId)
             .HasColumnName("user_id")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<HotOpModel>()
             .Property((ho) => ho.StartDate)
             .HasColumnName("start_date")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<HotOpModel>()
             .Property((ho) => ho.EndDate)
             .HasColumnName("end_date")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<HotOpModel>()
             .HasOne((ho) => ho.Channel)
             .WithMany((c) => c.HotOps)
@@ -223,11 +223,11 @@ public class BrobotDbContext : DbContext
         builder.Entity<HotOpSessionModel>()
             .Property((hos) => hos.UserId)
             .HasColumnName("user_id")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<HotOpSessionModel>()
             .Property((hos) => hos.StartDateTime)
             .HasColumnName("start_date_time")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<HotOpSessionModel>()
             .Property((hos) => hos.EndDateTime)
             .HasColumnName("end_date_time")
@@ -235,7 +235,7 @@ public class BrobotDbContext : DbContext
         builder.Entity<HotOpSessionModel>()
             .Property((hos) => hos.HotOpId)
             .HasColumnName("hot_op_id")
-            .IsRequired(true);
+            .IsRequired();
         builder.Entity<HotOpSessionModel>()
             .HasOne((hos) => hos.User)
             .WithMany((hos) => hos.HotOpSessions)
@@ -244,5 +244,23 @@ public class BrobotDbContext : DbContext
             .HasOne((hos) => hos.HotOp)
             .WithMany((ho) => ho.HotOpSessions)
             .HasForeignKey((hos) => hos.HotOpId);
+
+        builder.Entity<DailyMessageCountModel>()
+            .ToTable(name: "daily_message_count", schema: "brobot")
+            .HasKey((dc) => new { dc.UserId, dc.CountDate });
+        builder.Entity<DailyMessageCountModel>()
+            .Property((dc) => dc.CountDate)
+            .HasColumnName("count_date");
+        builder.Entity<DailyMessageCountModel>()
+            .Property((dc) => dc.UserId)
+            .HasColumnName("user_id");
+        builder.Entity<DailyMessageCountModel>()
+            .Property((dc) => dc.MessageCount)
+            .HasColumnName("message_count")
+            .HasDefaultValue(0);
+        builder.Entity<DailyMessageCountModel>()
+            .HasOne((dc) => dc.User)
+            .WithMany((u) => u.DailyCounts)
+            .HasForeignKey((dc) => dc.UserId);
     }
 }

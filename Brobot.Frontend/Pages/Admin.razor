@@ -1,0 +1,22 @@
+@page "/admin"
+@inject ApiService ApiService
+
+@if (channels == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <SendMessage Channels="@channels" />
+    <UsersTable />
+}
+
+@code {
+    private ChannelResponse[]? channels;
+
+    protected override async Task OnInitializedAsync()
+    {
+        channels = await ApiService.GetChannels();
+    }
+
+}

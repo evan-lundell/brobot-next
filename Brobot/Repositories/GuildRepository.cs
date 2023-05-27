@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Brobot.Contexts;
 using Brobot.Models;
 
@@ -12,10 +13,10 @@ public class GuildRepository : RepositoryBase<GuildModel, ulong>, IGuildReposito
         Channels = channels;
     }
 
-    public async override Task Add(GuildModel entity)
+    public override async Task Add(GuildModel entity)
     {
         var guild = await GetById(entity.Id);
-        if (guild != null && guild.Archived)
+        if (guild is { Archived: true })
         {
             guild.Archived = false;
             return;
@@ -29,6 +30,7 @@ public class GuildRepository : RepositoryBase<GuildModel, ulong>, IGuildReposito
         await base.Add(entity);
     }
 
+    [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
     public override async Task AddRange(IEnumerable<GuildModel> entities)
     {
         var guildIds = entities.Select((e) => e.Id);

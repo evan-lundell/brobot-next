@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using Brobot.Contexts;
 using Brobot.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
@@ -10,10 +12,10 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
     {
     }
 
-    public async override Task Add(ChannelModel entity)
+    public override async Task Add(ChannelModel entity)
     {
         var existingChannel = await GetById(entity.Id);
-        if (existingChannel != null && existingChannel.Archived)
+        if (existingChannel is { Archived: true })
         {
             existingChannel.Archived = false;
             return;
@@ -27,7 +29,8 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
         await base.Add(entity);
     }
 
-    public async override Task AddRange(IEnumerable<ChannelModel> entities)
+    [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
+    public override async Task AddRange(IEnumerable<ChannelModel> entities)
     {
         var channelIds = entities.Select((e) => e.Id);
         var existingChannels = await Find((c) => channelIds.Contains(c.Id));
@@ -37,6 +40,7 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
             {
                 throw new ArgumentException($"Channel with id {existingChannel.Id} already exists");
             }
+
             existingChannel.Archived = false;
         }
 
@@ -56,4 +60,11 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
             Remove(channel);
         }
     }
+
+    public async Task<IEnumerable<ChannelModel>> FindByUser(ulong userId)
+        => await Context.Channels.FromSql(
+                $"SELECT c.* FROM brobot.channel c INNER JOIN brobot.channel_user cu ON c.Id = cu.channel_id WHERE cu.user_id = {userId}")
+            .ToListAsync();
+
+
 }

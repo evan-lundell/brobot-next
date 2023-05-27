@@ -15,6 +15,7 @@ public class UnitOfWork : IUnitOfWork
         ScheduledMessages = new ScheduledMessageRepository(context);
         HotOps = new HotOpRepository(context);
         HotOpSessions = new HotOpSessionRepository(context);
+        DailyMessageCounts = new DailyMessageCountRepository(context);
     }
 
     public IUserRepository Users { get; }
@@ -25,13 +26,16 @@ public class UnitOfWork : IUnitOfWork
     public IHotOpRepository HotOps { get; }
 
     public IHotOpSessionRepository HotOpSessions { get; }
+    public IDailyMessageCountRepository DailyMessageCounts { get; }
 
     public Task<int> CompleteAsync()
     {
         return _context.SaveChangesAsync();
     }
 
+#pragma warning disable CA1816
     public void Dispose()
+#pragma warning restore CA1816
     {
         _context.Dispose();
     }

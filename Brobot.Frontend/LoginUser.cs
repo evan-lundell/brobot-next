@@ -4,7 +4,7 @@ namespace Brobot.Frontend;
 
 public class LoginUser
 {
-    public string? DisplayName { get; set; }
-    public required string Jwt { get; set; }
-    public required ClaimsPrincipal Principal { get; set; }
+    public string? DisplayName { get; init; }
+    public required string Jwt { get; init; }
+    public required ClaimsPrincipal Principal { get; init; }
 }

@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Identity;
+// ReSharper disable VirtualMemberCallInConstructor
 
 namespace Brobot.Models;
 
+// ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
 public class UserModel
 {
     public ulong Id { get; set; }
@@ -18,10 +20,13 @@ public class UserModel
     public virtual ICollection<ChannelUserModel> ChannelUsers { get; set; }
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
     public virtual ICollection<HotOpModel> HotOps { get; set; }
+    // ReSharper disable once CollectionNeverUpdated.Global
     public ICollection<HotOpSessionModel> HotOpSessions { get; set; }
 
     public IdentityUser? IdentityUser { get; set; }
     public string? IdentityUserId { get; set; }
+
+    public virtual ICollection<DailyMessageCountModel> DailyCounts { get; set; }
 
     public UserModel()
     {
@@ -30,5 +35,6 @@ public class UserModel
         ScheduledMessages = new HashSet<ScheduledMessageModel>();
         HotOps = new HashSet<HotOpModel>();
         HotOpSessions = new HashSet<HotOpSessionModel>();
+        DailyCounts = new HashSet<DailyMessageCountModel>();
     }
 }

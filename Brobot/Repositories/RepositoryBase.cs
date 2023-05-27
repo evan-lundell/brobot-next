@@ -6,45 +6,45 @@ namespace Brobot.Repositories;
 
 public abstract class RepositoryBase<TEntity, TKey> : IRepository<TEntity, TKey> where TEntity : class
 {
-    protected readonly BrobotDbContext _context;
+    protected readonly BrobotDbContext Context;
 
-    public RepositoryBase(BrobotDbContext context)
+    protected RepositoryBase(BrobotDbContext context)
     {
-        _context = context;
+        Context = context;
     }
 
-    public async virtual Task Add(TEntity entity)
+    public virtual async Task Add(TEntity entity)
     {
-        await _context.Set<TEntity>().AddAsync(entity);
+        await Context.Set<TEntity>().AddAsync(entity);
     }
 
-    public async virtual Task AddRange(IEnumerable<TEntity> entities)
+    public virtual async Task AddRange(IEnumerable<TEntity> entities)
     {
-        await _context.Set<TEntity>().AddRangeAsync(entities);
+        await Context.Set<TEntity>().AddRangeAsync(entities);
     }
 
-    public async virtual Task<IEnumerable<TEntity>> Find(Expression<Func<TEntity, bool>> expression)
+    public virtual async Task<IEnumerable<TEntity>> Find(Expression<Func<TEntity, bool>> expression)
     {
-        return await _context.Set<TEntity>().Where(expression).ToListAsync();
+        return await Context.Set<TEntity>().Where(expression).ToListAsync();
     }
 
-    public async virtual Task<IEnumerable<TEntity>> GetAll()
+    public virtual async Task<IEnumerable<TEntity>> GetAll()
     {
-        return await _context.Set<TEntity>().ToListAsync();
+        return await Context.Set<TEntity>().ToListAsync();
     }
 
-    public async virtual Task<TEntity?> GetById(TKey id)
+    public virtual async Task<TEntity?> GetById(TKey id)
     {
-        return await _context.Set<TEntity>().FindAsync(id);
+        return await Context.Set<TEntity>().FindAsync(id);
     }
 
     public virtual void Remove(TEntity entity)
     {
-        _context.Set<TEntity>().Remove(entity);
+        Context.Set<TEntity>().Remove(entity);
     }
 
     public virtual void RemoveRange(IEnumerable<TEntity> entities)
     {
-        _context.Set<TEntity>().RemoveRange(entities);
+        Context.Set<TEntity>().RemoveRange(entities);
     }
 }

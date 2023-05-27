@@ -1,0 +1,48 @@
+@inject IJSRuntime JS
+
+<div id="@Id" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                @ModalHeader
+                @if (ShowCloseButton)
+                {
+                    <button type="button" class="btn-close" @onclick="HideModal"></button>
+                }
+            </div>
+            <div class="modal-body">
+                @ModalBody
+            </div>
+            <div class="modal-footer">
+                @ModalFooter
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public required RenderFragment ModalHeader { get; set; }
+    
+    [Parameter]
+    public required RenderFragment ModalBody { get; set; }
+    
+    [Parameter]
+    public required RenderFragment ModalFooter { get; set; }
+
+    [Parameter]
+    public bool ShowCloseButton { get; set; } = true;
+
+    [Parameter]
+    public required string Id { get; set; }
+    
+    public async Task ShowModal()
+    {
+        await JS.InvokeVoidAsync("showModal", $"#{Id}");
+    }
+
+    public async Task HideModal()
+    {
+        await JS.InvokeVoidAsync("hideModal", $"#{Id}");
+    }
+}

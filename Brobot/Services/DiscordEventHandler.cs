@@ -1,11 +1,15 @@
 using System.Reflection;
+using Brobot.Models;
 using Brobot.Modules;
+using Brobot.Repositories;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using TimeZoneConverter;
 using Victoria.Node;
 using Victoria.Node.EventArgs;
 using Victoria.Player;
+// ReSharper disable MemberCanBeMadeStatic.Local
 
 namespace Brobot.Services;
 
@@ -55,7 +59,9 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         _node.OnTrackEnd += OnTrackEnd;
     }
 
+#pragma warning disable CA1816
     public void Dispose()
+#pragma warning restore CA1816
     {
         _client.Log -= Log;
         _client.Ready -= Ready;
@@ -88,17 +94,48 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
     {
         return Task.Run(async () =>
         {
-            if (socketMessage.Content.ToLower() == "good bot")
+            switch (socketMessage.Content.ToLower())
             {
-                await socketMessage.Channel.SendMessageAsync("Thanks! :robot:");
+                case "good bot":
+                    await socketMessage.Channel.SendMessageAsync("Thanks! :robot:");
+                    break;
+                case "bad bot":
+                    await socketMessage.Channel.SendMessageAsync(":middle_finger:");
+                    break;
+            }
+
+            if (socketMessage.Author.IsBot)
+            {
+                return;
+            }
+            
+            using var scope = _services.CreateScope();
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var user = await uow.Users.GetById(socketMessage.Author.Id);
+            if (string.IsNullOrWhiteSpace(user?.Timezone))
+            {
                 return;
             }
 
-            if (socketMessage.Content.ToLower() == "bad bot")
+            var timezone = TZConvert.GetTimeZoneInfo(user.Timezone);
+            var userTimeNow = DateTime.UtcNow + timezone.GetUtcOffset(DateTime.UtcNow);
+            var dailyCount = await uow.DailyMessageCounts.GetByUserAndDay(user.Id, DateOnly.FromDateTime(userTimeNow));
+            if (dailyCount == null)
             {
-                await socketMessage.Channel.SendMessageAsync(":middle_finger:");
-                return;
+                await uow.DailyMessageCounts.Add(new DailyMessageCountModel
+                {
+                    User = user,
+                    UserId = user.Id,
+                    CountDate = DateOnly.FromDateTime(userTimeNow),
+                    MessageCount = 1
+                });
             }
+            else
+            {
+                dailyCount.MessageCount++;
+            }
+
+            await uow.CompleteAsync();
         });
     }
 
@@ -108,12 +145,8 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         {
             var now = DateTimeOffset.UtcNow;
             var channel = await cachedChannel.GetOrDownloadAsync();
-            var message = await cachedMessage.GetOrDownloadAsync();
-            if (message == null)
-            {
-                message = await channel.GetMessageAsync(cachedMessage.Id);
-            }
-            if (!(channel is SocketTextChannel textChannel) || channel is SocketVoiceChannel)
+            var message = await cachedMessage.GetOrDownloadAsync() ?? await channel.GetMessageAsync(cachedMessage.Id);
+            if (channel is not SocketTextChannel textChannel || channel is SocketVoiceChannel)
             {
                 return;
             }
@@ -123,16 +156,8 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
             {
                 return;
             }
-
-            var username = "";
-            if (now - auditLog.CreatedAt < TimeSpan.FromSeconds(5))
-            {
-                username = auditLog.User.Username;
-            }
-            else
-            {
-                username = message.Author.Username;
-            }
+            
+            var username = now - auditLog.CreatedAt < TimeSpan.FromSeconds(5) ? auditLog.User.Username : message.Author.Username;
 
             await textChannel.SendMessageAsync($"I saw that {username} :spy:");
         });
@@ -146,9 +171,9 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
     private Task ChannelUpdated(SocketChannel previous, SocketChannel current)
     {
         var tasks = new List<Task>();
-        if (!(previous is SocketTextChannel previousTextChannel)
+        if (previous is not SocketTextChannel previousTextChannel
             || previous is SocketVoiceChannel
-            || !(current is SocketTextChannel currentTextChannel)
+            || current is not SocketTextChannel currentTextChannel
             || current is SocketVoiceChannel)
         {
             return Task.CompletedTask;
@@ -159,7 +184,7 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
 
     private Task ChannelDestroyed(SocketChannel channel)
     {
-        if (!(channel is SocketTextChannel textChannel) || channel is SocketVoiceChannel)
+        if (channel is not SocketTextChannel textChannel || channel is SocketVoiceChannel)
         {
             return Task.CompletedTask;
         }
@@ -168,7 +193,7 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
 
     private Task ChannelCreated(SocketChannel channel)
     {
-        if (!(channel is SocketTextChannel textChannel) || channel is SocketVoiceChannel)
+        if (channel is not SocketTextChannel textChannel || channel is SocketVoiceChannel)
         {
             return Task.CompletedTask;
         }
@@ -242,7 +267,9 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         await player.PlayAsync(nextTrack);
     }
 
+#pragma warning disable CA1816
     public async ValueTask DisposeAsync()
+#pragma warning restore CA1816
     {
         foreach (var player in _node.Players)
         {

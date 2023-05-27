@@ -26,7 +26,7 @@ public class DictionaryService : IDictionaryService
             return "An error occured";
         }
         var meaningData = data[0];
-        if (meaningData == null || meaningData.Meanings == null || meaningData.Meanings.Length == 0)
+        if (meaningData.Meanings == null || meaningData.Meanings.Length == 0)
         {
             return "An error occured";
         }
