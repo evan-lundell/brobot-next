@@ -2,7 +2,7 @@ version: '3.8'
 services:
   brobot-db:
     container_name: brobot-db
-    image: postgres:14.3-alpine
+    image: postgres:alpine
     volumes:
       - ${BROBOT_DB_DATA_PATH}:/var/lib/postgresql/data:rw
     environment:

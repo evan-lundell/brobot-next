@@ -33,8 +33,10 @@ public static class Program
 
         if (app.Environment.IsProduction())
         {
-            var context = app.Services.GetRequiredService<BrobotDbContext>();
-            await context.Database.MigrateAsync();
+            var usersDbContext = app.Services.GetRequiredService<UsersDbContext>();
+            await usersDbContext.Database.MigrateAsync();
+            var brobotDbContext = app.Services.GetRequiredService<BrobotDbContext>();
+            await brobotDbContext.Database.MigrateAsync();
         }
 
         var client = app.Services.GetRequiredService<DiscordSocketClient>();
