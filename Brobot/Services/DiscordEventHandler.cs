@@ -1,6 +1,5 @@
 using System.Reflection;
 using Brobot.Models;
-using Brobot.Modules;
 using Brobot.Repositories;
 using Discord;
 using Discord.Interactions;
@@ -170,7 +169,6 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
 
     private Task ChannelUpdated(SocketChannel previous, SocketChannel current)
     {
-        var tasks = new List<Task>();
         if (previous is not SocketTextChannel previousTextChannel
             || previous is SocketVoiceChannel
             || current is not SocketTextChannel currentTextChannel

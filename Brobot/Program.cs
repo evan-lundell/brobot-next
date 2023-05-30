@@ -1,7 +1,4 @@
-using System.Net.Http.Headers;
-using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
 using Brobot.Contexts;
 using Brobot.Repositories;
 using Brobot.Services;
@@ -9,16 +6,15 @@ using Brobot.Workers;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Victoria.Node;
 
 namespace Brobot;
 
-class Program
+public static class Program
 {
-    static async Task Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         CreateServices(builder, args);
@@ -68,6 +64,7 @@ class Program
         app.UseDiscordUser();
         app.MapControllers();
         app.MapFallbackToFile("index.html");
+        // ReSharper disable once MethodHasAsyncOverload
         app.Run();
     }
 
@@ -150,7 +147,7 @@ class Program
             Authorization = builder.Configuration["LavalinkPassword"],
             Hostname = builder.Configuration["LavalinkHost"]
         };
-        builder.Services.AddSingleton<NodeConfiguration>(nodeConfig);
+        builder.Services.AddSingleton(nodeConfig);
         builder.Services.AddSingleton<LavaNode>();
         builder.Services.AddAuthentication()
         .AddJwtBearer((options) =>

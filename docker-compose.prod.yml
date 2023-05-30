@@ -1,8 +1,8 @@
-version: '3.0'
+version: '3.8'
 services:
   brobot-db:
     container_name: brobot-db
-    image: postgres:alpine
+    image: postgres:14.3-alpine
     volumes:
       - ${BROBOT_DB_DATA_PATH}:/var/lib/postgresql/data:rw
     environment:
@@ -16,11 +16,26 @@ services:
       - ./Lavalink:/opt/Lavalink:ro
   brobot:
     container_name: brobot
-    build: ./Brobot
+    build:
+      context: .
+      dockerfile: ./Brobot/Dockerfile
+      target: app
     environment:
-      - DOTNETCORE_ENVIRONMENT=Production
+      - DOTNET_ENVIRONMENT=Production
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/live/evanlundell.ddns.net/fullchain.pem
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/https/live/evanlundell.ddns.net/privkey.pem
+      - ASPNETCORE_HTTPS_PORT=443
+      - ASPNETCORE_URLS=https://+;http://+
+    volumes:
+      - /etc/letsencrypt:/https:ro
+    ports:
+      - 80:80
+      - 443:443
     depends_on:
       brobot-db:
         condition: service_started
       lavalink:
         condition: service_started
+        
+
+      
