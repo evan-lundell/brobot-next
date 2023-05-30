@@ -1,0 +1,20 @@
+﻿@page "/"
+@inject JwtAuthenticationStateProvider JwtAuthenticationStateProvider
+
+<PageTitle>Brobot</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <DailyMessagesChart />
+    </Authorized>
+    <NotAuthorized>
+        @if (JwtAuthenticationStateProvider.IsLoggedIn)
+        {
+            <SyncDiscordButton />
+        }
+        else
+        {
+            <LoginForm />
+        }
+    </NotAuthorized>
+</AuthorizeView>

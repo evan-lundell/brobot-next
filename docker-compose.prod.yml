@@ -18,12 +18,12 @@ services:
     container_name: brobot
     build:
       context: .
-      dockerfile: ./Brobot/Dockerfile
+      dockerfile: ./src/Brobot/Dockerfile
       target: app
     environment:
       - DOTNET_ENVIRONMENT=Production
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/live/evanlundell.ddns.net/fullchain.pem
-      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/https/live/evanlundell.ddns.net/privkey.pem
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=${FULLCHAIN_PATH}
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=${PRIVATEKEY_PATH}
       - ASPNETCORE_HTTPS_PORT=443
       - ASPNETCORE_URLS=https://+;http://+
     volumes:
