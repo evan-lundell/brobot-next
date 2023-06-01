@@ -1,6 +1,6 @@
 namespace Brobot.Shared.Responses;
 
-public class IdentityUserResponse
+public record IdentityUserResponse
 {
     public required string Id { get; init; }
     public string? Email { get; init; }

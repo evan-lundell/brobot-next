@@ -1,7 +1,7 @@
 namespace Brobot.Shared.Responses;
 
-public class ChannelResponse
+public record ChannelResponse
 {
-    public ulong Id { get; set; }
-    public required string Name { get; set; }
+    public ulong Id { get; init; }
+    public required string Name { get; init; }
 }

@@ -3,7 +3,7 @@ using Brobot.Shared.Attributes;
 
 namespace Brobot.Shared.Requests;
 
-public class RegisterRequest
+public record RegisterRequest
 {
     [Required]
     [EmailAddress]

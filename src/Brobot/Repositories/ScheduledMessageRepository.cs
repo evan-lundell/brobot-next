@@ -25,6 +25,8 @@ public class ScheduledMessageRepository : RepositoryBase<ScheduledMessageModel, 
         int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
         var query = Context.ScheduledMessages
+            .Include((sm) => sm.Channel)
+            .Include((sm) => sm.CreatedBy)
             .Where((sm) => sm.CreatedById == userId)
             .Take(limit);
 

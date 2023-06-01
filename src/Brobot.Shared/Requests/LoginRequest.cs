@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Brobot.Shared.Requests;
 
-public class LoginRequest
+public record LoginRequest
 {
     [Required]
     [EmailAddress]

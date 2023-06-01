@@ -185,5 +185,6 @@ public static class Program
         builder.Services.AddSingleton<JwtService>();
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         builder.Services.AddHttpClient<DiscordOauthService>();
+        builder.Services.AddScoped<ScheduledMessageService>();
     }
 }

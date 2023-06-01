@@ -1,6 +1,6 @@
 namespace Brobot.Shared.Responses;
 
-public class DiscordAuthResponse
+public record DiscordAuthResponse
 {
-    public required string Url { get; set; }
+    public required string Url { get; init; }
 }

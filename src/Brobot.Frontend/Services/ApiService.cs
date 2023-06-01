@@ -1,6 +1,5 @@
 using Brobot.Shared.Responses;
 using System.Net.Http.Json;
-using Brobot.Shared;
 using Brobot.Shared.Requests;
 
 namespace Brobot.Frontend.Services;
@@ -23,17 +22,6 @@ public class ApiService
 
     }
 
-    public async Task<WeatherForecast[]> GetWeatherForecast()
-    {
-        var response = await _client.GetAsync("WeatherForecast");
-        var weatherForecast = await response.Content.ReadFromJsonAsync<WeatherForecast[]>();
-        if (weatherForecast == null)
-        {
-            return new WeatherForecast[0];
-        }
-        return weatherForecast;
-    }
-
     public async Task<LoginResponse?> Login(LoginRequest loginRequest)
     {
         var response = await _client.PostAsJsonAsync("auth/login", loginRequest);
@@ -43,7 +31,7 @@ public class ApiService
 
     public async Task Logout()
     {
-        var response = await _client.PostAsync("auth/logout", null);
+        await _client.PostAsync("auth/logout", null);
     }
 
     public async Task<string> GetDiscordAuthUrl()
@@ -60,7 +48,7 @@ public class ApiService
 
     public async Task SyncDiscordUser(string authCode)
     {
-        var response = await _client.PostAsJsonAsync<SyncDiscordUserRequest>("auth/sync-discord-user", new SyncDiscordUserRequest
+        var response = await _client.PostAsJsonAsync("auth/sync-discord-user", new SyncDiscordUserRequest
         {
             AuthorizationCode = authCode
         });
@@ -72,7 +60,7 @@ public class ApiService
 
     public async Task<RegisterResponse?> RegisterUser(RegisterRequest registerRequest)
     {
-        var response = await _client.PostAsJsonAsync<RegisterRequest>("auth/register", registerRequest);
+        var response = await _client.PostAsJsonAsync("auth/register", registerRequest);
         var registerResponse = await response.Content.ReadFromJsonAsync<RegisterResponse>();
         return registerResponse;
     }
@@ -101,7 +89,7 @@ public class ApiService
 
     public async Task<UserSettingsResponse> SaveUserSettings(UserSettingsRequest userSettingsRequest)
     {
-        var response = await _client.PatchAsJsonAsync<UserSettingsRequest>("users/settings", userSettingsRequest);
+        var response = await _client.PatchAsJsonAsync("users/settings", userSettingsRequest);
         var userSettingsResponse = await response.Content.ReadFromJsonAsync<UserSettingsResponse>();
         return userSettingsResponse ?? new UserSettingsResponse();
     }
@@ -125,4 +113,19 @@ public class ApiService
     public async Task<IdentityUserResponse[]> GetIdentityUsers()
         => await _client.GetFromJsonAsync<IdentityUserResponse[]>("Auth/users") ?? Array.Empty<IdentityUserResponse>();
 
+    public async Task<ScheduledMessageResponse[]> GetScheduledMessages()
+        => (await _client.GetFromJsonAsync<ScheduledMessageResponse[]>(
+               $"ScheduledMessages?limit=50&scheduledAfter={DateTime.UtcNow:O}"))
+           ?.OrderBy((sm) => sm.SendDate)
+           .ToArray()
+           ?? Array.Empty<ScheduledMessageResponse>();
+
+    public async Task<ScheduledMessageResponse> EditScheduledMessage(int scheduledMessageId, ScheduledMessageRequest scheduledMessageRequest)
+    {
+        var response = await _client.PutAsJsonAsync($"ScheduledMessages/{scheduledMessageId}", scheduledMessageRequest);
+        return await response.Content.ReadFromJsonAsync<ScheduledMessageResponse>() ?? throw new Exception("Scheduled Message failed");
+    }
+
+    public async Task DeleteScheduledMessage(int scheduledMessageId)
+        => await _client.DeleteAsync($"ScheduledMessages/{scheduledMessageId}");
 }

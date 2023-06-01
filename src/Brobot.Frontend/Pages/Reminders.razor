@@ -1,0 +1,94 @@
+@page "/Reminders"
+@inject ApiService ApiService
+<PageTitle>Reminders</PageTitle>
+
+@if (!PageReady)
+{
+    <p><em>Loading..</em></p>
+}
+else
+{
+    <RadzenDataGrid Data="@reminders" TItem="ScheduledMessageResponse" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="MessageText" Title="Message" />
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="SendDate" Title="Send Date" />
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="Channel.Name" Title="Channel" />
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse">
+                <Template Context="message">
+                    <button class="btn btn-primary" @onclick="() => EditScheduledMessage(message)">Edit</button>
+                    <button class="btn btn-danger" @onclick="() => DeleteScheduledMessage(message)">Delete</button>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+    <Modal Id="editScheduleMessage" @ref="scheduledMessageModal">
+        <ModalHeader>
+            <h4 class="modal-title">Edit Reminder</h4>
+        </ModalHeader>
+        <ModalBody>
+            <EditForm Model="@editScheduleMessage" OnValidSubmit="@SubmitEditMessage">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="row mx-2">
+                    <div class="col-12 form-group">
+                        <label class="form-label">Message</label>
+                        <InputTextArea class="form-select" @bind-Value="editScheduleMessage.MessageText"></InputTextArea>
+                    </div>
+                </div>
+                <div class="row mx-2">
+                    <div class="col-12 form-group">
+                        <label class="form-label">Reminder Date/Time</label>
+                        <InputDate Type="InputDateType.DateTimeLocal" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="editScheduleMessage.SendDate" />
+                    </div>
+                </div>
+            </EditForm>
+        </ModalBody>
+    </Modal>
+}
+
+
+@code {
+    private ScheduledMessageResponse[]? reminders;
+    private ChannelResponse[]? channels;
+
+    private bool PageReady => reminders != null && channels != null;
+
+    private ScheduledMessageRequest editScheduleMessage = new ScheduledMessageRequest
+    {
+        MessageText = string.Empty
+    };
+    
+    private Modal? scheduledMessageModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        reminders = await ApiService.GetScheduledMessages();
+        channels = await ApiService.GetChannels();
+    }
+
+    private void EditScheduledMessage(ScheduledMessageResponse message)
+    {
+        editScheduleMessage = new ScheduledMessageRequest
+        {
+            MessageText = message.MessageText,
+            SendDate = message.SendDate ?? DateTime.UtcNow,
+            ChannelId = message.Channel.Id,
+            Id = message.Id
+        };
+        scheduledMessageModal?.ShowModal();
+    }
+
+    private void DeleteScheduledMessage(ScheduledMessageResponse message)
+    {
+        
+    }
+
+    private async Task SubmitEditMessage()
+    {
+        if (editScheduleMessage.Id == null)
+        {
+            return;
+        }
+        await ApiService.EditScheduledMessage(editScheduleMessage.Id.Value, editScheduleMessage);
+    }
+}

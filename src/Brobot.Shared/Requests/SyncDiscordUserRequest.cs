@@ -1,6 +1,6 @@
 namespace Brobot.Shared.Requests;
 
-public class SyncDiscordUserRequest
+public record SyncDiscordUserRequest
 {
     public required string AuthorizationCode { get; init; }
 }

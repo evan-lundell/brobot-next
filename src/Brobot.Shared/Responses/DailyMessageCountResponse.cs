@@ -1,6 +1,6 @@
 namespace Brobot.Shared.Responses;
 
-public class DailyMessageCountResponse
+public record DailyMessageCountResponse
 {
     public required UserResponse User { get; init; }
     public DateOnly CountDate { get; init; }

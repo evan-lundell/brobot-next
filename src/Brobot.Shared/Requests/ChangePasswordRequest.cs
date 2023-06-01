@@ -3,7 +3,7 @@ using Brobot.Shared.Attributes;
 
 namespace Brobot.Shared.Requests;
 
-public class ChangePasswordRequest
+public record ChangePasswordRequest
 {
     [Required]
     [MinLength(8, ErrorMessage = "Password must be at least 8 characters")]

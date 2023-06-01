@@ -17,6 +17,7 @@ public class BrobotModule : InteractionModuleBase
     private readonly IRandomFactService _randomFactService;
     private readonly IDictionaryService _dictionaryService;
     private readonly HotOpService _hotOpService;
+    private readonly ScheduledMessageService _scheduledMessageService;
 
     private readonly string[] _emojiLookup = new string[]
     {
@@ -37,7 +38,8 @@ public class BrobotModule : InteractionModuleBase
         IGiphyService giphyService,
         IRandomFactService randomFactService,
         IDictionaryService dictionaryService,
-        HotOpService hotOpService)
+        HotOpService hotOpService,
+        ScheduledMessageService scheduledMessageService)
     {
         _uow = uow;
         _random = random;
@@ -45,6 +47,7 @@ public class BrobotModule : InteractionModuleBase
         _randomFactService = randomFactService;
         _dictionaryService = dictionaryService;
         _hotOpService = hotOpService;
+        _scheduledMessageService = scheduledMessageService;
     }
     [SlashCommand("info", "Returns guild, channel, and user ids")]
     public async Task Info()
@@ -306,26 +309,8 @@ public class BrobotModule : InteractionModuleBase
             await RespondAsync("An error has occured");
             return;
         }
-        if (!string.IsNullOrWhiteSpace(user.Timezone))
-        {
-            var timezone = TZConvert.GetTimeZoneInfo(user.Timezone);
-            var offset = timezone.GetUtcOffset(DateTime.Now);
-            reminderDateFormatted = reminderDateFormatted - offset;
 
-        }
-
-        var reminder = new ScheduledMessageModel
-        {
-            MessageText = message,
-            SendDate = reminderDateFormatted,
-            Channel = channel,
-            ChannelId = Context.Channel.Id,
-            CreatedBy = user,
-            CreatedById = Context.User.Id
-        };
-
-        await _uow.ScheduledMessages.Add(reminder);
-        await _uow.CompleteAsync();
+        await _scheduledMessageService.CreateScheduledMessage(message, user, reminderDateFormatted, channel);
         await RespondAsync("Reminder has been created");
     }
 

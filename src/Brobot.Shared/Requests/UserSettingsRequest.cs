@@ -1,6 +1,6 @@
 namespace Brobot.Shared.Requests;
 
-public class UserSettingsRequest
+public record UserSettingsRequest
 {
     public string? Timezone { get; init; }
     public ulong? PrimaryChannelId { get; init; }
