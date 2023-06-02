@@ -31,10 +31,10 @@ else
         </div>
         <div class="row my-3">
             <div class="form-group col-lg-6">
-                <label class="form-label">Primary Channel</label>
+                <label class="form-label">Primary Channel Id</label>
                 <InputSelect class="form-select" @bind-Value="UserSettings.PrimaryChannelId">
                     <option value="">Select a channel...</option>
-                    @foreach (var channel in Channels)
+                    @foreach (var channel in Channels ?? Array.Empty<ChannelResponse>())
                     {
                         <option value="@channel.Id">@channel.Name</option>
                     }

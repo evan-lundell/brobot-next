@@ -128,4 +128,10 @@ public class ApiService
 
     public async Task DeleteScheduledMessage(int scheduledMessageId)
         => await _client.DeleteAsync($"ScheduledMessages/{scheduledMessageId}");
+
+    public async Task<ScheduledMessageResponse> CreateScheduledMessage(ScheduledMessageRequest scheduledMessage)
+    {
+        var response = await _client.PostAsJsonAsync("ScheduledMessages", scheduledMessage);
+        return await response.Content.ReadFromJsonAsync<ScheduledMessageResponse>() ?? throw new Exception("Scheduled Message failed");
+    }
 }

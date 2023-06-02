@@ -11,7 +11,7 @@
     <div class="row">
         <div class="col-md-6 my-2">
             <label class="form-label">Channel</label>
-            <InputSelect class="form-select" @bind-Value="@selectedChannelId">
+            <InputSelect class="form-select" @bind-Value="selectedChannelId">
                 <option value="">Select a channel...</option>
                 @foreach (var channel in Channels ?? Array.Empty<ChannelResponse>())
                 {

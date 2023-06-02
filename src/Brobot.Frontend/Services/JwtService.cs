@@ -4,16 +4,19 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Brobot.Frontend.Providers;
+using Microsoft.AspNetCore.Components;
 
 namespace Brobot.Frontend.Services;
 
 public class JwtService
 {
     private readonly IServiceProvider _services;
+    private readonly NavigationManager _navigationManager;
 
-    public JwtService(IServiceProvider services)
+    public JwtService(IServiceProvider services, NavigationManager navigationManager)
     {
         _services = services;
+        _navigationManager = navigationManager;
     }
 
     public async Task RefreshJwtToken()
@@ -25,6 +28,10 @@ public class JwtService
             using var scope = _services.CreateScope();
             var loginStateService = scope.ServiceProvider.GetRequiredService<JwtAuthenticationStateProvider>();
             loginStateService.Login(loginResponse.Token);
+        }
+        else
+        {
+            _navigationManager.NavigateTo("/");
         }
     }
 
