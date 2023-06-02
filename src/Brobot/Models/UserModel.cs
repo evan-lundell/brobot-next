@@ -8,9 +8,9 @@ public class UserModel
 {
     public ulong Id { get; set; }
     public required string Username { get; set; }
-    public DateTime? Birthdate { get; set; }
+    public DateOnly? Birthdate { get; set; }
     public string? Timezone { get; set; }
-    public DateTime? LastOnline { get; set; }
+    public DateTimeOffset? LastOnline { get; set; }
     public bool Archived { get; set; }
 
     public ChannelModel? PrimaryChannel { get; set; }

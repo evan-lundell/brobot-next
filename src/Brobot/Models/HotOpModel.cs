@@ -9,8 +9,8 @@ public class HotOpModel
     public ulong UserId { get; set; }
     public required ChannelModel Channel { get; set; }
     public ulong ChannelId { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
+    public DateTimeOffset StartDate { get; set; }
+    public DateTimeOffset EndDate { get; set; }
     public virtual ICollection<HotOpSessionModel> HotOpSessions { get; set; }
 
     public HotOpModel()

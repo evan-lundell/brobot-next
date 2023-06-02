@@ -75,10 +75,6 @@ public class UsersController : ControllerBase
             return Unauthorized();
         }
 
-        if (userSettingsRequest.BirthDate != null)
-        {
-            userSettingsRequest.BirthDate = DateTime.SpecifyKind(userSettingsRequest.BirthDate.Value, DateTimeKind.Utc);
-        }
         discordUser.Birthdate = userSettingsRequest.BirthDate;
         discordUser.Timezone = userSettingsRequest.Timezone;
         discordUser.PrimaryChannelId = userSettingsRequest.PrimaryChannelId;

@@ -7,6 +7,6 @@ public class HotOpSessionModel
     public ulong UserId { get; set; }
     public required HotOpModel HotOp { get; set; }
     public int HotOpId { get; set; }
-    public DateTime StartDateTime { get; set; }
-    public DateTime? EndDateTime { get; set; }
+    public DateTimeOffset StartDateTime { get; set; }
+    public DateTimeOffset? EndDateTime { get; set; }
 }

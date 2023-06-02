@@ -6,6 +6,7 @@ using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TimeZoneConverter;
 
 namespace Brobot.Controllers;
 
@@ -43,6 +44,25 @@ public class ScheduledMessagesController : ControllerBase
         }
 
         var scheduledMessages = await _uow.ScheduledMessages.GetScheduledMessagesByUser(discordUser.Id, limit, skip, scheduledBefore, scheduledAfter);
+        foreach (var message in scheduledMessages)
+        {
+            if (string.IsNullOrWhiteSpace(message.CreatedBy.Timezone))
+            {
+                continue;
+            }
+
+            var timezone = TZConvert.GetTimeZoneInfo(message.CreatedBy.Timezone);
+            var offset = timezone.GetUtcOffset(DateTime.UtcNow);
+            if (message.SendDate.HasValue)
+            {
+                message.SendDate = message.SendDate.Value.ToOffset(offset);
+            }
+
+            if (message.SentDate.HasValue)
+            {
+                message.SentDate = message.SentDate.Value.ToOffset(offset);
+            }
+        }
         return Ok(_mapper.Map<IEnumerable<ScheduledMessageResponse>>(scheduledMessages));
     }
 
@@ -68,6 +88,14 @@ public class ScheduledMessagesController : ControllerBase
 
         var newScheduledMessage = await _scheduledMessageService.CreateScheduledMessage(scheduledMessage.MessageText,
             discordUser, scheduledMessage.SendDate, channelModel);
+        // ReSharper disable once InvertIf
+        if (newScheduledMessage.SendDate.HasValue && !string.IsNullOrWhiteSpace(newScheduledMessage.CreatedBy.Timezone))
+        {
+            var timezone = TZConvert.GetTimeZoneInfo(newScheduledMessage.CreatedBy.Timezone);
+            var offset = timezone.GetUtcOffset(DateTime.UtcNow);
+            newScheduledMessage.SendDate = newScheduledMessage.SendDate.Value.ToOffset(offset);
+        }
+
         return Ok(_mapper.Map<ScheduledMessageResponse>(newScheduledMessage));
     }
 
@@ -101,10 +129,23 @@ public class ScheduledMessagesController : ControllerBase
         }
         
         scheduledMessage.MessageText = scheduledMessageRequest.MessageText;
-        scheduledMessage.SendDate = scheduledMessageRequest.SendDate;
+
+        var offset = TimeSpan.FromHours(0);
+        if (!string.IsNullOrEmpty(discordUser.Timezone))
+        {
+            var tz = TZConvert.GetTimeZoneInfo(discordUser.Timezone);
+            offset = tz.GetUtcOffset(DateTime.UtcNow);
+        }
+        
+        scheduledMessage.SendDate = new DateTimeOffset(scheduledMessageRequest.SendDate, offset).ToUniversalTime();
         scheduledMessage.ChannelId = channel.Id;
         scheduledMessage.Channel = channel;
         await _uow.CompleteAsync();
+        
+        if (!string.IsNullOrEmpty(discordUser.Timezone) && scheduledMessage.SendDate.HasValue)
+        {
+            scheduledMessage.SendDate = scheduledMessage.SendDate.Value.ToOffset(offset);
+        }
         return Ok(_mapper.Map<ScheduledMessageResponse>(scheduledMessage));
     }
 

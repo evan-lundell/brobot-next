@@ -23,14 +23,12 @@ public class BirthdayWorker : CronWorkerBase
     {
         using var scope = _services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var now = DateTime.UtcNow;
+        var now = DateOnly.FromDateTime(DateTime.UtcNow);
         var users = await uow.Users.Find((u) =>
             u.Birthdate.HasValue
-            && u.Birthdate.Value.Month == now.Month
-            && u.Birthdate.Value.Day == now.Day
-            && u.PrimaryChannelId.HasValue
+            && u.Birthdate == now
         );
-
+        
         var tasks = new List<Task>();
         foreach (var user in users)
         {
@@ -41,7 +39,7 @@ public class BirthdayWorker : CronWorkerBase
             }
             tasks.Add(channel.SendMessageAsync($"Happy birthday {user.Username}! :birthday:"));
         }
-
+        
         await Task.WhenAll(tasks);
     }
 }

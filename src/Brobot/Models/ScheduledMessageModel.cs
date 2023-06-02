@@ -4,8 +4,8 @@ public class ScheduledMessageModel
 {
     public int Id { get; set; }
     public required string MessageText { get; set; }
-    public DateTime? SendDate { get; set; }
-    public DateTime? SentDate { get; set; }
+    public DateTimeOffset? SendDate { get; set; }
+    public DateTimeOffset? SentDate { get; set; }
 
     public required ChannelModel Channel { get; set; }
     public ulong ChannelId { get; set; }

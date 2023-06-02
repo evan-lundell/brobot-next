@@ -16,18 +16,18 @@ public class ScheduledMessageService
     public async Task<ScheduledMessageModel> CreateScheduledMessage(string messageText, UserModel createdBy,
         DateTime sendDate, ChannelModel channel)
     {
+        var offset = TimeSpan.FromHours(0);
         if (!string.IsNullOrWhiteSpace(createdBy.Timezone))
         {
             var timezone = TZConvert.GetTimeZoneInfo(createdBy.Timezone);
-            var offset = timezone.GetUtcOffset(DateTime.Now);
-            sendDate = sendDate - offset;
-
+            offset = timezone.GetUtcOffset(DateTime.Now);
         }
+        var sendDateAdjusted = new DateTimeOffset(sendDate, offset).ToUniversalTime();
 
         var reminder = new ScheduledMessageModel
         {
             MessageText = messageText,
-            SendDate = sendDate,
+            SendDate = sendDateAdjusted,
             Channel = channel,
             ChannelId = channel.Id,
             CreatedBy = createdBy,
