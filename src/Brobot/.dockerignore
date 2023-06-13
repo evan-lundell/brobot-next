@@ -1,1 +1,6 @@
 appsettings.Development.json
+bin/
+obj/
+Properties/
+appsettings.Sample.json
+appsettings.Production.json
