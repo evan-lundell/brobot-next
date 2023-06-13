@@ -3,7 +3,7 @@ WORKDIR /build
 COPY ./src/Brobot/Brobot.csproj ./src/Brobot/Brobot.csproj
 COPY ./src/Brobot.Frontend/Brobot.Frontend.csproj ./src/Brobot.Frontend/Brobot.Frontend.csproj
 COPY ./src/Brobot.Shared/Brobot.Shared.csproj ./src/Brobot.Shared/Brobot.Shared.csproj
-RUN dotnet restore
+RUN dotnet restore ./src/Brobot/Brobot.csproj
 COPY ./src ./src
 RUN dotnet publish ./src/Brobot/Brobot.csproj -c Release -o /app
 
