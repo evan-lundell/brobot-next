@@ -17,7 +17,6 @@ public static class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        Console.WriteLine($"JWT Expiry: {builder.Configuration["JwtExpiry"]}");
         CreateServices(builder, args);
         var app = builder.Build();
         if (app.Environment.IsDevelopment())

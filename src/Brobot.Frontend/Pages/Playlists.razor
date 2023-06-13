@@ -1,0 +1,124 @@
+@page "/playlists"
+@inject ApiService ApiService
+@inject NavigationManager NavigationManager
+
+@if (playlists == null)
+{
+    <p><em>Loading</em></p>
+}
+else
+{
+    <h3>Playlists</h3>
+    <div class="row my-3">
+        <div class="offset-xs-6 offset-lg-9 col-xs-6 col-lg-3 text-end">
+            <button type="button" class="btn btn-primary" @onclick="NewPlaylist">New Playlist</button>
+        </div>
+    </div>
+    <RadzenDataGrid class="my-3" @ref="grid" TItem="PlaylistResponse" Data="@playlists" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="PlaylistResponse" Property="Name" Title="Name" Width="300px" />
+            <RadzenDataGridColumn TItem="PlaylistResponse" Width="100px" TextAlign="TextAlign.Right">
+                <Template Context="playlist">
+                    <div class="align-items-end">
+                        <button type="button" class="btn btn-primary" @onclick="() => ViewOrEditPlaylist(playlist)">View/Edit</button>
+                        <button type="button" class="btn btn-danger" @onclick="() => DeletePlaylist(playlist)">Delete</button>
+                    </div>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+    <FormModal 
+        @ref="newPlaylistModal" 
+        OnValidSubmit="SubmitNewPlaylist" 
+        Id="newPlaylistModal" 
+        Title="New Playlist"
+        Model="@newPlaylistRequest">
+        <ModalBody>
+            <div class="row">
+                <div class="col-12">
+                    <label class="form-label">Name</label>
+                    <InputText class="form-control" @bind-Value="newPlaylistRequest.Name"></InputText>
+                </div>
+            </div>
+        </ModalBody>
+    </FormModal>
+    <ConfirmationModal
+        @ref="playlistDeleteConfirmationModal"
+        Title="Delete Playlist?"
+        Id="playlistDeleteConfirmationModal"
+        OnConfirmationClosed="DeleteConfirmationModalClosed">
+        <ModalBody>
+            <p>Are you sure you want to delete this playlist?</p>
+        </ModalBody>
+    </ConfirmationModal>
+}
+
+@code {
+    private List<PlaylistResponse>? playlists;
+    private RadzenDataGrid<PlaylistResponse>? grid;
+    private FormModal? newPlaylistModal;
+    private ConfirmationModal? playlistDeleteConfirmationModal;
+    private PlaylistResponse? playlistToDelete;
+
+    private PlaylistRequest newPlaylistRequest = new PlaylistRequest
+    {
+        Id = null,
+        Name = "",
+        Songs = Array.Empty<PlaylistSongResponse>()
+    };
+    
+    protected override async Task OnInitializedAsync()
+    {
+        playlists = (await ApiService.GetPlaylists()).ToList();
+    }
+
+    private void ViewOrEditPlaylist(PlaylistResponse playlist)
+    {
+        NavigationManager.NavigateTo($"/playlists/{playlist.Id}");
+    }
+
+    private async Task DeletePlaylist(PlaylistResponse playlist)
+    {
+        if (playlistDeleteConfirmationModal != null)
+        {
+            await playlistDeleteConfirmationModal.ShowModal();
+            playlistToDelete = playlist;
+        }
+    }
+
+    private async Task NewPlaylist()
+    {
+        if (newPlaylistModal != null)
+        {
+            await newPlaylistModal.ShowModal();
+        }
+    }
+
+    private async Task SubmitNewPlaylist()
+    {
+        var newPlaylist = await ApiService.CreatePlaylist(newPlaylistRequest);
+        playlists?.Add(newPlaylist);
+        if (grid != null)
+        {
+            await grid.Reload();
+        }
+        if (newPlaylistModal != null)
+        {
+            await newPlaylistModal.HideModal();
+        }
+    }
+
+    private async Task DeleteConfirmationModalClosed(bool confirmed)
+    {
+        if (confirmed && playlistToDelete != null)
+        {
+            await ApiService.DeletePlaylist(playlistToDelete.Id);
+            playlists?.Remove(playlistToDelete);
+        }
+        playlistToDelete = null;
+        if (grid != null)
+        {
+            await grid.Reload();
+        }
+    }
+}

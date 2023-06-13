@@ -1,4 +1,5 @@
 using Brobot.Contexts;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Brobot.Repositories;
 
@@ -16,6 +17,8 @@ public class UnitOfWork : IUnitOfWork
         HotOps = new HotOpRepository(context);
         HotOpSessions = new HotOpSessionRepository(context);
         DailyMessageCounts = new DailyMessageCountRepository(context);
+        Playlists = new PlaylistRepository(context);
+        PlaylistSongs = new PlaylistSongRepository(context);
     }
 
     public IUserRepository Users { get; }
@@ -27,11 +30,18 @@ public class UnitOfWork : IUnitOfWork
 
     public IHotOpSessionRepository HotOpSessions { get; }
     public IDailyMessageCountRepository DailyMessageCounts { get; }
+    public IPlaylistRepository Playlists { get; }
+    public IPlaylistSongRepository PlaylistSongs { get; set; }
+    
 
     public Task<int> CompleteAsync()
     {
         return _context.SaveChangesAsync();
     }
+
+    public Task<IDbContextTransaction> BeginTransaction() => _context.Database.BeginTransactionAsync();
+
+    public Task CommitTransaction(IDbContextTransaction transaction) => transaction.CommitAsync();
 
 #pragma warning disable CA1816
     public void Dispose()

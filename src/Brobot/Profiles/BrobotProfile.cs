@@ -1,5 +1,6 @@
 using AutoMapper;
 using Brobot.Models;
+using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Identity;
 
@@ -14,5 +15,9 @@ public class BrobotProfile : Profile
         CreateMap<UserModel, UserResponse>();
         CreateMap<DailyMessageCountModel, DailyMessageCountResponse>();
         CreateMap<IdentityUser, IdentityUserResponse>();
+        CreateMap<PlaylistModel, PlaylistResponse>();
+        CreateMap<PlaylistSongModel, PlaylistSongResponse>();
+        CreateMap<PlaylistRequest, PlaylistModel>();
+        CreateMap<PlaylistSongRequest, PlaylistSongModel>();
     }
 }

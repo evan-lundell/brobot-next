@@ -134,4 +134,51 @@ public class ApiService
         var response = await _client.PostAsJsonAsync("ScheduledMessages", scheduledMessage);
         return await response.Content.ReadFromJsonAsync<ScheduledMessageResponse>() ?? throw new Exception("Scheduled Message failed");
     }
+
+    public async Task<IEnumerable<PlaylistResponse>> GetPlaylists()
+        => await _client.GetFromJsonAsync<IEnumerable<PlaylistResponse>>("api/Playlists") ??
+           Array.Empty<PlaylistResponse>();
+
+    public async Task<PlaylistResponse> GetPlaylist(int playlistId)
+        => await _client.GetFromJsonAsync<PlaylistResponse>($"api/Playlists/{playlistId}") ??
+           throw new Exception("Get playlist failed");
+
+    public async Task<PlaylistResponse> CreatePlaylist(PlaylistRequest playlistRequest)
+    {
+        var response = await _client.PostAsJsonAsync("api/Playlists", playlistRequest);
+        return await response.Content.ReadFromJsonAsync<PlaylistResponse>() ??
+               throw new Exception("Create Playlist failed");
+    }
+
+    public async Task<PlaylistResponse> UpdatePlaylist(PlaylistRequest playlistRequest)
+    {
+        var response = await _client.PutAsJsonAsync($"api/Playlists/{playlistRequest.Id}", playlistRequest);
+        return await response.Content.ReadFromJsonAsync<PlaylistResponse>() ??
+               throw new Exception("Update Playlist failed");
+    }
+
+    public async Task DeletePlaylist(int playlistId)
+    {
+        await _client.DeleteAsync($"api/Playlists/{playlistId}");
+    }
+
+    public async Task<PlaylistSongResponse> CreatePlaylistSong(int playlistId, PlaylistSongRequest playlistSongRequest)
+    {
+        var response = await _client.PostAsJsonAsync($"api/Playlists/{playlistId}/songs", playlistSongRequest);
+        return await response.Content.ReadFromJsonAsync<PlaylistSongResponse>() ??
+               throw new Exception("Failed to creat Playlist song");
+    }
+
+    public async Task<PlaylistSongResponse> UpdatePlaylistSong(int playlistId, PlaylistSongRequest playlistSongRequest)
+    {
+        var response = await _client.PutAsJsonAsync($"api/Playlists/{playlistId}/songs/{playlistSongRequest.Id}",
+            playlistSongRequest);
+        return await response.Content.ReadFromJsonAsync<PlaylistSongResponse>() ??
+               throw new Exception("Failed to update playlist song");
+    }
+
+    public async Task DeletePlaylistSong(int playlistId, int playlistSongId)
+    {
+        await _client.DeleteAsync($"/api/Playlists/{playlistId}/songs/{playlistSongId}");
+    }
 }

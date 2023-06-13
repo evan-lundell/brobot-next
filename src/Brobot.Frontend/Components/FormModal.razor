@@ -1,0 +1,36 @@
+@inherits ModalBase
+
+<div id="@Id" class="modal fade" tabindex="-1" role="dialog">
+    <EditForm Model="@Model" OnValidSubmit="@OnValidSubmit">
+        <DataAnnotationsValidator />
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                </div>
+                <div class="modal-body">
+                    <ValidationSummary/>
+                    @ModalBody
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col">
+                            <button type="submit" class="btn btn-primary form-control">Submit</button>
+                        </div>
+                        <div class="col">
+                            <button type="button" class="btn btn-danger form-control" @onclick="HideModal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public required object Model { get; set; }
+
+    [Parameter]
+    public required EventCallback<EditContext> OnValidSubmit { get; set; }
+}

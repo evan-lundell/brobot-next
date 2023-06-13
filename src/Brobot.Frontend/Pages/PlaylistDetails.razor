@@ -1,0 +1,24 @@
+@page "/playlists/{id:int}"
+@inject ApiService ApiService
+
+@if (playlist == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h3>@playlist.Name</h3>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    private PlaylistResponse? playlist;
+
+    protected override async Task OnInitializedAsync()
+    {
+        playlist = await ApiService.GetPlaylist(Id);
+    }
+
+}
