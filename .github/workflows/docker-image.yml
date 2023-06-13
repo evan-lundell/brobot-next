@@ -23,4 +23,4 @@ jobs:
     - name: Build the Docker image
       run: docker build . --file ./src/Brobot/Dockerfile --tag ${{secrets.DOCKER_USER}}/brobot:$(date +%s)
     - name: Docker Push
-      run: docker push ${{secrets.DOCKER_USER}}/brobot:$(date +%s)
+      run: docker push ${{secrets.DOCKER_USER}}/brobot
