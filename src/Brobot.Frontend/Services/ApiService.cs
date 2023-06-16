@@ -20,7 +20,6 @@ public class ApiService
 
     public async Task<LoginResponse?> RefreshToken()
     {
-
         var response = await _client.PostAsync("auth/refresh-token", null);
         var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
         return loginResponse;
@@ -35,9 +34,7 @@ public class ApiService
     }
 
     public async Task Logout()
-    {
-        await _client.PostAsync("auth/logout", null);
-    }
+        => await _client.PostAsync("auth/logout", null);
 
     public async Task<string> GetDiscordAuthUrl()
     {
@@ -51,17 +48,11 @@ public class ApiService
         return discordAuthResponse.Url;
     }
 
-    public async Task SyncDiscordUser(string authCode)
-    {
-        var response = await _client.PostAsJsonAsync("auth/sync-discord-user", new SyncDiscordUserRequest
+    public Task SyncDiscordUser(string authCode)
+        =>  _client.PostAsJsonAsync("auth/sync-discord-user", new SyncDiscordUserRequest
         {
             AuthorizationCode = authCode
         });
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new Exception(await response.Content.ReadAsStringAsync());
-        }
-    }
 
     public async Task<RegisterResponse?> RegisterUser(RegisterRequest registerRequest)
     {
@@ -71,27 +62,10 @@ public class ApiService
     }
 
     public async Task<ChannelResponse[]> GetChannels()
-    {
-        try
-        {
-            var response = await _client.GetAsync("channels");
-            var channels = await response.Content.ReadFromJsonAsync<ChannelResponse[]>();
-            return channels ?? Array.Empty<ChannelResponse>();
-
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Get channels failed");
-            return Array.Empty<ChannelResponse>();
-        }
-    }
+        => await _client.GetFromJsonAsync<ChannelResponse[]>("Channels") ?? Array.Empty<ChannelResponse>();
 
     public async Task<UserSettingsResponse> GetUserSettings()
-    {
-        var response = await _client.GetAsync("users/settings");
-        var userSettings = await response.Content.ReadFromJsonAsync<UserSettingsResponse>();
-        return userSettings ?? new UserSettingsResponse();
-    }
+        => await _client.GetFromJsonAsync<UserSettingsResponse>("users/settings") ?? new UserSettingsResponse();
 
     public async Task<UserSettingsResponse> SaveUserSettings(UserSettingsRequest userSettingsRequest)
     {
@@ -101,20 +75,13 @@ public class ApiService
     }
 
     public async Task<DailyMessageCountResponse[]> GetDailyMessageCount(int numOfDays = 10)
-    {
-        var response = await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/daily");
-        return response ?? Array.Empty<DailyMessageCountResponse>();
-    }
+        => await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/daily") ?? Array.Empty<DailyMessageCountResponse>();
 
-    public async Task SendMessage(SendMessageRequest sendMessageRequest)
-    {
-        await _client.PostAsJsonAsync("Messages/send", sendMessageRequest);
-    }
+    public Task SendMessage(SendMessageRequest sendMessageRequest)
+        => _client.PostAsJsonAsync("Messages/send", sendMessageRequest);
 
-    public async Task ChangePassword(ChangePasswordRequest changePasswordRequest)
-    {
-        await _client.PostAsJsonAsync("auth/change-password", changePasswordRequest);
-    }
+    public Task ChangePassword(ChangePasswordRequest changePasswordRequest)
+        => _client.PostAsJsonAsync("auth/change-password", changePasswordRequest);
 
     public async Task<IdentityUserResponse[]> GetIdentityUsers()
         => await _client.GetFromJsonAsync<IdentityUserResponse[]>("Auth/users") ?? Array.Empty<IdentityUserResponse>();

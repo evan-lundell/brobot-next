@@ -109,11 +109,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _reminders = (await ApiService.GetScheduledMessages()).ToList();
-        _channels = await ApiService.GetChannels();
-        if (_channels.Length == 0)
+        try
         {
-            ToastService.ShowError("Failed to get channels");
+            _reminders = (await ApiService.GetScheduledMessages()).ToList();
+            _channels = await ApiService.GetChannels();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to initialize. {ex.Message}");
         }
     }
 
