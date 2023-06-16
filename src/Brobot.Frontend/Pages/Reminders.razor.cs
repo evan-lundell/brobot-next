@@ -1,3 +1,4 @@
+using Blazored.Toast.Services;
 using Brobot.Frontend.Components;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
@@ -8,129 +9,123 @@ namespace Brobot.Frontend.Pages;
 
 public partial class Reminders : ComponentBase
 {
-    private List<ScheduledMessageResponse>? reminders;
-    private ChannelResponse[]? channels;
+    private List<ScheduledMessageResponse>? _reminders;
+    private ChannelResponse[]? _channels;
 
-    private bool PageReady => reminders != null && channels != null;
+    private bool PageReady => _reminders != null && _channels != null;
 
-    private ScheduledMessageRequest editScheduleMessage = new ScheduledMessageRequest
+    private ScheduledMessageRequest _editScheduleMessage = new ScheduledMessageRequest
     {
         MessageText = string.Empty
     };
     
-    private FormModal? scheduledMessageModal;
-    private ConfirmationModal? deleteConfirmationModal;
+    private FormModal? _scheduledMessageModal;
+    private ConfirmationModal? _deleteConfirmationModal;
 
-    private ScheduledMessageResponse? reminderToDelete;
-    private RadzenDataGrid<ScheduledMessageResponse>? grid;
+    private ScheduledMessageResponse? _reminderToDelete;
+    private RadzenDataGrid<ScheduledMessageResponse>? _grid;
 
     protected override async Task OnInitializedAsync()
     {
-        reminders = (await ApiService.GetScheduledMessages()).ToList();
-        channels = await ApiService.GetChannels();
+        try
+        {
+            _reminders = (await ApiService.GetScheduledMessages()).ToList();
+            _channels = await ApiService.GetChannels();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Initialization failed. {ex.Message}");
+        }
     }
 
     private void NewScheduledMessage()
     {
-        editScheduleMessage = new ScheduledMessageRequest
+        _editScheduleMessage = new ScheduledMessageRequest
         {
             MessageText = string.Empty,
             SendDate = DateTime.UtcNow,
         };
-        scheduledMessageModal?.ShowModal();
+        _scheduledMessageModal?.ShowModal();
     }
     
     private void EditScheduledMessage(ScheduledMessageResponse message)
     {
-        editScheduleMessage = new ScheduledMessageRequest
+        _editScheduleMessage = new ScheduledMessageRequest
         {
             MessageText = message.MessageText,
             SendDate = message.SendDate?.DateTime ?? DateTime.UtcNow,
             ChannelId = message.Channel.Id,
             Id = message.Id
         };
-        scheduledMessageModal?.ShowModal();
+        _scheduledMessageModal?.ShowModal();
     }
-
-    private async Task DeleteScheduledMessage()
-    {
-        if (reminderToDelete == null)
-        {
-            if (deleteConfirmationModal != null)
-            {
-                await deleteConfirmationModal.HideModal();
-            }
-            return;
-        }
-        
-        await ApiService.DeleteScheduledMessage(reminderToDelete.Id);
-        var reminderToRemove = reminders?.FirstOrDefault((r) => r.Id == reminderToDelete.Id);
-        if (reminderToRemove != null)
-        {
-            reminders?.Remove(reminderToRemove);
-        }
-        
-        if (deleteConfirmationModal != null)
-        {
-            await deleteConfirmationModal.HideModal();
-        }
-        
-        if (grid != null)
-        {
-            await grid.Reload();
-        }
-    }
-
+    
     private async Task SubmitEditMessage()
     {
-        var message = editScheduleMessage.Id == null
-            ? await ApiService.CreateScheduledMessage(editScheduleMessage)
-            : await ApiService.EditScheduledMessage(editScheduleMessage.Id.Value, editScheduleMessage);
-
-        
-        var existingReminder = reminders?.FirstOrDefault((r) => r.Id == message.Id);
-        if (existingReminder == null)
+        try
         {
-            reminders?.Add(message);
-            if (grid != null)
+            var message = _editScheduleMessage.Id == null
+                ? await ApiService.CreateScheduledMessage(_editScheduleMessage)
+                : await ApiService.EditScheduledMessage(_editScheduleMessage.Id.Value, _editScheduleMessage);
+
+
+            var existingReminder = _reminders?.FirstOrDefault((r) => r.Id == message.Id);
+            if (existingReminder == null)
             {
-                await grid.Reload();
+                _reminders?.Add(message);
+                if (_grid != null)
+                {
+                    await _grid.Reload();
+                }
+            }
+            else
+            {
+                existingReminder.MessageText = message.MessageText;
+                existingReminder.SendDate = message.SendDate;
+                existingReminder.Channel = message.Channel;
+                ToastService.ShowSuccess("Successfully saved reminder");
             }
         }
-        else
+        catch (Exception ex)
         {
-            existingReminder.MessageText = message.MessageText;
-            existingReminder.SendDate = message.SendDate;
-            existingReminder.Channel = message.Channel;
+            ToastService.ShowError($"Failed to save reminder. {ex.Message}");
         }
 
-        if (scheduledMessageModal != null)
+        if (_scheduledMessageModal != null)
         {
-            await scheduledMessageModal.HideModal();
+            await _scheduledMessageModal.HideModal();
         }
     }
 
     private async Task ShowDeleteConfirmationModal(ScheduledMessageResponse message)
     {
-        reminderToDelete = message;
-        if (deleteConfirmationModal != null)
+        _reminderToDelete = message;
+        if (_deleteConfirmationModal != null)
         {
-            await deleteConfirmationModal.ShowModal();
+            await _deleteConfirmationModal.ShowModal();
         }
     }
 
     private async Task DeleteConfirmationClosed(bool confirmed)
     {
-        if (confirmed && reminderToDelete != null)
+        if (confirmed && _reminderToDelete != null)
         {
-            await ApiService.DeleteScheduledMessage(reminderToDelete.Id);
-            reminders?.Remove(reminderToDelete);
-            if (grid != null)
+            try
             {
-                await grid.Reload();
+                await ApiService.DeleteScheduledMessage(_reminderToDelete.Id);
+                _reminders?.Remove(_reminderToDelete);
+                if (_grid != null)
+                {
+                    await _grid.Reload();
+                }
+                ToastService.ShowSuccess("Successfully delete reminder");
+            }
+            catch (Exception ex)
+            {
+                ToastService.ShowError($"Failed to delete reminder. {ex.Message}");
             }
         }
 
-        reminderToDelete = null;
+        _reminderToDelete = null;
     }
 }

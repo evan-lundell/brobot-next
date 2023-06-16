@@ -1,5 +1,8 @@
 @page "/reminders"
 @inject ApiService ApiService
+@inject IToastService ToastService
+@inject ILogger<Reminders> Logger
+
 <PageTitle>Reminders</PageTitle>
 
 @if (!PageReady)
@@ -14,7 +17,7 @@ else
             <button type="button" class="btn btn-primary" @onclick="NewScheduledMessage">New Reminder</button>
         </div>
     </div>
-    <RadzenDataGrid @ref="grid" Data="@reminders" TItem="ScheduledMessageResponse" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true">
+    <RadzenDataGrid @ref="_grid" Data="@_reminders" TItem="ScheduledMessageResponse" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true">
         <Columns>
             <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="MessageText" Title="Message" />
             <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="SendDate" Title="Send Date">
@@ -33,29 +36,29 @@ else
     </RadzenDataGrid>
     <FormModal
         Id="editScheduleMessage"
-        @ref="scheduledMessageModal"
-        Model="editScheduleMessage"
+        @ref="_scheduledMessageModal"
+        Model="_editScheduleMessage"
         OnValidSubmit="SubmitEditMessage"
-        Title="@(editScheduleMessage.Id.HasValue ? "Edit Reminder" : "New Reminder")">
+        Title="@(_editScheduleMessage.Id.HasValue ? "Edit Reminder" : "New Reminder")">
         <ModalBody>
             <div class="row my-2">
                 <div class="col-12 form-group">
                     <label class="form-label">Message</label>
-                    <InputTextArea class="form-control" @bind-Value="editScheduleMessage.MessageText"></InputTextArea>
+                    <InputTextArea class="form-control" @bind-Value="_editScheduleMessage.MessageText"></InputTextArea>
                 </div>
             </div>
             <div class="row my-2">
                 <div class="col-12 form-group">
                     <label class="form-label">Reminder Date/Time</label>
-                    <InputDate class="form-control" Type="InputDateType.DateTimeLocal" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="editScheduleMessage.SendDate" />
+                    <InputDate class="form-control" Type="InputDateType.DateTimeLocal" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="_editScheduleMessage.SendDate" />
                 </div>
             </div>
             <div class="row my-2">
                 <div class="col-12 form-group">
                     <label class="form-label">Channel</label>
-                    <InputSelect class="form-select" @bind-Value="editScheduleMessage.ChannelId">
+                    <InputSelect class="form-select" @bind-Value="_editScheduleMessage.ChannelId">
                         <option value="">Select a channel...</option>
-                        @foreach (var channel in channels ?? Array.Empty<ChannelResponse>())
+                        @foreach (var channel in _channels ?? Array.Empty<ChannelResponse>())
                         {
                             <option value="@channel.Id">@channel.Name</option>
                         }
@@ -65,7 +68,7 @@ else
         </ModalBody>
     </FormModal>
     <ConfirmationModal
-        @ref="deleteConfirmationModal"
+        @ref="_deleteConfirmationModal"
         Id="deleteConfirmation"
         Title="Delete Reminder?"
         OnConfirmationClosed="DeleteConfirmationClosed">

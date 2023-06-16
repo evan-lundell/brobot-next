@@ -6,7 +6,6 @@
 **/build
 
 appsettings.Development.json
-appsettings.Production.json
 scripts/
 application.yml
 

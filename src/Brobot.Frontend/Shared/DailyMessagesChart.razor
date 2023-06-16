@@ -1,6 +1,7 @@
 @inject ApiService ApiService
+@inject IToastService ToastService
 
-@if (messageCountData == null)
+@if (_messageCountData == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -11,7 +12,7 @@ else
             <h3>Daily Message Count</h3>
             <RadzenChart>
                 <RadzenLegend Visible="false"></RadzenLegend>
-                <RadzenLineSeries Title="Message Count" Data="@messageCountData" CategoryProperty="CountDate" LineType="LineType.Solid" ValueProperty="MessageCount">
+                <RadzenLineSeries Title="Message Count" Data="@_messageCountData" CategoryProperty="CountDate" LineType="LineType.Solid" ValueProperty="MessageCount">
                     <RadzenMarkers MarkerType="MarkerType.Circle"></RadzenMarkers>
                 </RadzenLineSeries>
                 <RadzenValueAxis>
@@ -23,11 +24,19 @@ else
 }
 
 @code {
-    private DailyMessageCountResponse[]? messageCountData;
+    private DailyMessageCountResponse[]? _messageCountData;
 
     protected override async Task OnInitializedAsync()
     {
-        messageCountData = await ApiService.GetDailyMessageCount();
+        try
+        {
+            _messageCountData = await ApiService.GetDailyMessageCount();
+
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
     }
 
 }
