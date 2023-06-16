@@ -1,10 +1,17 @@
-﻿@inherits LayoutComponentBase
+﻿@using Blazored.Toast.Configuration
+@inherits LayoutComponentBase
 @inject JwtAuthenticationStateProvider JwtAuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
 <div class="page">
+    <BlazoredToasts Position="ToastPosition.BottomRight"
+                    Timeout="5"
+                    IconType="IconType.FontAwesome"
+                    SuccessIcon="fa fa-thumbs-up"
+                    ErrorIcon="fa fa-bug"
+                    RemoveToastsOnNavigation="true" />
     <div class="sidebar">
-        <NavMenu />
+        <NavMenu/>
     </div>
 
     <main>
@@ -15,13 +22,3 @@
         </article>
     </main>
 </div>
-
-@code {
-    private string? DisplayName => JwtAuthenticationStateProvider.DisplayName;
-
-    private async Task Logout()
-    {
-        await JwtAuthenticationStateProvider.Logout();
-        NavigationManager.NavigateTo("/");
-    }
-}

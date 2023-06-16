@@ -18,6 +18,7 @@ public class BrobotModule : InteractionModuleBase
     private readonly IDictionaryService _dictionaryService;
     private readonly HotOpService _hotOpService;
     private readonly ScheduledMessageService _scheduledMessageService;
+    private readonly ILogger _logger;
 
     private readonly string[] _emojiLookup = new string[]
     {
@@ -39,7 +40,8 @@ public class BrobotModule : InteractionModuleBase
         IRandomFactService randomFactService,
         IDictionaryService dictionaryService,
         HotOpService hotOpService,
-        ScheduledMessageService scheduledMessageService)
+        ScheduledMessageService scheduledMessageService,
+        ILogger<BrobotModule> logger)
     {
         _uow = uow;
         _random = random;
@@ -48,6 +50,7 @@ public class BrobotModule : InteractionModuleBase
         _dictionaryService = dictionaryService;
         _hotOpService = hotOpService;
         _scheduledMessageService = scheduledMessageService;
+        _logger = logger;
     }
     [SlashCommand("info", "Returns guild, channel, and user ids")]
     public async Task Info()
@@ -185,7 +188,7 @@ public class BrobotModule : InteractionModuleBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to execute 'gif' command\n{ex.Message}");
+            _logger.LogError(ex, "Gif command failed");
             await RespondAsync("An error occurred");
         }
     }
@@ -200,7 +203,7 @@ public class BrobotModule : InteractionModuleBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to execute 'fact' command\n{ex.Message}");
+            _logger.LogError(ex, "Fact command failed");
             await RespondAsync("An error occurred");
         }
     }
@@ -227,7 +230,7 @@ public class BrobotModule : InteractionModuleBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to execute 'define' command\n{ex.Message}");
+            _logger.LogError(ex, "Define command failed");
             await RespondAsync("An error occurred");
         }
     }
@@ -295,23 +298,33 @@ public class BrobotModule : InteractionModuleBase
         [Summary("date", "Date and time the reminder will be sent, in yyyy-MM-dd HH:mm format")] string reminderDate,
         [Summary("message", "The message that will be posted")] string message)
     {
-        if (!DateTime.TryParse(reminderDate, out DateTime reminderDateFormatted))
+        try
         {
-            await RespondAsync("Invalid date format. Please use yyyy-MM-dd HH:mm");
-            return;
-        }
 
-        reminderDateFormatted = DateTime.SpecifyKind(reminderDateFormatted, DateTimeKind.Utc);
-        var user = await _uow.Users.GetById(Context.User.Id);
-        var channel = await _uow.Channels.GetById(Context.Channel.Id);
-        if (user == null || channel == null)
+
+            if (!DateTime.TryParse(reminderDate, out DateTime reminderDateFormatted))
+            {
+                await RespondAsync("Invalid date format. Please use yyyy-MM-dd HH:mm");
+                return;
+            }
+
+            reminderDateFormatted = DateTime.SpecifyKind(reminderDateFormatted, DateTimeKind.Utc);
+            var user = await _uow.Users.GetById(Context.User.Id);
+            var channel = await _uow.Channels.GetById(Context.Channel.Id);
+            if (user == null || channel == null)
+            {
+                await RespondAsync("An error has occured");
+                return;
+            }
+
+            await _scheduledMessageService.CreateScheduledMessage(message, user, reminderDateFormatted, channel);
+            await RespondAsync("Reminder has been created");
+        }
+        catch (Exception ex)
         {
-            await RespondAsync("An error has occured");
-            return;
+            _logger.LogError(ex, "Reminder message failed");
+            await RespondAsync(text: "Failed to create reminder", ephemeral: true);
         }
-
-        await _scheduledMessageService.CreateScheduledMessage(message, user, reminderDateFormatted, channel);
-        await RespondAsync("Reminder has been created");
     }
 
     [SlashCommand("lastonline", "Get last online times")]
@@ -343,8 +356,9 @@ public class BrobotModule : InteractionModuleBase
 
             await RespondAsync(text: $"{user.Username} was last online at {lastOnline:yyyy-MM-dd hh:mm tt}", ephemeral: true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "LastOnline command failed");
             await RespondAsync(text: "Failed to get last online", ephemeral: true);
         }
     }
@@ -364,8 +378,9 @@ public class BrobotModule : InteractionModuleBase
             await RespondAsync(embeds: activeHotOps.Select(_hotOpService.CreateScoreboardEmbed).ToArray());
 
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "HotOp command failed");
             await RespondAsync(text: "Failed to get hot op scores", ephemeral: true);
         }
     }

@@ -1,3 +1,4 @@
+using Blazored.Toast;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Brobot.Frontend;
@@ -24,6 +25,7 @@ builder.Services.AddHttpClient<ApiService>((client) => client.BaseAddress = appU
     .AddHttpMessageHandler<JwtTokenMessageHandler>();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddLogging();
+builder.Services.AddBlazoredToast();
 
 var app = builder.Build();
 await app.Services.GetRequiredService<JwtService>().RefreshJwtToken();

@@ -5,21 +5,21 @@
 
 <PageTitle>Discord Auth Callback</PageTitle>
 
-@if (Syncing)
+@if (_syncing)
 {
     <p><em>Syncing user data...</em></p>
 }
 
-<p>@Message</p>
+<p>@_message</p>
 
 @code {
     [Parameter]
     [SupplyParameterFromQuery]
     public string Code { get; set; } = "";
 
-    private bool Syncing = true;
+    private bool _syncing = true;
 
-    private string Message = "";
+    private string _message = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -27,7 +27,7 @@
         {
             if (string.IsNullOrWhiteSpace(Code))
             {
-                Message = "Unable to sync user. Please logout and try again.";
+                _message = "Unable to sync user. Please logout and try again.";
             }
             else
             {
@@ -35,12 +35,12 @@
                 await JwtService.RefreshJwtToken();
                 NavigationManager.NavigateTo("/");
             }
-            Syncing = false;
+            _syncing = false;
         }
         catch (Exception)
         {
-            Syncing = false;
-            Message = "Unable to sync user. Please logout and try again.";
+            _syncing = false;
+            _message = "Unable to sync user. Please logout and try again.";
         }
     }
 }
