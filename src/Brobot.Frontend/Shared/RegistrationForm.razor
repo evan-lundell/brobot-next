@@ -5,7 +5,7 @@
     <h1>Register</h1>
 </div>
 
-@if (RegistrationSuccessful)
+@if (_registrationSuccessful)
 {
     <p>Registration Successful!</p>
     <div>
@@ -16,37 +16,37 @@
 }
 else
 {
-    <EditForm Model="@registerRequest" OnValidSubmit="OnValidSubmit">
+    <EditForm Model="@_registerRequest" OnValidSubmit="OnValidSubmit">
         <DataAnnotationsValidator />
         <ValidationSummary />
-        @if (ErrorMessage.Length != 0)
+        @if (_errorMessage.Length != 0)
         {
             <div class="row">
-                <em style="color: red">@ErrorMessage</em>
+                <em style="color: red">@_errorMessage</em>
             </div>
         }
         <div class="row my-3">
             <div class="form-group col-lg-6">
                 <label>Email</label>
-                <InputText class="form-control" type="email" @bind-Value="registerRequest.EmailAddress" />
+                <InputText class="form-control" type="email" @bind-Value="_registerRequest.EmailAddress" />
             </div>
         </div>
         <div class="row my-3">
             <div class="form-group col-lg-6">
                 <label>Password</label>
-                <InputText class="form-control" type="password" @bind-Value="registerRequest.Password" />
+                <InputText class="form-control" type="password" @bind-Value="_registerRequest.Password" />
             </div>
         </div>
         <div class="row my-3">
             <div class="form-group col-lg-6">
                 <label>Confirm Password</label>
-                <InputText class="form-control" type="password" @bind-Value="registerRequest.ConfirmPassword" />
+                <InputText class="form-control" type="password" @bind-Value="_registerRequest.ConfirmPassword" />
             </div>
         </div>
         <div class="row my-3">
             <div class="form-group col-lg-3 offset-lg-3">
-                <button class="btn btn-primary form-control" disabled="@Loading">
-                    @if (Loading)
+                <button class="btn btn-primary form-control" disabled="@_loading">
+                    @if (_loading)
                     {
                         <span class="spinner-border spinner-border-sm mr-1"></span>
                     }
@@ -58,11 +58,11 @@ else
 }
 
 @code {
-    private bool Loading = false;
-    private string ErrorMessage = "";
-    private bool RegistrationSuccessful = false;
+    private bool _loading = false;
+    private string _errorMessage = "";
+    private bool _registrationSuccessful = false;
     private const string GenericError = "Unable to register at this time. Please try again. If this problem persists, contact your Brobot admin";
-    private RegisterRequest registerRequest = new RegisterRequest
+    private RegisterRequest _registerRequest = new RegisterRequest
     {
         EmailAddress = "",
         Password = "",
@@ -73,26 +73,26 @@ else
     {
         try
         {
-            Loading = true;
-            var registrationResponse = await ApiService.RegisterUser(registerRequest);
-            Loading = false;
-            if (registrationResponse != null && registrationResponse.Succeeded)
+            _loading = true;
+            var registrationResponse = await ApiService.RegisterUser(_registerRequest);
+            _loading = false;
+            if (registrationResponse is { Succeeded: true })
             {
-                RegistrationSuccessful = true;
+                _registrationSuccessful = true;
             }
-            else if (registrationResponse?.Errors != null && registrationResponse.Errors.Count() > 0)
+            else if (registrationResponse?.Errors != null && registrationResponse.Errors.Any())
             {
-                ErrorMessage = registrationResponse?.Errors?.FirstOrDefault() ?? GenericError;
+                _errorMessage = registrationResponse.Errors?.FirstOrDefault() ?? GenericError;
             }
             else
             {
-                ErrorMessage = GenericError;
+                _errorMessage = GenericError;
             }
 
         }
         catch (Exception)
         {
-            ErrorMessage = GenericError;
+            _errorMessage = GenericError;
         }
     }
 

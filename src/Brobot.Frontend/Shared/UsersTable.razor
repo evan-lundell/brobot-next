@@ -1,6 +1,6 @@
 @inject ApiService ApiService
 
-@if (userResponses == null)
+@if (_userResponses == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -17,7 +17,7 @@ else
             </tr>
             </thead>
             <tbody>
-                @foreach (var user in userResponses)
+                @foreach (var user in _userResponses)
                 {
                     <tr>
                         <td>@(user.Email ?? user.Username ?? "unknown")</td>
@@ -38,10 +38,10 @@ else
 }
 
 @code {
-    private IdentityUserResponse[]? userResponses;
+    private IdentityUserResponse[]? _userResponses;
 
     protected override async Task OnInitializedAsync()
     {
-        userResponses = await ApiService.GetIdentityUsers();
+        _userResponses = await ApiService.GetIdentityUsers();
     }
 }

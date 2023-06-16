@@ -39,4 +39,8 @@
     <ProjectReference Include="..\Brobot.Shared\Brobot.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Pages\Error.cshtml" />
+  </ItemGroup>
+
 </Project>

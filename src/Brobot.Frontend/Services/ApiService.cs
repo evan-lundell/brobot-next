@@ -1,5 +1,6 @@
 using Brobot.Shared.Responses;
 using System.Net.Http.Json;
+using Blazored.Toast.Services;
 using Brobot.Shared.Requests;
 
 namespace Brobot.Frontend.Services;
@@ -7,10 +8,14 @@ namespace Brobot.Frontend.Services;
 public class ApiService
 {
     private readonly HttpClient _client;
+    private readonly ILogger _logger;
 
-    public ApiService(HttpClient client)
+    public ApiService(
+        HttpClient client, 
+        ILogger<ApiService> logger)
     {
         _client = client;
+        _logger = logger;
     }
 
     public async Task<LoginResponse?> RefreshToken()
@@ -72,10 +77,11 @@ public class ApiService
             var response = await _client.GetAsync("channels");
             var channels = await response.Content.ReadFromJsonAsync<ChannelResponse[]>();
             return channels ?? Array.Empty<ChannelResponse>();
+
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            _logger.LogError(ex, "Get channels failed");
             return Array.Empty<ChannelResponse>();
         }
     }
@@ -132,6 +138,6 @@ public class ApiService
     public async Task<ScheduledMessageResponse> CreateScheduledMessage(ScheduledMessageRequest scheduledMessage)
     {
         var response = await _client.PostAsJsonAsync("ScheduledMessages", scheduledMessage);
-        return await response.Content.ReadFromJsonAsync<ScheduledMessageResponse>() ?? throw new Exception("Scheduled Message failed");
+        return await response.Content.ReadFromJsonAsync<ScheduledMessageResponse>() ?? throw new Exception("Something went wrong, please refresh the page");
     }
 }

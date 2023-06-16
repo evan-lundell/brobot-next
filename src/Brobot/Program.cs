@@ -17,7 +17,6 @@ public static class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        Console.WriteLine($"JWT Expiry: {builder.Configuration["JwtExpiry"]}");
         CreateServices(builder, args);
         var app = builder.Build();
         if (app.Environment.IsDevelopment())
@@ -25,10 +24,11 @@ public static class Program
             app.UseSwagger();
             app.UseSwaggerUI();
             app.UseWebAssemblyDebugging();
+            app.UseExceptionHandler("/error-development");
         }
         else
         {
-            app.UseExceptionHandler("/Error");
+            app.UseExceptionHandler("/error");
             app.UseHsts();
         }
 

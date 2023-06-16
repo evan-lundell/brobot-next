@@ -2,7 +2,7 @@ version: '3.0'
 services:
   brobot-db:
     container_name: brobot-db
-    image: postgres:14.3-alpine
+    image: postgres:alpine
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:

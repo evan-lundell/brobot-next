@@ -1,17 +1,18 @@
 @inject ApiService ApiService
+@inject IToastService ToastService
 
 <h3>Send a Message</h3>
 <form @onsubmit="SendMessageAsync">
     <div class="row">
         <div class="col-md-6 my-2">
             <label class="form-label">Message</label>
-            <InputText @bind-Value="@message" class="form-control" placeholder="Enter message..." />
+            <InputText @bind-Value="@_message" class="form-control" placeholder="Enter message..." />
         </div>
     </div>
     <div class="row">
         <div class="col-md-6 my-2">
             <label class="form-label">Channel</label>
-            <InputSelect class="form-select" @bind-Value="selectedChannelId">
+            <InputSelect class="form-select" @bind-Value="_selectedChannelId">
                 <option value="">Select a channel...</option>
                 @foreach (var channel in Channels ?? Array.Empty<ChannelResponse>())
                 {
@@ -32,30 +33,39 @@
     [Parameter]
     public ChannelResponse[]? Channels { get; set; } = Array.Empty<ChannelResponse>();
 
-    private bool DisableSend => isSending || string.IsNullOrWhiteSpace(message) || selectedChannelId == null;
+    private bool DisableSend => _isSending || string.IsNullOrWhiteSpace(_message) || _selectedChannelId == null;
     
-    private string? message;
+    private string? _message;
 
-    private ulong? selectedChannelId;
+    private ulong? _selectedChannelId;
 
-    private bool isSending = false;
+    private bool _isSending = false;
     
     private async Task SendMessageAsync()
     {
-        if (selectedChannelId == null || message == null)
+        try
         {
-            return;
-        }
-        var sendMessageRequest = new SendMessageRequest
-        {
-            ChannelId = selectedChannelId.Value,
-            Message = message
-        };
 
-        isSending = true;
-        await ApiService.SendMessage(sendMessageRequest);
-        isSending = false;
-        message = null;
-        selectedChannelId = null;
+            if (_selectedChannelId == null || _message == null)
+            {
+                return;
+            }
+            var sendMessageRequest = new SendMessageRequest
+            {
+                ChannelId = _selectedChannelId.Value,
+                Message = _message
+            };
+
+            _isSending = true;
+            await ApiService.SendMessage(sendMessageRequest);
+            _isSending = false;
+            _message = null;
+            _selectedChannelId = null;
+            ToastService.ShowSuccess("Successfully sent message!");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Failed to send message. " + ex.Message);
+        }
     }
 }
