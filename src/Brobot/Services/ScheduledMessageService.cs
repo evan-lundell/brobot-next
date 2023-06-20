@@ -17,12 +17,13 @@ public class ScheduledMessageService
         DateTime sendDate, ChannelModel channel)
     {
         var offset = TimeSpan.FromHours(0);
+        var sendDateUnspecified = new DateTime(sendDate.Ticks, DateTimeKind.Unspecified);
         if (!string.IsNullOrWhiteSpace(createdBy.Timezone))
         {
             var timezone = TZConvert.GetTimeZoneInfo(createdBy.Timezone);
             offset = timezone.GetUtcOffset(DateTime.Now);
         }
-        var sendDateAdjusted = new DateTimeOffset(sendDate, offset).ToUniversalTime();
+        var sendDateAdjusted = new DateTimeOffset(sendDateUnspecified, offset).ToUniversalTime();
 
         var reminder = new ScheduledMessageModel
         {
