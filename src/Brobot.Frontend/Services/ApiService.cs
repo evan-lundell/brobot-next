@@ -1,5 +1,6 @@
 using Brobot.Shared.Responses;
 using System.Net.Http.Json;
+using System.Web;
 using Blazored.Toast.Services;
 using Brobot.Shared.Requests;
 
@@ -154,4 +155,7 @@ public class ApiService
     {
         await _client.DeleteAsync($"/api/Playlists/{playlistId}/songs/{playlistSongId}");
     }
+
+    public Task<SongDataResponse?> GetSongData(string url)
+        => _client.GetFromJsonAsync<SongDataResponse>($"api/Playlists/song-data?url={HttpUtility.UrlEncode(url)}");
 }

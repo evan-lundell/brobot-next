@@ -244,7 +244,6 @@ public class PlaylistsController : ControllerBase
             existingSong.Order = playlistSongRequest.Order;
             existingSong.Artist = playlistSongRequest.Artist;
             existingSong.Url = playlistSongRequest.Url;
-            existingSong.Length = playlistSongRequest.Length;
 
             await _uow.CompleteAsync();
             await _uow.CommitTransaction(transaction);
@@ -305,5 +304,16 @@ public class PlaylistsController : ControllerBase
         _uow.PlaylistSongs.Remove(existingSong);
         await _uow.CompleteAsync();
         return Ok();
+    }
+
+    [HttpGet("song-data")]
+    public async Task<ActionResult<SongDataResponse>> GetSongData([FromQuery] string url)
+    {
+        return Ok(new SongDataResponse
+        {
+            Name = "Test Song",
+            Artist = "Test Artist",
+            Length = 213
+        });
     }
 }

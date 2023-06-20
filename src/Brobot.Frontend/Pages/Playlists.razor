@@ -1,8 +1,9 @@
 @page "/playlists"
 @inject ApiService ApiService
 @inject NavigationManager NavigationManager
+@inject IToastService ToastService
 
-@if (playlists == null)
+@if (_playlists == null)
 {
     <p><em>Loading</em></p>
 }
@@ -14,7 +15,7 @@ else
             <button type="button" class="btn btn-primary" @onclick="NewPlaylist">New Playlist</button>
         </div>
     </div>
-    <RadzenDataGrid class="my-3" @ref="grid" TItem="PlaylistResponse" Data="@playlists" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true">
+    <RadzenDataGrid class="my-3" @ref="_grid" TItem="PlaylistResponse" Data="@_playlists" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true">
         <Columns>
             <RadzenDataGridColumn TItem="PlaylistResponse" Property="Name" Title="Name" Width="300px" />
             <RadzenDataGridColumn TItem="PlaylistResponse" Width="100px" TextAlign="TextAlign.Right">
@@ -28,22 +29,22 @@ else
         </Columns>
     </RadzenDataGrid>
     <FormModal 
-        @ref="newPlaylistModal" 
+        @ref="_newPlaylistModal" 
         OnValidSubmit="SubmitNewPlaylist" 
         Id="newPlaylistModal" 
         Title="New Playlist"
-        Model="@newPlaylistRequest">
+        Model="@_newPlaylistRequest">
         <ModalBody>
             <div class="row">
                 <div class="col-12">
                     <label class="form-label">Name</label>
-                    <InputText class="form-control" @bind-Value="newPlaylistRequest.Name"></InputText>
+                    <InputText class="form-control" @bind-Value="_newPlaylistRequest.Name"></InputText>
                 </div>
             </div>
         </ModalBody>
     </FormModal>
     <ConfirmationModal
-        @ref="playlistDeleteConfirmationModal"
+        @ref="_playlistDeleteConfirmationModal"
         Title="Delete Playlist?"
         Id="playlistDeleteConfirmationModal"
         OnConfirmationClosed="DeleteConfirmationModalClosed">
@@ -54,13 +55,13 @@ else
 }
 
 @code {
-    private List<PlaylistResponse>? playlists;
-    private RadzenDataGrid<PlaylistResponse>? grid;
-    private FormModal? newPlaylistModal;
-    private ConfirmationModal? playlistDeleteConfirmationModal;
-    private PlaylistResponse? playlistToDelete;
+    private List<PlaylistResponse>? _playlists;
+    private RadzenDataGrid<PlaylistResponse>? _grid;
+    private FormModal? _newPlaylistModal;
+    private ConfirmationModal? _playlistDeleteConfirmationModal;
+    private PlaylistResponse? _playlistToDelete;
 
-    private PlaylistRequest newPlaylistRequest = new PlaylistRequest
+    private readonly PlaylistRequest _newPlaylistRequest = new()
     {
         Id = null,
         Name = "",
@@ -69,7 +70,14 @@ else
     
     protected override async Task OnInitializedAsync()
     {
-        playlists = (await ApiService.GetPlaylists()).ToList();
+        try
+        {
+            _playlists = (await ApiService.GetPlaylists()).ToList();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to initialize. {ex.Message}");
+        }
     }
 
     private void ViewOrEditPlaylist(PlaylistResponse playlist)
@@ -79,46 +87,63 @@ else
 
     private async Task DeletePlaylist(PlaylistResponse playlist)
     {
-        if (playlistDeleteConfirmationModal != null)
+        if (_playlistDeleteConfirmationModal != null)
         {
-            await playlistDeleteConfirmationModal.ShowModal();
-            playlistToDelete = playlist;
+            await _playlistDeleteConfirmationModal.ShowModal();
+            _playlistToDelete = playlist;
         }
     }
 
     private async Task NewPlaylist()
     {
-        if (newPlaylistModal != null)
+        if (_newPlaylistModal != null)
         {
-            await newPlaylistModal.ShowModal();
+            await _newPlaylistModal.ShowModal();
         }
     }
 
     private async Task SubmitNewPlaylist()
     {
-        var newPlaylist = await ApiService.CreatePlaylist(newPlaylistRequest);
-        playlists?.Add(newPlaylist);
-        if (grid != null)
+        try
         {
-            await grid.Reload();
+            var newPlaylist = await ApiService.CreatePlaylist(_newPlaylistRequest);
+            _playlists?.Add(newPlaylist);
+            if (_grid != null)
+            {
+                await _grid.Reload();
+            }
         }
-        if (newPlaylistModal != null)
+        catch (Exception ex)
         {
-            await newPlaylistModal.HideModal();
+            ToastService.ShowError($"Failed to save playlist. {ex.Message}");
+        }
+        
+        ToastService.ShowSuccess("Successfully saved playlist");
+        if (_newPlaylistModal != null)
+        {
+            await _newPlaylistModal.HideModal();
         }
     }
 
     private async Task DeleteConfirmationModalClosed(bool confirmed)
     {
-        if (confirmed && playlistToDelete != null)
+        try
         {
-            await ApiService.DeletePlaylist(playlistToDelete.Id);
-            playlists?.Remove(playlistToDelete);
+            if (confirmed && _playlistToDelete != null)
+            {
+                await ApiService.DeletePlaylist(_playlistToDelete.Id);
+                _playlists?.Remove(_playlistToDelete);
+            }
+            _playlistToDelete = null;
+            if (_grid != null)
+            {
+                await _grid.Reload();
+            }
+            ToastService.ShowSuccess("Successfully deleted playlist");
         }
-        playlistToDelete = null;
-        if (grid != null)
+        catch (Exception ex)
         {
-            await grid.Reload();
+            ToastService.ShowError($"Failed to delete playlist. {ex.Message}");
         }
     }
 }

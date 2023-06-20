@@ -15,9 +15,6 @@ public record PlaylistSongRequest
     public required string Url { get; set; }
     
     [Required]
-    public int Length { get; set; }
-    
-    [Required]
     [MaxLength(256)]
     public required string Artist { get; set; }
     

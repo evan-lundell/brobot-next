@@ -1,4 +1,6 @@
 using System.Text;
+using Brobot.Models;
+using Brobot.Repositories;
 using Discord;
 using Discord.Interactions;
 using Victoria.Node;
@@ -11,10 +13,12 @@ namespace Brobot.Modules;
 public class MusicModule : InteractionModuleBase
 {
     private readonly LavaNode _node;
+    private IUnitOfWork _uow;
 
-    public MusicModule(LavaNode node)
+    public MusicModule(LavaNode node, IUnitOfWork uow)
     {
         _node = node;
+        _uow = uow;
     }
 
     [SlashCommand("join", "Join a voice channel")]
@@ -228,5 +232,62 @@ public class MusicModule : InteractionModuleBase
 
         await player.StopAsync();
         await RespondAsync("Player stopped");
+    }
+
+    [SlashCommand("playlist list", "Lists the available playlists")]
+    public async Task ListPlaylists()
+    {
+        var playlists = await _uow.Playlists.GetAll();
+        var builder = new EmbedBuilder
+        {
+            Color = new Color(114, 137, 218),
+            Description = "Playlists"
+        };
+
+        foreach (var playlist in playlists)
+        {
+            builder.AddField((x) =>
+            {
+                x.Name = playlist.Name;
+                x.Value = $"{playlist.Songs.Count} song(s)";
+                x.IsInline = false;
+            });
+        }
+
+        await RespondAsync(embed: builder.Build(), ephemeral: true);
+    }
+
+    [SlashCommand("playlist queue", "Queues the songs in a playlist")]
+    public async Task QueuePlaylist(string name)
+    {
+        var playlist =
+            (await _uow.Playlists.Find((p) => p.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase)))
+            .FirstOrDefault();
+        if (playlist == null)
+        {
+            await RespondAsync("Playlist not found", ephemeral: true);
+            return;
+        }
+        
+        if (!_node.TryGetPlayer(Context.Guild, out LavaPlayer<LavaTrack> player))
+        {
+            await RespondAsync(text: "I'm not connected to a voice channel", ephemeral: true);
+            return;
+        }
+
+        _ = QueuePlaylistSongs(playlist, player);
+        await RespondAsync($"Queuing playlist {playlist.Name}");
+    }
+
+    private async Task QueuePlaylistSongs(PlaylistModel playlistModel, LavaPlayer<LavaTrack> player)
+    {
+        foreach (var song in playlistModel.Songs)
+        {
+            var searchResult = await _node.SearchAsync(SearchType.YouTube, song.Url);
+            if (searchResult.Tracks.Count > 0)
+            {
+                player.Vueue.Enqueue(searchResult.Tracks.First());
+            }
+        }
     }
 }

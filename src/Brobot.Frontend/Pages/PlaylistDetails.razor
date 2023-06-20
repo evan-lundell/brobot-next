@@ -1,24 +1,190 @@
 @page "/playlists/{id:int}"
 @inject ApiService ApiService
+@inject IToastService ToastService
 
-@if (playlist == null)
+@if (_playlist == null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
-    <h3>@playlist.Name</h3>
+    <h3>@_playlist.Name</h3>
+    <div class="row my-3">
+        <div class="offset-xs-6 offset-lg-9 col-xs-6 col-lg-3 text-end">
+            <button type="button" class="btn btn-primary" @onclick="NewSong">New Song</button>
+        </div>
+    </div>
+    <RadzenDataGrid class="my-3" @ref="_grid" TItem="PlaylistSongResponse" Data="@_playlist.Songs" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="false">
+        <Columns>
+            <RadzenDataGridColumn TItem="PlaylistSongResponse" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="PlaylistSongResponse" Property="Artist" Title="Artist" />
+            <RadzenDataGridColumn TItem="PlaylistSongResponse" Property="Length" Title="Length">
+                <Template Context="song">
+                    @(song.Length / 60):@(song.Length % 60)
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="PlaylistSongResponse">
+                <Template Context="song">
+                    <button type="button" class="btn btn-danger" @onclick="() => DeleteSong(song)">Delete</button>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+    <FormModal
+        @ref="_newSongModal"
+        OnValidSubmit="SubmitNewSong"
+        Id="newSongModal"
+        Title="New Song"
+        Model="@_newSongRequest"
+    >
+        <ModalBody>
+            <div class="row">
+                <div class="col-md-9 form-group">
+                    <label class="form-label">URL</label>
+                    <InputText class="form-control" @bind-Value="_newSongRequest.Url" />
+                </div>
+                <div class="col-md 3">
+                    <button type="button" class="btn btn-primary" @onclick="GetSongData">Get Data</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 form-group">
+                    <label class="form-label">Name</label>
+                    <InputText class="form-control" disabled="@(!_songInfoGathered)" @bind-Value="_newSongRequest.Name" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 form-group">
+                    <label class="form-label">Artist</label>
+                    <InputText class="form-control" disabled="@(!_songInfoGathered)" @bind-Value="_newSongRequest.Artist" />
+                </div>
+            </div>
+        </ModalBody>
+    </FormModal>
+    <ConfirmationModal
+        @ref="_deleteSongConfirmationModal"
+        Title="Delete Song?"
+        Id="deleteSongConfirmationModal"
+        OnConfirmationClosed="DeleteConfirmationModalClosed">
+        <ModalBody>
+            <p>Are you sure you want to delete this song?</p>
+        </ModalBody>
+    </ConfirmationModal>
 }
 
 @code {
     [Parameter]
     public int Id { get; set; }
     
-    private PlaylistResponse? playlist;
+    private PlaylistResponse? _playlist;
+    private RadzenDataGrid<PlaylistSongResponse>? _grid;
+    private FormModal? _newSongModal;
+    private ConfirmationModal? _deleteSongConfirmationModal;
+    private bool _songInfoGathered;
 
+    private readonly PlaylistSongRequest _newSongRequest = new()
+    {
+        Id = null,
+        Name = "",
+        Url = "",
+        Artist = ""
+    };
+
+    private PlaylistSongResponse? _songToDelete;
+    
     protected override async Task OnInitializedAsync()
     {
-        playlist = await ApiService.GetPlaylist(Id);
+        try
+        {
+            _playlist = await ApiService.GetPlaylist(Id);
+            _newSongRequest.Order = _playlist.Songs.Count() + 1;
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to initialize. {ex.Message}");
+        }
     }
 
+    private async Task NewSong()
+    {
+        if (_newSongModal != null)
+        {
+            _songInfoGathered = false;
+            await _newSongModal.ShowModal();
+        }
+    }
+
+    private async Task SubmitNewSong()
+    {
+        try
+        {
+            var newSong = await ApiService.CreatePlaylistSong(_playlist!.Id, _newSongRequest);
+            var songs = _playlist.Songs.ToList();
+            songs.Add(newSong);
+            _playlist.Songs = songs.OrderBy((s) => s.Order);
+            if (_newSongModal != null)
+            {
+                await _newSongModal.HideModal();
+            }
+            ToastService.ShowSuccess("Successfully saved song");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to save song. {ex.Message}");
+        }
+    }
+
+    private async Task DeleteSong(PlaylistSongResponse song)
+    {
+        _songToDelete = song;
+        if (_deleteSongConfirmationModal != null)
+        {
+            await _deleteSongConfirmationModal.ShowModal();
+        }
+    }
+
+    private async Task DeleteConfirmationModalClosed(bool confirmed)
+    {
+        try
+        {
+            if (confirmed && _songToDelete != null)
+            {
+                await ApiService.DeletePlaylistSong(_playlist!.Id, _songToDelete.Id);
+            }
+            _songToDelete = null;
+            if (_grid != null)
+            {
+                await _grid.Reload();
+            }
+            ToastService.ShowSuccess("Successfully deleted song");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to delete song. {ex.Message}");
+        }
+    }
+
+    private async Task GetSongData()
+    {
+        if (string.IsNullOrWhiteSpace(_newSongRequest.Url))
+        {
+            ToastService.ShowWarning("No URL provided");
+            return;
+        }
+
+        try
+        {
+            var songData = await ApiService.GetSongData(_newSongRequest.Url);
+            if (songData != null)
+            {
+                _songInfoGathered = true;
+                _newSongRequest.Name = songData.Name ?? "";
+                _newSongRequest.Artist = songData.Artist ?? "";
+            }
+        }
+        catch (Exception)
+        {
+            ToastService.ShowError("Failed to get song data");
+        }
+    }
 }
