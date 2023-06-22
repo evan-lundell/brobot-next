@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Brobot.Contexts;
 using Brobot.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +12,28 @@ public class PlaylistRepository : RepositoryBase<PlaylistModel, int>, IPlaylistR
     {
     }
 
+    public override async Task<IEnumerable<PlaylistModel>> GetAll()
+    {
+        var playlists = await Context.Playlists
+            .Include((p) => p.Songs)
+            .ToListAsync();
+        return playlists;
+    }
+
     public override Task<PlaylistModel?> GetById(int id)
     {
         return Context.Playlists
             .Include((p) => p.Songs)
             .SingleOrDefaultAsync((p) => p.Id == id);
+    }
+
+    public override async Task<IEnumerable<PlaylistModel>> Find(Expression<Func<PlaylistModel, bool>> expression)
+    {
+        var playlists = await Context.Playlists
+            .Include((p) => p.Songs)
+            .Where(expression)
+            .ToListAsync();
+        return playlists;
     }
 
     public async Task<IEnumerable<PlaylistModel>> GetPlaylistsFromUser(ulong userId)

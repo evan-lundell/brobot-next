@@ -16,6 +16,9 @@ public abstract class ModalBase : ComponentBase
     
     [Parameter]
     public required RenderFragment ModalBody { get; set; }
+    
+    [Parameter]
+    public Action? OnModalClosed { get; set; }
 
     public virtual async Task ShowModal()
     {
@@ -25,5 +28,6 @@ public abstract class ModalBase : ComponentBase
     public virtual async Task HideModal()
     {
         await JsRuntime.InvokeVoidAsync("hideModal", $"#{Id}");
+        OnModalClosed?.Invoke();
     }
 }

@@ -307,10 +307,6 @@ public class BrobotDbContext : DbContext
             .IsRequired()
             .HasMaxLength(1024);
         builder.Entity<PlaylistSongModel>()
-            .Property((ps) => ps.Length)
-            .HasColumnName("length")
-            .IsRequired();
-        builder.Entity<PlaylistSongModel>()
             .Property((ps) => ps.PlaylistId)
             .HasColumnName("playlist_id")
             .IsRequired();

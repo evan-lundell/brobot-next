@@ -16,14 +16,10 @@ else
     </div>
     <RadzenDataGrid class="my-3" @ref="_grid" TItem="PlaylistSongResponse" Data="@_playlist.Songs" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="false">
         <Columns>
-            <RadzenDataGridColumn TItem="PlaylistSongResponse" Property="Name" Title="Name" />
-            <RadzenDataGridColumn TItem="PlaylistSongResponse" Property="Artist" Title="Artist" />
-            <RadzenDataGridColumn TItem="PlaylistSongResponse" Property="Length" Title="Length">
-                <Template Context="song">
-                    @(song.Length / 60):@(song.Length % 60)
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="PlaylistSongResponse">
+            <RadzenDataGridColumn TItem="PlaylistSongResponse" Width="3px" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="PlaylistSongResponse" Width="3px" Property="Artist" Title="Artist" />
+            <RadzenDataGridColumn TItem="PlaylistSongResponse" Width="3px" Property="Url" Title="Url" />
+            <RadzenDataGridColumn TItem="PlaylistSongResponse" Width="1px">
                 <Template Context="song">
                     <button type="button" class="btn btn-danger" @onclick="() => DeleteSong(song)">Delete</button>
                 </Template>
@@ -36,9 +32,10 @@ else
         Id="newSongModal"
         Title="New Song"
         Model="@_newSongRequest"
+        OnModalClosed="NewSongModalClosed"
     >
         <ModalBody>
-            <div class="row">
+            <div class="row my-2">
                 <div class="col-md-9 form-group">
                     <label class="form-label">URL</label>
                     <InputText class="form-control" @bind-Value="_newSongRequest.Url" />
@@ -47,13 +44,13 @@ else
                     <button type="button" class="btn btn-primary" @onclick="GetSongData">Get Data</button>
                 </div>
             </div>
-            <div class="row">
+            <div class="row my-2">
                 <div class="col-12 form-group">
                     <label class="form-label">Name</label>
                     <InputText class="form-control" disabled="@(!_songInfoGathered)" @bind-Value="_newSongRequest.Name" />
                 </div>
             </div>
-            <div class="row">
+            <div class="row my-2">
                 <div class="col-12 form-group">
                     <label class="form-label">Artist</label>
                     <InputText class="form-control" disabled="@(!_songInfoGathered)" @bind-Value="_newSongRequest.Artist" />
@@ -82,7 +79,7 @@ else
     private ConfirmationModal? _deleteSongConfirmationModal;
     private bool _songInfoGathered;
 
-    private readonly PlaylistSongRequest _newSongRequest = new()
+    private PlaylistSongRequest _newSongRequest = new()
     {
         Id = null,
         Name = "",
@@ -147,15 +144,14 @@ else
     {
         try
         {
-            if (confirmed && _songToDelete != null)
+            if (confirmed && _songToDelete != null && _playlist != null)
             {
                 await ApiService.DeletePlaylistSong(_playlist!.Id, _songToDelete.Id);
+                var songs = _playlist.Songs.ToList();
+                songs.Remove(_songToDelete);
+                _playlist.Songs = songs;
             }
             _songToDelete = null;
-            if (_grid != null)
-            {
-                await _grid.Reload();
-            }
             ToastService.ShowSuccess("Successfully deleted song");
         }
         catch (Exception ex)
@@ -186,5 +182,17 @@ else
         {
             ToastService.ShowError("Failed to get song data");
         }
+    }
+
+    private void NewSongModalClosed()
+    {
+        _newSongRequest = new PlaylistSongRequest
+        {
+            Id = null,
+            Name = "",
+            Url = "",
+            Artist = "",
+            Order = _playlist == null ? 1 : _playlist.Songs.Count() + 1
+        };
     }
 }

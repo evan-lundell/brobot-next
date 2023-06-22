@@ -1,6 +1,7 @@
 using AutoMapper;
 using Brobot.Models;
 using Brobot.Repositories;
+using Brobot.Services;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -17,10 +18,16 @@ public class PlaylistsController : ControllerBase
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
     private readonly ILogger<PlaylistsController> _logger;
+    private readonly SongDataService _songDataService;
 
-    public PlaylistsController(IUnitOfWork uow, IMapper mapper, ILogger<PlaylistsController> logger)
+    public PlaylistsController(
+        IUnitOfWork uow,
+        IMapper mapper,
+        ILogger<PlaylistsController> logger,
+        SongDataService songDataService)
     {
         _logger = logger;
+        _songDataService = songDataService;
         _uow = uow;
         _mapper = mapper;
     }
@@ -309,11 +316,7 @@ public class PlaylistsController : ControllerBase
     [HttpGet("song-data")]
     public async Task<ActionResult<SongDataResponse>> GetSongData([FromQuery] string url)
     {
-        return Ok(new SongDataResponse
-        {
-            Name = "Test Song",
-            Artist = "Test Artist",
-            Length = 213
-        });
+        var songData = await _songDataService.GetSongData(url);
+        return Ok(songData);
     }
 }

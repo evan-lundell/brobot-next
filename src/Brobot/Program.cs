@@ -187,5 +187,6 @@ public static class Program
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         builder.Services.AddHttpClient<DiscordOauthService>();
         builder.Services.AddScoped<ScheduledMessageService>();
+        builder.Services.AddHttpClient<SongDataService>();
     }
 }
