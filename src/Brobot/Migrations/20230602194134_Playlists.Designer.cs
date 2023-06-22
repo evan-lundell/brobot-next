@@ -3,6 +3,7 @@ using System;
 using Brobot.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Brobot.Migrations
 {
     [DbContext(typeof(BrobotDbContext))]
-    partial class BrobotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230602194134_Playlists")]
+    partial class Playlists
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -239,6 +242,10 @@ namespace Brobot.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("artist");
+
+                    b.Property<int>("Length")
+                        .HasColumnType("integer")
+                        .HasColumnName("length");
 
                     b.Property<string>("Name")
                         .IsRequired()

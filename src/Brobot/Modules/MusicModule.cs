@@ -101,7 +101,6 @@ public class MusicModule : InteractionModuleBase
                         player.Vueue.Enqueue(tracks[i]);
                     }
                 }
-
             }
             else
             {
@@ -162,22 +161,24 @@ public class MusicModule : InteractionModuleBase
             return;
         }
 
-        var tracksBuilder = new StringBuilder();
-        var index = 1;
+        var embedBuilder = new EmbedBuilder
+        {
+            Title = "Queue"
+        };
+        
         if (player.Track != null)
         {
-            tracksBuilder.AppendLine($"1. {player.Track.Title}");
-            index++;
+            embedBuilder.AddField("Now Playing", player.Track.Title);
         }
+        
+        var tracksBuilder = new StringBuilder();
+        var index = 1;
         foreach (var track in player.Vueue)
         {
             tracksBuilder.AppendLine($"{index}: {track.Title}");
             index++;
         }
-        var embedBuilder = new EmbedBuilder
-        {
-            Title = "Queue"
-        };
+        
         embedBuilder.AddField("Tracks", tracksBuilder.ToString());
         await RespondAsync(embed: embedBuilder.Build());
     }

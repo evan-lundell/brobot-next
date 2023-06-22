@@ -9,6 +9,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
   lavalink:
     container_name: lavalink
     image: fredboat/lavalink
@@ -29,8 +31,8 @@ services:
     volumes:
       - /etc/letsencrypt:/https:ro
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
     depends_on:
       brobot-db:
         condition: service_started

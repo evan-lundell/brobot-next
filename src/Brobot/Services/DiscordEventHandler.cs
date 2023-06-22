@@ -222,7 +222,14 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
         }
 
-        _ = _commands.RegisterCommandsGloballyAsync();
+        if (_configuration["DOTNET_ENVIRONMENT"] == "Development")
+        {
+            _ = _commands.RegisterCommandsToGuildAsync(421404457599762433);
+        }
+        else
+        {
+            _ = _commands.RegisterCommandsGloballyAsync();
+        }
 
         if (!bool.TryParse(_configuration["NoSync"], out bool noSync) || !noSync)
         {

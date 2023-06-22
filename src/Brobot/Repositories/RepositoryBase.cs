@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Brobot.Contexts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Brobot.Repositories;
 
@@ -38,6 +39,17 @@ public abstract class RepositoryBase<TEntity, TKey> : IRepository<TEntity, TKey>
         return await Context.Set<TEntity>().FindAsync(id);
     }
 
+    public virtual async Task<TEntity?> GetByIdNoTracking(TKey id)
+    {
+        var entity = await Context.Set<TEntity>().FindAsync(id);
+        if (entity != null)
+        {
+            Context.Entry(entity).State = EntityState.Detached;
+        }
+
+        return entity;
+    }
+
     public virtual void Remove(TEntity entity)
     {
         Context.Set<TEntity>().Remove(entity);
@@ -46,5 +58,10 @@ public abstract class RepositoryBase<TEntity, TKey> : IRepository<TEntity, TKey>
     public virtual void RemoveRange(IEnumerable<TEntity> entities)
     {
         Context.Set<TEntity>().RemoveRange(entities);
+    }
+
+    public EntityEntry<TEntity> Entry(TEntity entity)
+    {
+        return Context.Entry(entity);
     }
 }

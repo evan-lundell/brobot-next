@@ -27,6 +27,7 @@ public class UserModel
     public string? IdentityUserId { get; set; }
 
     public virtual ICollection<DailyMessageCountModel> DailyCounts { get; set; }
+    public virtual ICollection<PlaylistModel> Playlists { get; set; }
 
     public UserModel()
     {
@@ -36,5 +37,6 @@ public class UserModel
         HotOps = new HashSet<HotOpModel>();
         HotOpSessions = new HashSet<HotOpSessionModel>();
         DailyCounts = new HashSet<DailyMessageCountModel>();
+        Playlists = new HashSet<PlaylistModel>();
     }
 }

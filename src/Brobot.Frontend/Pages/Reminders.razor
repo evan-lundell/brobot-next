@@ -1,4 +1,4 @@
-@page "/Reminders"
+@page "/reminders"
 @inject ApiService ApiService
 @inject IToastService ToastService
 @inject ILogger<Reminders> Logger
@@ -13,15 +13,14 @@ else
 {
     <h4>Reminders</h4>
     <div class="row my-2">
-        <div class="offset-md-6 offset-lg-9 col-md-6 col-lg-3">
+        <div class="offset-xs-6 offset-lg-9 col-xs-6 col-lg-3">
             <button type="button" class="btn btn-primary" @onclick="NewScheduledMessage">New Reminder</button>
         </div>
     </div>
     <RadzenDataGrid @ref="_grid" Data="@_reminders" TItem="ScheduledMessageResponse" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true">
         <Columns>
             <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="MessageText" Title="Message" />
-            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="SendDate
-            " Title="Send Date">
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="SendDate" Title="Send Date">
                 <Template Context="message">
                     @(message.SendDate?.ToString("yyy-MM-dd hh:mm tt"))
                 </Template>
@@ -35,194 +34,46 @@ else
             </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
-    <Modal Id="editScheduleMessage" @ref="_scheduledMessageModal">
-        <ModalHeader>
-            <h4 class="modal-title">Edit Reminder</h4>
-        </ModalHeader>
+    <FormModal
+        Id="editScheduleMessage"
+        @ref="_scheduledMessageModal"
+        Model="_editScheduleMessage"
+        OnValidSubmit="SubmitEditMessage"
+        Title="@(_editScheduleMessage.Id.HasValue ? "Edit Reminder" : "New Reminder")">
         <ModalBody>
-            <EditForm Model="@_editScheduleMessage" OnValidSubmit="@SubmitEditMessage">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-                <div class="row my-2">
-                    <div class="col-12 form-group">
-                        <label class="form-label">Message</label>
-                        <InputTextArea class="form-control" @bind-Value="_editScheduleMessage.MessageText"></InputTextArea>
-                    </div>
+            <div class="row my-2">
+                <div class="col-12 form-group">
+                    <label class="form-label">Message</label>
+                    <InputTextArea class="form-control" @bind-Value="_editScheduleMessage.MessageText"></InputTextArea>
                 </div>
-                <div class="row my-2">
-                    <div class="col-12 form-group">
-                        <label class="form-label">Reminder Date/Time</label>
-                        <InputDate class="form-control" Type="InputDateType.DateTimeLocal" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="_editScheduleMessage.SendDate" />
-                    </div>
+            </div>
+            <div class="row my-2">
+                <div class="col-12 form-group">
+                    <label class="form-label">Reminder Date/Time</label>
+                    <InputDate class="form-control" Type="InputDateType.DateTimeLocal" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="_editScheduleMessage.SendDate" />
                 </div>
-                <div class="row my-2">
-                    <div class="col-12 form-group">
-                        <label class="form-label">Channel</label>
-                        <InputSelect class="form-select" @bind-Value="_editScheduleMessage.ChannelId">
-                            <option value="">Select a channel...</option>
-                            @foreach (var channel in _channels ?? Array.Empty<ChannelResponse>())
-                            {
-                                <option value="@channel.Id">@channel.Name</option>
-                            }
-                        </InputSelect>
-                    </div>
+            </div>
+            <div class="row my-2">
+                <div class="col-12 form-group">
+                    <label class="form-label">Channel</label>
+                    <InputSelect class="form-select" @bind-Value="_editScheduleMessage.ChannelId">
+                        <option value="">Select a channel...</option>
+                        @foreach (var channel in _channels ?? Array.Empty<ChannelResponse>())
+                        {
+                            <option value="@channel.Id">@channel.Name</option>
+                        }
+                    </InputSelect>
                 </div>
-                <div class="row my-2">
-                    <div class="offset-md-6 col-md-6">
-                        <button class="btn btn-primary">Submit</button>
-                    </div>
-                </div>
-            </EditForm>
+            </div>
         </ModalBody>
-    </Modal>
-    <Modal Id="deleteConfirmation" @ref="_deleteConfirmationModal">
-        <ModalHeader>
-            <h5 class="modal-title">Delete Reminder</h5>
-        </ModalHeader>
+    </FormModal>
+    <ConfirmationModal
+        @ref="_deleteConfirmationModal"
+        Id="deleteConfirmation"
+        Title="Delete Reminder?"
+        OnConfirmationClosed="DeleteConfirmationClosed">
         <ModalBody>
             <p>Are you sure you want to delete this reminder?</p>
         </ModalBody>
-        <ModalFooter>
-            <button type="button" class="btn btn-primary mx-2" @onclick="DeleteScheduledMessage">Yes</button>
-            <button type="button" class="btn btn-danger mx-2" @onclick="HideDeleteConfirmationModal">No</button>
-        </ModalFooter>
-    </Modal>
-}
-
-
-@code {
-    private List<ScheduledMessageResponse>? _reminders;
-    private ChannelResponse[]? _channels;
-
-    private bool PageReady => _reminders != null && _channels != null;
-
-    private ScheduledMessageRequest _editScheduleMessage = new ScheduledMessageRequest
-    {
-        MessageText = string.Empty
-    };
-    
-    private Modal? _scheduledMessageModal;
-    private Modal? _deleteConfirmationModal;
-
-    private ScheduledMessageResponse? _reminderToDelete;
-    private RadzenDataGrid<ScheduledMessageResponse>? _grid;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            _reminders = (await ApiService.GetScheduledMessages()).ToList();
-            _channels = await ApiService.GetChannels();
-        }
-        catch (Exception ex)
-        {
-            ToastService.ShowError($"Failed to initialize. {ex.Message}");
-        }
-    }
-
-    private void NewScheduledMessage()
-    {
-        _editScheduleMessage = new ScheduledMessageRequest
-        {
-            MessageText = string.Empty,
-            SendDate = DateTime.UtcNow,
-        };
-        _scheduledMessageModal?.ShowModal();
-    }
-    
-    private void EditScheduledMessage(ScheduledMessageResponse message)
-    {
-        _editScheduleMessage = new ScheduledMessageRequest
-        {
-            MessageText = message.MessageText,
-            SendDate = message.SendDate?.DateTime ?? DateTime.UtcNow,
-            ChannelId = message.Channel.Id,
-            Id = message.Id
-        };
-        _scheduledMessageModal?.ShowModal();
-    }
-
-    private async Task DeleteScheduledMessage()
-    {
-        if (_reminderToDelete == null)
-        {
-            if (_deleteConfirmationModal != null)
-            {
-                await _deleteConfirmationModal.HideModal();
-            }
-            return;
-        }
-        
-        await ApiService.DeleteScheduledMessage(_reminderToDelete.Id);
-        var reminderToRemove = _reminders?.FirstOrDefault((r) => r.Id == _reminderToDelete.Id);
-        if (reminderToRemove != null)
-        {
-            _reminders?.Remove(reminderToRemove);
-        }
-        
-        if (_deleteConfirmationModal != null)
-        {
-            await _deleteConfirmationModal.HideModal();
-        }
-        
-        if (_grid != null)
-        {
-            await _grid.Reload();
-        }
-    }
-
-    private async Task SubmitEditMessage()
-    {
-        try
-        {
-            var message = _editScheduleMessage.Id == null
-                ? await ApiService.CreateScheduledMessage(_editScheduleMessage)
-                : await ApiService.EditScheduledMessage(_editScheduleMessage.Id.Value, _editScheduleMessage);
-            
-            var existingReminder = _reminders?.FirstOrDefault((r) => r.Id == message.Id);
-            if (existingReminder == null)
-            {
-                _reminders?.Add(message);
-                if (_grid != null)
-                {
-                    await _grid.Reload();
-                }
-            }
-            else
-            {
-                existingReminder.MessageText = message.MessageText;
-                existingReminder.SendDate = message.SendDate;
-                existingReminder.Channel = message.Channel;
-            }
-
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to save reminder");
-            ToastService.ShowError(ex.Message);
-        }
-
-        if (_scheduledMessageModal != null)
-        {
-            await _scheduledMessageModal.HideModal();
-        }
-    }
-
-    private async Task ShowDeleteConfirmationModal(ScheduledMessageResponse message)
-    {
-        _reminderToDelete = message;
-        if (_deleteConfirmationModal != null)
-        {
-            await _deleteConfirmationModal.ShowModal();
-        }
-    }
-
-    private async Task HideDeleteConfirmationModal()
-    {
-        _reminderToDelete = null;
-        if (_deleteConfirmationModal != null)
-        {
-            await _deleteConfirmationModal.HideModal();
-        }
-    }
+    </ConfirmationModal>
 }

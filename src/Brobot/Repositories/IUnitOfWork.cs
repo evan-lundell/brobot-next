@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace Brobot.Repositories;
 
 public interface IUnitOfWork : IDisposable
@@ -9,5 +11,9 @@ public interface IUnitOfWork : IDisposable
     IHotOpRepository HotOps { get; }
     IHotOpSessionRepository HotOpSessions { get; }
     IDailyMessageCountRepository DailyMessageCounts { get; }
+    IPlaylistRepository Playlists { get; }
+    IPlaylistSongRepository PlaylistSongs { get; }
+    Task<IDbContextTransaction> BeginTransaction();
+    Task CommitTransaction(IDbContextTransaction transaction);
     Task<int> CompleteAsync();
 }
