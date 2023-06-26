@@ -1,0 +1,80 @@
+@if (_hotOps == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row my-3">
+        <div class="offset-xs-6 offset-lg-9 col-xs-6 col-lg-3 text-end">
+            <button type="button" class="btn btn-primary" @onclick="NewHotOp">New Hot Op</button>
+        </div>
+    </div>
+    <RadzenDataGrid @ref="Grid"
+                    Data="@_hotOps"
+                    TItem="HotOpResponse">
+        <Columns>
+            <RadzenDataGridColumn Width="2px" TItem="HotOpResponse" Title="Start Date" Property="StartDate">
+                <Template Context="hotOp">
+                    @(hotOp.StartDate.ToString("yyyy-MM-dd hh:mm tt"))
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Width="2px" TItem="HotOpResponse" Title="End Date" Property="EndDate">
+                <Template Context="hotOp">
+                    @(hotOp.EndDate.ToString("yyyy-MM-dd hh:mm tt"))
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Width="2px" TItem="HotOpResponse" Title="Channel">
+                <Template Context="hotOp">
+                    @hotOp.Channel.Name
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Width="1px" TItem="HotOpResponse">
+                <Template Context="hotOp">
+                    <button class="btn btn-primary" @onclick="async () => await EditHotOp(hotOp)">Edit</button>
+                    <button class="btn btn-danger" @onclick="async () => await ShowDeleteConfirmationModal(hotOp)">Delete</button>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+    <FormModal
+        @ref="EditHotOpModal"
+        OnValidSubmit="SubmitHotOp"
+        Id="editHotOpModal"
+        Title="@(_editHotOpRequest.Id.HasValue ? "Edit Hot Op" : "New HotOp")"
+        Model="_editHotOpRequest">
+        <ModalBody>
+            <div class="row my-2">
+                <div class="col-12 form-group">
+                    <label class="form-label">Start Date</label>
+                    <InputDate class="form-control" Type="InputDateType.DateTimeLocal" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="_editHotOpRequest.StartDate" />
+                </div>
+            </div>
+            <div class="row my-2">
+                <div class="col-12 form-group">
+                    <label class="form-label">End Date</label>
+                    <InputDate class="form-control" Type="InputDateType.DateTimeLocal" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="_editHotOpRequest.EndDate" />
+                </div>
+            </div>
+            <div class="row my-2">
+                <div class="col-12 form-group">
+                    <label class="form-label">Channel</label>
+                    <InputSelect class="form-select" @bind-Value="_editHotOpRequest.ChannelId">
+                        <option value="">Select a channel...</option>
+                        @foreach (var channel in _channels ?? Array.Empty<ChannelResponse>())
+                        {
+                            <option value="@channel.Id">@channel.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+            </div>
+        </ModalBody>
+    </FormModal>
+    <ConfirmationModal
+        @ref="DeleteHotOpModal"
+        Id="deleteHotOpModal"
+        OnConfirmationClosed="DeleteConfirmationClosed">
+        <ModalBody>
+            <p>Are you sure you want to delete this Hot Op?</p>
+        </ModalBody>
+    </ConfirmationModal>
+}

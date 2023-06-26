@@ -1,0 +1,42 @@
+@page "/hotops"
+@inject ApiService ApiService
+
+<h3>Hot Ops</h3>
+<RadzenTabs Change="@OnChange" class="my-3" TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Client">
+    <Tabs>
+        <RadzenTabsItem Text="Upcoming">
+            <UpcomingHotOps @ref="UpcomingHotOps" />
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Current">
+            <CurrentHotOps @ref="CurrentHotOps" />
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Completed">
+            <CompletedHotOps @ref="CompletedHotOps" />
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+
+    public required UpcomingHotOps UpcomingHotOps { get; set; }
+    public required CurrentHotOps CurrentHotOps { get; set; }
+    public required CompletedHotOps CompletedHotOps { get; set; }
+
+    private readonly List<ITabbable> _tabs = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _tabs.Add(UpcomingHotOps);
+            _tabs.Add(CurrentHotOps);
+            _tabs.Add(CompletedHotOps);
+            await OnChange(0);
+        }
+    }
+
+    private async Task OnChange(int index)
+    {
+        await _tabs[index].TabSelected();
+    }
+}

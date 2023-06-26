@@ -93,7 +93,7 @@ else
     {
         try
         {
-            _playlist = await ApiService.GetPlaylist(Id);
+            _playlist = await ApiService.PlaylistService.Get(Id);
             _newSongRequest.Order = _playlist.Songs.Count() + 1;
         }
         catch (Exception ex)
@@ -115,7 +115,7 @@ else
     {
         try
         {
-            var newSong = await ApiService.CreatePlaylistSong(_playlist!.Id, _newSongRequest);
+            var newSong = await ApiService.PlaylistService.CreatePlaylistSong(_playlist!.Id, _newSongRequest);
             var songs = _playlist.Songs.ToList();
             songs.Add(newSong);
             _playlist.Songs = songs.OrderBy((s) => s.Order);
@@ -146,7 +146,7 @@ else
         {
             if (confirmed && _songToDelete != null && _playlist != null)
             {
-                await ApiService.DeletePlaylistSong(_playlist!.Id, _songToDelete.Id);
+                await ApiService.PlaylistService.DeletePlaylistSong(_playlist!.Id, _songToDelete.Id);
                 var songs = _playlist.Songs.ToList();
                 songs.Remove(_songToDelete);
                 _playlist.Songs = songs;
@@ -170,7 +170,7 @@ else
 
         try
         {
-            var songData = await ApiService.GetSongData(_newSongRequest.Url);
+            var songData = await ApiService.PlaylistService.GetSongData(_newSongRequest.Url);
             if (songData != null)
             {
                 _songInfoGathered = true;

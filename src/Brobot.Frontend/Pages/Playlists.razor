@@ -72,7 +72,7 @@ else
     {
         try
         {
-            _playlists = (await ApiService.GetPlaylists()).ToList();
+            _playlists = (await ApiService.PlaylistService.GetAll()).ToList();
         }
         catch (Exception ex)
         {
@@ -106,7 +106,7 @@ else
     {
         try
         {
-            var newPlaylist = await ApiService.CreatePlaylist(_newPlaylistRequest);
+            var newPlaylist = await ApiService.PlaylistService.Create(_newPlaylistRequest);
             _playlists?.Add(newPlaylist);
             if (_grid != null)
             {
@@ -131,7 +131,7 @@ else
         {
             if (confirmed && _playlistToDelete != null)
             {
-                await ApiService.DeletePlaylist(_playlistToDelete.Id);
+                await ApiService.PlaylistService.Delete(_playlistToDelete.Id);
                 _playlists?.Remove(_playlistToDelete);
             }
             _playlistToDelete = null;

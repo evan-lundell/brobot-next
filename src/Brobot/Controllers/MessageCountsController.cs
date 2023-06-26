@@ -2,6 +2,7 @@ using AutoMapper;
 using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Shared.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TimeZoneConverter;
 
@@ -9,6 +10,7 @@ namespace Brobot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Authorize]
 public class MessageCountsController : ControllerBase
 {
     private readonly IUnitOfWork _uow;

@@ -21,6 +21,7 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
     private readonly HotOpService _hotOpService;
     private readonly LavaNode _node;
     private readonly IConfiguration _configuration;
+    private readonly ILogger _logger;
 
     public DiscordEventHandler(
         DiscordSocketClient client,
@@ -28,8 +29,8 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         ISyncService sync,
         HotOpService hotOpService,
         LavaNode node,
-        IConfiguration configuration
-    )
+        IConfiguration configuration,
+        ILogger<DiscordEventHandler> logger)
     {
         _client = client;
         _services = services;
@@ -38,6 +39,7 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         _hotOpService = hotOpService;
         _node = node;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public void Start()
@@ -142,23 +144,35 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
     {
         return Task.Run(async () =>
         {
-            var now = DateTimeOffset.UtcNow;
-            var channel = await cachedChannel.GetOrDownloadAsync();
-            var message = await cachedMessage.GetOrDownloadAsync() ?? await channel.GetMessageAsync(cachedMessage.Id);
-            if (channel is not SocketTextChannel textChannel || channel is SocketVoiceChannel)
+            try
             {
-                return;
-            }
+                var now = DateTimeOffset.UtcNow;
+                var channel = await cachedChannel.GetOrDownloadAsync();
+                var message = await cachedMessage.GetOrDownloadAsync() ??
+                              await channel.GetMessageAsync(cachedMessage.Id);
+                if (channel is not SocketTextChannel textChannel || channel is SocketVoiceChannel)
+                {
+                    return;
+                }
+                
+                var auditLog = (await textChannel.Guild
+                    .GetAuditLogsAsync(limit: 1, actionType: ActionType.MessageDeleted).FlattenAsync()).FirstOrDefault();
+                if (auditLog == null)
+                {
+                    await textChannel.SendMessageAsync($"I saw that {message.Author.Username} :spy:");
+                    return;
+                }
 
-            var auditLog = (await textChannel.Guild.GetAuditLogsAsync(limit: 1, actionType: ActionType.MessageDeleted).FlattenAsync()).First();
-            if (auditLog == null)
+                var username = now - auditLog.CreatedAt < TimeSpan.FromSeconds(5)
+                    ? auditLog.User.Username
+                    : message.Author.Username;
+
+                await textChannel.SendMessageAsync($"I saw that {username} :spy:");
+            }
+            catch (Exception ex)
             {
-                return;
+                _logger.LogError(ex, "Message deleted failed");
             }
-            
-            var username = now - auditLog.CreatedAt < TimeSpan.FromSeconds(5) ? auditLog.User.Username : message.Author.Username;
-
-            await textChannel.SendMessageAsync($"I saw that {username} :spy:");
         });
     }
 
