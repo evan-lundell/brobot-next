@@ -1,0 +1,41 @@
+@inject ApiService ApiService
+
+<InformationModal
+    @ref="ScoreboardModal"
+    Id="@Id"
+    Title="@_title"
+    OnModalClosed="ModalClosed">
+    <ModalBody>
+        <ol>
+            @foreach (var score in _scores)
+            {
+                <li>@(score.Username) - @(score.Score)</li>
+            }
+        </ol>
+    </ModalBody>
+</InformationModal>
+
+@code {
+    [Parameter]
+    public required string Id { get; set; }
+    
+    public required InformationModal ScoreboardModal { get; set; }
+    private ScoreboardItemResponse[] _scores = Array.Empty<ScoreboardItemResponse>();
+    private string _title = "";
+
+    public async Task ShowScoreboard(int hotOpId)
+    {
+        var scoreboard = await ApiService.HotOpService.GetHotOpScoreboard(hotOpId);
+        _scores = scoreboard.Scores.ToArray();
+        _title = $"Operation Hot {scoreboard.OwnerUsername}";
+        StateHasChanged();
+        await ScoreboardModal.ShowModal();
+    }
+    
+
+    private void ModalClosed()
+    {
+        _scores = Array.Empty<ScoreboardItemResponse>();
+        _title = "";
+    }
+}

@@ -1,4 +1,5 @@
 using AutoMapper;
+using Brobot.Dtos;
 using Brobot.Models;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
@@ -19,5 +20,9 @@ public class BrobotProfile : Profile
         CreateMap<PlaylistSongModel, PlaylistSongResponse>();
         CreateMap<PlaylistRequest, PlaylistModel>();
         CreateMap<PlaylistSongRequest, PlaylistSongModel>();
+        CreateMap<HotOpModel, HotOpResponse>();
+        CreateMap<HotOpRequest, HotOpModel>();
+        CreateMap<ScoreboardDto, ScoreboardResponse>();
+        CreateMap<ScoreboardItemDto, ScoreboardItemResponse>();
     }
 }

@@ -1,7 +1,5 @@
 using Brobot.Shared.Responses;
 using System.Net.Http.Json;
-using System.Web;
-using Blazored.Toast.Services;
 using Brobot.Shared.Requests;
 
 namespace Brobot.Frontend.Services;
@@ -9,14 +7,17 @@ namespace Brobot.Frontend.Services;
 public class ApiService
 {
     private readonly HttpClient _client;
-    private readonly ILogger _logger;
+    
+    public IHotOpService HotOpService { get; }
+    public IPlaylistService PlaylistService { get; }
+    public IScheduledMessageService ScheduledMessageService { get; }
 
-    public ApiService(
-        HttpClient client, 
-        ILogger<ApiService> logger)
+    public ApiService(HttpClient client)
     {
         _client = client;
-        _logger = logger;
+        HotOpService = new HotOpService(client);
+        PlaylistService = new PlaylistService(client);
+        ScheduledMessageService = new ScheduledMessageService(client);
     }
 
     public async Task<LoginResponse?> RefreshToken()
@@ -86,76 +87,4 @@ public class ApiService
 
     public async Task<IdentityUserResponse[]> GetIdentityUsers()
         => await _client.GetFromJsonAsync<IdentityUserResponse[]>("Auth/users") ?? Array.Empty<IdentityUserResponse>();
-
-    public async Task<ScheduledMessageResponse[]> GetScheduledMessages()
-        => (await _client.GetFromJsonAsync<ScheduledMessageResponse[]>(
-               $"ScheduledMessages?limit=50&scheduledAfter={DateTime.UtcNow:O}"))
-           ?.OrderBy((sm) => sm.SendDate)
-           .ToArray()
-           ?? Array.Empty<ScheduledMessageResponse>();
-
-    public async Task<ScheduledMessageResponse> EditScheduledMessage(int scheduledMessageId, ScheduledMessageRequest scheduledMessageRequest)
-    {
-        var response = await _client.PutAsJsonAsync($"ScheduledMessages/{scheduledMessageId}", scheduledMessageRequest);
-        return await response.Content.ReadFromJsonAsync<ScheduledMessageResponse>() ?? throw new Exception("Scheduled Message failed");
-    }
-
-    public async Task DeleteScheduledMessage(int scheduledMessageId)
-        => await _client.DeleteAsync($"ScheduledMessages/{scheduledMessageId}");
-
-    public async Task<ScheduledMessageResponse> CreateScheduledMessage(ScheduledMessageRequest scheduledMessage)
-    {
-        var response = await _client.PostAsJsonAsync("ScheduledMessages", scheduledMessage);
-        return await response.Content.ReadFromJsonAsync<ScheduledMessageResponse>() ?? throw new Exception("Something went wrong, please refresh the page");
-    }
-
-    public async Task<IEnumerable<PlaylistResponse>> GetPlaylists()
-        => await _client.GetFromJsonAsync<IEnumerable<PlaylistResponse>>("api/Playlists") ??
-           Array.Empty<PlaylistResponse>();
-
-    public async Task<PlaylistResponse> GetPlaylist(int playlistId)
-        => await _client.GetFromJsonAsync<PlaylistResponse>($"api/Playlists/{playlistId}") ??
-           throw new Exception("Get playlist failed");
-
-    public async Task<PlaylistResponse> CreatePlaylist(PlaylistRequest playlistRequest)
-    {
-        var response = await _client.PostAsJsonAsync("api/Playlists", playlistRequest);
-        return await response.Content.ReadFromJsonAsync<PlaylistResponse>() ??
-               throw new Exception("Create Playlist failed");
-    }
-
-    public async Task<PlaylistResponse> UpdatePlaylist(PlaylistRequest playlistRequest)
-    {
-        var response = await _client.PutAsJsonAsync($"api/Playlists/{playlistRequest.Id}", playlistRequest);
-        return await response.Content.ReadFromJsonAsync<PlaylistResponse>() ??
-               throw new Exception("Update Playlist failed");
-    }
-
-    public async Task DeletePlaylist(int playlistId)
-    {
-        await _client.DeleteAsync($"api/Playlists/{playlistId}");
-    }
-
-    public async Task<PlaylistSongResponse> CreatePlaylistSong(int playlistId, PlaylistSongRequest playlistSongRequest)
-    {
-        var response = await _client.PostAsJsonAsync($"api/Playlists/{playlistId}/songs", playlistSongRequest);
-        return await response.Content.ReadFromJsonAsync<PlaylistSongResponse>() ??
-               throw new Exception("Failed to creat Playlist song");
-    }
-
-    public async Task<PlaylistSongResponse> UpdatePlaylistSong(int playlistId, PlaylistSongRequest playlistSongRequest)
-    {
-        var response = await _client.PutAsJsonAsync($"api/Playlists/{playlistId}/songs/{playlistSongRequest.Id}",
-            playlistSongRequest);
-        return await response.Content.ReadFromJsonAsync<PlaylistSongResponse>() ??
-               throw new Exception("Failed to update playlist song");
-    }
-
-    public async Task DeletePlaylistSong(int playlistId, int playlistSongId)
-    {
-        await _client.DeleteAsync($"/api/Playlists/{playlistId}/songs/{playlistSongId}");
-    }
-
-    public Task<SongDataResponse?> GetSongData(string url)
-        => _client.GetFromJsonAsync<SongDataResponse>($"api/Playlists/song-data?url={HttpUtility.UrlEncode(url)}");
 }

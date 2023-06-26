@@ -19,15 +19,18 @@ public class PlaylistsController : ControllerBase
     private readonly IMapper _mapper;
     private readonly ILogger<PlaylistsController> _logger;
     private readonly SongDataService _songDataService;
+    private readonly IConfiguration _configuration;
 
     public PlaylistsController(
         IUnitOfWork uow,
         IMapper mapper,
         ILogger<PlaylistsController> logger,
-        SongDataService songDataService)
+        SongDataService songDataService,
+        IConfiguration configuration)
     {
         _logger = logger;
         _songDataService = songDataService;
+        _configuration = configuration;
         _uow = uow;
         _mapper = mapper;
     }
@@ -151,6 +154,16 @@ public class PlaylistsController : ControllerBase
             return Unauthorized();
         }
 
+        if (!int.TryParse(_configuration["PlaylistMaxNumberOfSongs"], out int maxSongs))
+        {
+            maxSongs = 50;
+        }
+
+        if (playlistModel.Songs.Count == maxSongs)
+        {
+            return BadRequest($"Playlists cannot contain more than {maxSongs} songs");
+        }
+        
         var playlistSongModel = _mapper.Map<PlaylistSongModel>(playlistSongRequest);
         playlistSongModel.Playlist = playlistModel;
         playlistSongModel.PlaylistId = playlistModel.Id;

@@ -1,5 +1,6 @@
 using Brobot.Middlewares;
 using Brobot.Workers;
+using TimeZoneConverter;
 
 public static class Extensions
 {
@@ -41,5 +42,20 @@ public static class Extensions
     public static IApplicationBuilder UseDiscordUser(this IApplicationBuilder builder)
     {
         return builder.UseMiddleware<DiscordUserMiddleware>();
+    }
+
+    public static DateTimeOffset AdjustToUtc(this DateTimeOffset dateTimeOffset, string timezoneName)
+    {
+        var dateTimeUnspecified = new DateTime(dateTimeOffset.Ticks, DateTimeKind.Unspecified);
+        var timezone = TZConvert.GetTimeZoneInfo(timezoneName);
+        var offset = timezone.GetUtcOffset(DateTime.UtcNow);
+        return new DateTimeOffset(dateTimeUnspecified, offset).ToUniversalTime();
+    }
+
+    public static DateTimeOffset AdjustToUsersTimezone(this DateTimeOffset dateTimeOffset, string timezoneName)
+    {
+        var timezone = TZConvert.GetTimeZoneInfo(timezoneName);
+        var offset = timezone.GetUtcOffset(DateTime.UtcNow);
+        return dateTimeOffset.ToOffset(offset);
     }
 }

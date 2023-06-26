@@ -29,7 +29,9 @@ public partial class Reminders : ComponentBase
     {
         try
         {
-            _reminders = (await ApiService.GetScheduledMessages()).ToList();
+            _reminders = (await ApiService.ScheduledMessageService.GetAll())
+                .OrderBy((r) => r.SendDate)
+                .ToList();
             _channels = await ApiService.GetChannels();
         }
         catch (Exception ex)
@@ -65,8 +67,8 @@ public partial class Reminders : ComponentBase
         try
         {
             var message = _editScheduleMessage.Id == null
-                ? await ApiService.CreateScheduledMessage(_editScheduleMessage)
-                : await ApiService.EditScheduledMessage(_editScheduleMessage.Id.Value, _editScheduleMessage);
+                ? await ApiService.ScheduledMessageService.Create(_editScheduleMessage)
+                : await ApiService.ScheduledMessageService.Update(_editScheduleMessage.Id.Value, _editScheduleMessage);
 
 
             var existingReminder = _reminders?.FirstOrDefault((r) => r.Id == message.Id);
@@ -112,7 +114,7 @@ public partial class Reminders : ComponentBase
         {
             try
             {
-                await ApiService.DeleteScheduledMessage(_reminderToDelete.Id);
+                await ApiService.ScheduledMessageService.Delete(_reminderToDelete.Id);
                 _reminders?.Remove(_reminderToDelete);
                 if (_grid != null)
                 {

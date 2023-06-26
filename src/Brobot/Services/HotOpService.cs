@@ -111,7 +111,7 @@ public class HotOpService
         await uow.CompleteAsync();
     }
 
-    public Embed CreateScoreboardEmbed(HotOpModel hotOp)
+    public ScoreboardDto GetScoreboard(HotOpModel hotOp)
     {
         var scores = hotOp.Channel.ChannelUsers.Select((cu) => new ScoreboardItemDto
         {
@@ -144,6 +144,12 @@ public class HotOpService
             OwnerUsername = hotOp.User.Username
         };
 
+        return scoreboard;
+    }
+    
+    public Embed CreateScoreboardEmbed(HotOpModel hotOp)
+    {
+        var scoreboard = GetScoreboard(hotOp);
         var builder = new EmbedBuilder
         {
             Color = new Color(114, 137, 218),
