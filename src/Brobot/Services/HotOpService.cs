@@ -140,7 +140,7 @@ public class HotOpService
         var scoreboard = new ScoreboardDto
         {
             HotOpId = hotOp.Id,
-            Scores = scores.Values,
+            Scores = scores.Values.OrderByDescending((s) => s.Score),
             OwnerUsername = hotOp.User.Username
         };
 
