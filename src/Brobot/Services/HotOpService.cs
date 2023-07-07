@@ -24,7 +24,6 @@ public class HotOpService
     )
     {
         if ((previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel == null)
-            || (previousVoiceState.VoiceChannel != null && currentVoiceState.VoiceChannel != null)
             || socketUser.IsBot)
         {
             return;
@@ -39,8 +38,6 @@ public class HotOpService
 
         foreach (var hotOp in activeHotOps)
         {
-            var isHotOpOwner = hotOp.UserId == socketUser.Id;
-
             // if the user that connected is the hot op owner
             if (hotOp.UserId == socketUser.Id)
             {
@@ -59,13 +56,16 @@ public class HotOpService
                         });
                     await uow.HotOpSessions.AddRange(sessions);
                 }
-                // if the hot op owner left the voice channel, add end date to each session
-                else
+                // if the hot op owner left a voice channel, add end date to each session
+                if (previousVoiceState.VoiceChannel != null)
                 {
                     var existingSessions = await uow.HotOpSessions.Find((hos) => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
                     foreach (var existingSession in existingSessions)
                     {
-                        existingSession.EndDateTime = utcNow;
+                        if (previousVoiceState.VoiceChannel.ConnectedUsers.Any((cu) => cu.Id == existingSession.UserId))
+                        {
+                            existingSession.EndDateTime = utcNow;
+                        }
                     }
                 }
             }
@@ -90,8 +90,9 @@ public class HotOpService
                         StartDateTime = utcNow
                     });
                 }
+                
                 // if the user left the channel
-                else if (previousVoiceState.VoiceChannel != null)
+                if (previousVoiceState.VoiceChannel != null)
                 {
                     // if the owner isn't in the channel, do nothing
                     if (previousVoiceState.VoiceChannel.ConnectedUsers.All(cu => cu.Id != hotOp.UserId))
@@ -118,7 +119,9 @@ public class HotOpService
             UserId = cu.UserId,
             Username = cu.User.Username,
             Score = 0
-        }).ToDictionary((s) => s.UserId);
+        })
+            .Where((s) => s.UserId != hotOp.UserId)
+            .ToDictionary((s) => s.UserId);
 
         foreach (var session in hotOp.HotOpSessions)
         {

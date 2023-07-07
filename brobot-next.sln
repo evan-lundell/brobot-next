@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brobot.Frontend", "src\Brob
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brobot.Shared", "src\Brobot.Shared\Brobot.Shared.csproj", "{5DD910A2-463F-41F2-BD7A-D182B26C5D7B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{BCDE8BD7-145E-476E-A11C-CFBB9629BF39}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brobot.Tests", "tests\Brobot.Tests\Brobot.Tests.csproj", "{2F9AE852-0DB9-4418-A574-DC663C2371DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,12 @@ Global
 		{5DD910A2-463F-41F2-BD7A-D182B26C5D7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DD910A2-463F-41F2-BD7A-D182B26C5D7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5DD910A2-463F-41F2-BD7A-D182B26C5D7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F9AE852-0DB9-4418-A574-DC663C2371DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F9AE852-0DB9-4418-A574-DC663C2371DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F9AE852-0DB9-4418-A574-DC663C2371DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F9AE852-0DB9-4418-A574-DC663C2371DC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2F9AE852-0DB9-4418-A574-DC663C2371DC} = {BCDE8BD7-145E-476E-A11C-CFBB9629BF39}
 	EndGlobalSection
 EndGlobal
