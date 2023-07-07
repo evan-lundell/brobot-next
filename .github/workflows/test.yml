@@ -12,7 +12,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
       - name: Setup dotnet
-        uses: actions/setupdotnet@v3
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0.x
       - name: Install dependencies
