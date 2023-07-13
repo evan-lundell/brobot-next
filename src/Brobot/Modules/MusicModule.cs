@@ -155,7 +155,7 @@ public class MusicModule : InteractionModuleBase
             return;
         }
 
-        if (player.Vueue.Count == 0)
+        if (player.Vueue.Count == 0 && player.Track == null)
         {
             await RespondAsync("No songs in the queue");
             return;
@@ -173,13 +173,22 @@ public class MusicModule : InteractionModuleBase
         
         var tracksBuilder = new StringBuilder();
         var index = 1;
-        foreach (var track in player.Vueue)
+        foreach (var track in player.Vueue.Take(10))
         {
             tracksBuilder.AppendLine($"{index}: {track.Title}");
             index++;
         }
-        
-        embedBuilder.AddField("Tracks", tracksBuilder.ToString());
+
+        if (player.Vueue.Count > 10)
+        {
+            tracksBuilder.AppendLine($"{player.Vueue.Count - 10} more song(s)");
+        }
+
+        if (player.Vueue.Count > 0)
+        {
+            embedBuilder.AddField("Tracks", tracksBuilder.ToString());
+        }
+
         await RespondAsync(embed: embedBuilder.Build());
     }
 

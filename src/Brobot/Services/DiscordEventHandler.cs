@@ -272,17 +272,29 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
 
     private async Task OnTrackEnd(TrackEndEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
     {
-        if (arg.Reason != TrackEndReason.Finished)
-        {
-            return;
-        }
+        _logger.LogInformation("Track ended");
 
         var player = arg.Player;
-        if (!player.Vueue.TryDequeue(out LavaTrack nextTrack))
+        if (player.Vueue.Count == 0)
         {
+            _logger.LogInformation("Queue empty");
+            return;
+        }
+        
+        if (arg.Reason != TrackEndReason.Finished)
+        {
+            _logger.LogInformation("Not playing next, track end reason {Reason}", arg.Reason.ToString());
             return;
         }
 
+        
+        if (!player.Vueue.TryDequeue(out LavaTrack nextTrack))
+        {
+            _logger.LogInformation("Not playing next, unable to dequeue next track");
+            return;
+        }
+
+        _logger.LogInformation("Queuing next track");
         await player.PlayAsync(nextTrack);
     }
 
