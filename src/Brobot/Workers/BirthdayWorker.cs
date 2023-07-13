@@ -26,7 +26,8 @@ public class BirthdayWorker : CronWorkerBase
         var now = DateOnly.FromDateTime(DateTime.UtcNow);
         var users = await uow.Users.Find((u) =>
             u.Birthdate.HasValue
-            && u.Birthdate == now
+            && u.Birthdate.Value.Month == now.Month
+            && u.Birthdate.Value.Day == now.Day
         );
         
         var tasks = new List<Task>();
@@ -37,7 +38,9 @@ public class BirthdayWorker : CronWorkerBase
             {
                 continue;
             }
-            tasks.Add(channel.SendMessageAsync($"Happy birthday {user.Username}! :birthday:"));
+
+            var socketUser = await _client.GetUserAsync(user.Id);
+            tasks.Add(channel.SendMessageAsync($"Happy birthday {socketUser?.Mention ?? user.Username}! :birthday:"));
         }
         
         await Task.WhenAll(tasks);
