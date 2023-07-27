@@ -188,5 +188,6 @@ public static class Program
         builder.Services.AddHttpClient<DiscordOauthService>();
         builder.Services.AddScoped<ScheduledMessageService>();
         builder.Services.AddHttpClient<SongDataService>();
+        builder.Services.AddScoped<MessageCountService>();
     }
 }

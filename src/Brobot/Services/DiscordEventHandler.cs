@@ -1,10 +1,7 @@
 using System.Reflection;
-using Brobot.Models;
-using Brobot.Repositories;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using TimeZoneConverter;
 using Victoria.Node;
 using Victoria.Node.EventArgs;
 using Victoria.Player;
@@ -109,34 +106,10 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
             {
                 return;
             }
-            
+
             using var scope = _services.CreateScope();
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var user = await uow.Users.GetById(socketMessage.Author.Id);
-            if (string.IsNullOrWhiteSpace(user?.Timezone))
-            {
-                return;
-            }
-
-            var timezone = TZConvert.GetTimeZoneInfo(user.Timezone);
-            var userTimeNow = DateTime.UtcNow + timezone.GetUtcOffset(DateTime.UtcNow);
-            var dailyCount = await uow.DailyMessageCounts.GetByUserAndDay(user.Id, DateOnly.FromDateTime(userTimeNow));
-            if (dailyCount == null)
-            {
-                await uow.DailyMessageCounts.Add(new DailyMessageCountModel
-                {
-                    User = user,
-                    UserId = user.Id,
-                    CountDate = DateOnly.FromDateTime(userTimeNow),
-                    MessageCount = 1
-                });
-            }
-            else
-            {
-                dailyCount.MessageCount++;
-            }
-
-            await uow.CompleteAsync();
+            var messageCountService = scope.ServiceProvider.GetRequiredService<MessageCountService>();
+            await messageCountService.AddToDailyCount(socketMessage.Author.Id, socketMessage.Channel.Id);
         });
     }
 
