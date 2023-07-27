@@ -2,8 +2,8 @@ using Brobot.Models;
 
 namespace Brobot.Repositories;
 
-public interface IDailyMessageCountRepository : IRepository<DailyMessageCountModel, ulong>
+public interface IDailyMessageCountRepository : IRepository<DailyMessageCountModel, (ulong, ulong, DateOnly)>
 {
-    Task<DailyMessageCountModel?> GetByUserAndDay(ulong userId, DateOnly date);
-    Task<IEnumerable<DailyMessageCountModel>> GetByUserAndDateRange(ulong userId, DateOnly fromDate, DateOnly toDate);
+    Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDays(ulong userId, int numOfDays);
+    Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDaysInChannel(ulong userId, ulong channelId, int numOfDays);
 }

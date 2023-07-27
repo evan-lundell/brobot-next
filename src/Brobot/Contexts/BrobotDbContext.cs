@@ -249,7 +249,7 @@ public class BrobotDbContext : DbContext
 
         builder.Entity<DailyMessageCountModel>()
             .ToTable(name: "daily_message_count", schema: "brobot")
-            .HasKey((dc) => new { dc.UserId, dc.CountDate });
+            .HasKey((dc) => new { dc.UserId, dc.ChannelId, dc.CountDate });
         builder.Entity<DailyMessageCountModel>()
             .Property((dc) => dc.CountDate)
             .HasColumnName("count_date");
@@ -261,9 +261,16 @@ public class BrobotDbContext : DbContext
             .HasColumnName("message_count")
             .HasDefaultValue(0);
         builder.Entity<DailyMessageCountModel>()
+            .Property((dc) => dc.ChannelId)
+            .HasColumnName("channel_id");
+        builder.Entity<DailyMessageCountModel>()
             .HasOne((dc) => dc.User)
             .WithMany((u) => u.DailyCounts)
             .HasForeignKey((dc) => dc.UserId);
+        builder.Entity<DailyMessageCountModel>()
+            .HasOne((dc) => dc.Channel)
+            .WithMany((c) => c.DailyMessageCounts)
+            .HasForeignKey((dc) => dc.ChannelId);
 
         builder.Entity<PlaylistModel>()
             .ToTable(name: "playlist", schema: "brobot")

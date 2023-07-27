@@ -14,6 +14,7 @@ public class ChannelModel
     public virtual ICollection<ChannelUserModel> ChannelUsers { get; set; }
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
     public virtual ICollection<HotOpModel> HotOps { get; set; }
+    public virtual ICollection<DailyMessageCountModel> DailyMessageCounts { get; set; }
 
     // This is a collection of users where the given channel is their primary channel
     // ReSharper disable once CollectionNeverUpdated.Global
@@ -24,5 +25,6 @@ public class ChannelModel
         ScheduledMessages = new HashSet<ScheduledMessageModel>();
         HotOps = new HashSet<HotOpModel>();
         Users = new HashSet<UserModel>();
+        DailyMessageCounts = new HashSet<DailyMessageCountModel>();
     }
 }
