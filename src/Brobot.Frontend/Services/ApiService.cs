@@ -76,8 +76,31 @@ public class ApiService
         return userSettingsResponse ?? new UserSettingsResponse();
     }
 
-    public async Task<DailyMessageCountResponse[]> GetDailyMessageCount(int numOfDays = 10)
-        => await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/daily") ?? Array.Empty<DailyMessageCountResponse>();
+    public async Task<DailyMessageCountResponse[]> GetDailyMessageCount(ulong? channelId = null)
+    {
+        if (channelId == null)
+        {
+            return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/daily") ??
+                         Array.Empty<DailyMessageCountResponse>();
+        }
+
+        return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>(
+                   $"MessageCounts/daily?channelId={channelId.Value}") ??
+               Array.Empty<DailyMessageCountResponse>();
+    }
+
+    public async Task<DailyMessageCountResponse[]> GetTopDays(ulong? channelId = null)
+    {
+        if (channelId == null)
+        {
+            return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/top-days") ??
+                   Array.Empty<DailyMessageCountResponse>();
+        }
+
+        return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>(
+                   $"MessageCounts/top-days?channelId={channelId}") ??
+               Array.Empty<DailyMessageCountResponse>();
+    }
 
     public Task SendMessage(SendMessageRequest sendMessageRequest)
         => _client.PostAsJsonAsync("Messages/send", sendMessageRequest);

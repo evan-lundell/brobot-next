@@ -5,7 +5,14 @@
 
 <AuthorizeView>
     <Authorized>
-        <DailyMessagesChart />
+        <div class="row">
+            <div class="col-sm-5 rz-shadow-1 m-3">
+                <DailyMessagesChart/>
+            </div>
+            <div class="col-sm-5 rz-shadow-1 m-3">
+                <TopMessagesAllTime/>
+            </div>
+        </div>
     </Authorized>
     <NotAuthorized>
         @if (JwtAuthenticationStateProvider.IsLoggedIn)
