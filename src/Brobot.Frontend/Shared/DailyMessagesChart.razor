@@ -7,31 +7,60 @@
 }
 else
 {
-    <div class="row">
-        <div class="col-md-12 my-5 rz-shadow-1">
-            <h3>Daily Message Count</h3>
-            <RadzenChart>
-                <RadzenLegend Visible="false"></RadzenLegend>
-                <RadzenLineSeries Title="Message Count" Data="@_messageCountData" CategoryProperty="CountDate" LineType="LineType.Solid" ValueProperty="MessageCount">
-                    <RadzenMarkers MarkerType="MarkerType.Circle"></RadzenMarkers>
-                </RadzenLineSeries>
-                <RadzenValueAxis>
-                    <RadzenAxisTitle Text="Message Count" />
-                </RadzenValueAxis>
-            </RadzenChart>
+    <div class="p-3">
+        <div class="row">
+            <div class="col-12">
+                <h3>Daily Message Count</h3>
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="col-12">
+                <label class="form-label">Channel</label>
+                <select class="form-select" @onchange="OnChannelChange">
+                    <option value="">All</option>
+                    @foreach (var channel in _channels ?? Array.Empty<ChannelResponse>())
+                    {
+                        <option value="@channel.Id">@channel.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 my-5">
+                <RadzenChart @ref="_chart">
+                    <RadzenLegend Visible="false"></RadzenLegend>
+                    <RadzenLineSeries Title="Message Count" Data="@_messageCountData" CategoryProperty="CountDate" LineType="LineType.Solid" ValueProperty="MessageCount">
+                        <RadzenMarkers MarkerType="MarkerType.Circle"></RadzenMarkers>
+                    </RadzenLineSeries>
+                    <RadzenValueAxis Step="1">
+                        <RadzenAxisTitle Text="Message Count"/>
+                    </RadzenValueAxis>
+                    <RadzenCategoryAxis>
+                        <RadzenAxisTitle Text="Days" />
+                    </RadzenCategoryAxis>
+                </RadzenChart>
+            </div>
         </div>
     </div>
 }
 
 @code {
     private DailyMessageCountResponse[]? _messageCountData;
+    private ChannelResponse[]? _channels;
+
+    private Dictionary<ulong, DailyMessageCountResponse[]> _messageCountCache = new();
+
+    private ulong? _selectedChannelId;
+
+    private RadzenChart? _chart;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            _channels = await ApiService.GetChannels();
             _messageCountData = await ApiService.GetDailyMessageCount();
-
+            _messageCountCache.Add(0, _messageCountData);
         }
         catch (Exception ex)
         {
@@ -39,4 +68,36 @@ else
         }
     }
 
+    private async Task OnChannelChange(ChangeEventArgs eventArgs)
+    {
+        if (!ulong.TryParse(eventArgs.Value?.ToString(), out var channelId))
+        {
+            if (_messageCountCache.TryGetValue(0, out var value))
+            {
+                _messageCountData = value;
+            }
+            else
+            {
+                _messageCountData = await ApiService.GetDailyMessageCount();
+                _messageCountCache.Add(0, _messageCountData);
+            }
+        }
+        else
+        {
+            if (_messageCountCache.TryGetValue(channelId, out var value))
+            {
+                _messageCountData = value;
+            }
+            else
+            {
+                _messageCountData = await ApiService.GetDailyMessageCount(channelId);
+                _messageCountCache.Add(channelId, _messageCountData);
+            }
+        }
+
+        if (_chart != null)
+        {
+            await _chart.Reload();
+        }
+    }
 }

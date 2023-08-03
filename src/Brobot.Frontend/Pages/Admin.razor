@@ -3,22 +3,22 @@
 
 <PageTitle>Admin</PageTitle>
 
-@if (channels == null)
+@if (_channels == null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
-    <SendMessage Channels="@channels" />
+    <SendMessage Channels="@_channels" />
     <UsersTable />
 }
 
 @code {
-    private ChannelResponse[]? channels;
+    private ChannelResponse[]? _channels;
 
     protected override async Task OnInitializedAsync()
     {
-        channels = await ApiService.GetChannels();
+        _channels = await ApiService.GetChannels();
     }
 
 }
