@@ -49,7 +49,6 @@ public class GuildRepository : RepositoryBase<GuildModel, ulong>, IGuildReposito
     public override void Remove(GuildModel entity)
     {
         entity.Archived = true;
-        entity.GuildUsers.Clear();
         Channels.RemoveRange(entity.Channels);
     }
 

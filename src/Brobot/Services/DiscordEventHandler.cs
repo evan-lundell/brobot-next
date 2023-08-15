@@ -1,4 +1,6 @@
 using System.Reflection;
+using Brobot.Models;
+using Brobot.Repositories;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -54,6 +56,11 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         _client.MessageDeleted += MessageDeleted;
         _client.UserVoiceStateUpdated += UserVoiceStateUpdated;
         _client.PresenceUpdated += PresenceUpdated;
+        _client.ThreadCreated += ThreadCreated;
+        _client.ThreadDeleted += ThreadDeleted;
+        _client.ThreadUpdated += ThreadUpdated;
+        _client.ThreadMemberJoined += ThreadMemberJoined;
+        _client.ThreadMemberLeft += ThreadMemberLeft;
         _node.OnTrackEnd += OnTrackEnd;
     }
 
@@ -72,6 +79,11 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         _client.MessageReceived -= MessageReceived;
         _client.MessageDeleted -= MessageDeleted;
         _client.PresenceUpdated -= PresenceUpdated;
+        _client.ThreadCreated -= ThreadCreated;
+        _client.ThreadDeleted -= ThreadDeleted;
+        _client.ThreadUpdated -= ThreadUpdated;
+        _client.ThreadMemberJoined -= ThreadMemberJoined;
+        _client.ThreadMemberLeft -= ThreadMemberLeft;
         _node.OnTrackEnd -= OnTrackEnd;
     }
 
@@ -269,6 +281,146 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
 
         _logger.LogInformation("Queuing next track");
         await player.PlayAsync(nextTrack);
+    }
+
+    private async Task ThreadCreated(SocketThreadChannel thread)
+    {
+        using var scope = _services.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var guild = await uow.Guilds.GetById(thread.Guild.Id);
+        if (guild == null)
+        {
+            _logger.LogWarning("Thread creation failed. Guild {GuildId} does not exist", thread.Guild.Id);
+            return;
+        }
+        
+        var existingThread = await uow.Channels.GetById(thread.Id);
+        if (existingThread is { Archived: false })
+        {
+            _logger.LogWarning("Thread creation failed. Thread with ID {ThreadId} already exists", thread.Id);
+            return;
+        }
+        
+        if (existingThread != null)
+        {
+            existingThread.Archived = false;
+        }
+        else
+        {
+            var newThread = new ChannelModel
+            {
+                Id = thread.Id,
+                Name = thread.Name,
+                Guild = guild,
+                GuildId = thread.Guild.Id
+            };
+            await uow.Channels.Add(newThread);
+
+            var discordUser = await uow.Users.GetById(thread.Owner.Id);
+            if (discordUser != null)
+            {
+                newThread.ChannelUsers.Add(new ChannelUserModel
+                {
+                    User = discordUser,
+                    UserId = discordUser.Id,
+                    Channel = newThread,
+                    ChannelId = newThread.Id
+                });
+            }
+        }
+
+        await uow.CompleteAsync();
+    }
+
+    private async Task ThreadDeleted(Cacheable<SocketThreadChannel, ulong> thread)
+    {
+        using var scope = _services.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var existingThread = await uow.Channels.GetById(thread.Id);
+        if (existingThread == null)
+        {
+            return;
+        }
+        uow.Channels.Remove(existingThread);
+        await uow.CompleteAsync();
+    }
+    
+    private async Task ThreadUpdated(Cacheable<SocketThreadChannel, ulong> oldThreadChannelCacheable, SocketThreadChannel newThreadChannel)
+    {
+        var oldThreadChannel = await oldThreadChannelCacheable.GetOrDownloadAsync();
+        if (oldThreadChannel == null)
+        {
+            return;
+        }
+        
+        using var scope = _services.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var existingChannelModel = await uow.Channels.GetById(oldThreadChannel.Id);
+        if (existingChannelModel == null || (existingChannelModel.Name == newThreadChannel.Name && existingChannelModel.Archived == newThreadChannel.IsArchived))
+        {
+            return;
+        }
+
+        existingChannelModel.Name = newThreadChannel.Name;
+        existingChannelModel.Archived = newThreadChannel.IsArchived;
+        await uow.CompleteAsync();
+    }
+    
+    private async Task ThreadMemberJoined(SocketThreadUser threadUser)
+    {
+        if (threadUser.IsBot)
+        {
+            return;
+        }
+        
+        using var scope = _services.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(threadUser.Thread.Id);
+        var existingDiscordUser = await uow.Users.GetById(threadUser.Id);
+
+        if (existingChannelModel == null || existingDiscordUser == null)
+        {
+            return;
+        }
+
+        if (existingChannelModel.ChannelUsers.All(cu => cu.UserId != threadUser.Id))
+        {
+            existingChannelModel.ChannelUsers.Add(new ChannelUserModel
+            {
+                Channel = existingChannelModel,
+                ChannelId = existingChannelModel.Id,
+                User = existingDiscordUser,
+                UserId = existingDiscordUser.Id
+            });
+            await uow.CompleteAsync();
+        }
+    }
+    
+    private async Task ThreadMemberLeft(SocketThreadUser threadUser)
+    {
+        if (threadUser.IsBot)
+        {
+            return;
+        }
+        
+        using var scope = _services.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(threadUser.Thread.Id);
+        var existingDiscordUser = await uow.Users.GetById(threadUser.Id);
+
+        if (existingChannelModel == null || existingDiscordUser == null)
+        {
+            return;
+        }
+
+        var channelUserModel =
+            existingChannelModel.ChannelUsers.FirstOrDefault((cu) => cu.UserId == existingDiscordUser.Id);
+        if (channelUserModel == null)
+        {
+            return;
+        }
+        existingChannelModel.ChannelUsers.Remove(channelUserModel);
+        await uow.CompleteAsync();
     }
 
 #pragma warning disable CA1816

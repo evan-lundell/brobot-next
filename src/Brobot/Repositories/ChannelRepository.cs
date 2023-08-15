@@ -50,7 +50,6 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
     public override void Remove(ChannelModel entity)
     {
         entity.Archived = true;
-        entity.ChannelUsers.Clear();
     }
 
     public override void RemoveRange(IEnumerable<ChannelModel> entities)
@@ -66,5 +65,8 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
                 $"SELECT c.* FROM brobot.channel c INNER JOIN brobot.channel_user cu ON c.Id = cu.channel_id WHERE cu.user_id = {userId}")
             .ToListAsync();
 
-
+    public Task<ChannelModel?> GetByIdWithChannelUsers(ulong channelId)
+        => Context.Channels
+            .Include((c) => c.ChannelUsers)
+            .SingleOrDefaultAsync((c) => c.Id == channelId);
 }
