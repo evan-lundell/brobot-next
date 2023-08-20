@@ -56,4 +56,40 @@ public class MessageCountsController : ControllerBase
             : await _messageCountService.GetUsersTopDaysByChannel(discordUser, channelId.Value, numOfDays);
         return Ok(counts);
     }
+
+    [HttpGet("top-today")]
+    public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetTopToday([FromQuery] ulong? channelId)
+    {
+        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(discordUser.Timezone))
+        {
+            return Ok(Array.Empty<DailyMessageCountResponse>());
+        }
+
+        var counts = channelId == null
+            ? await _messageCountService.GetTopToday(discordUser)
+            : await _messageCountService.GetTopTodayByChannel(discordUser, channelId.Value);
+        return Ok(counts);
+    }
+
+    [HttpGet("total-daily")]
+    public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetTotalDailyMessageCounts(
+        [FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
+    {
+        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
+        {
+            return Unauthorized();
+        }
+
+        var counts = channelId == null
+            ? await _messageCountService.GetTotalDailyMessageCounts(numOfDays, discordUser.Timezone)
+            : await _messageCountService.GetTotalDailyMessageCountsByChannel(numOfDays, channelId.Value,
+                discordUser.Timezone);
+
+        return Ok(counts);
+    }
 }
