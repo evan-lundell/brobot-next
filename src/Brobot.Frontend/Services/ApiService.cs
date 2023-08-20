@@ -88,6 +88,19 @@ public class ApiService
                    $"MessageCounts/daily?channelId={channelId.Value}") ??
                Array.Empty<DailyMessageCountResponse>();
     }
+    
+    public async Task<DailyMessageCountResponse[]> GetTotalDailyMessageCount(ulong? channelId = null)
+    {
+        if (channelId == null)
+        {
+            return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/total-daily") ??
+                   Array.Empty<DailyMessageCountResponse>();
+        }
+
+        return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>(
+                   $"MessageCounts/total-daily?channelId={channelId.Value}") ??
+               Array.Empty<DailyMessageCountResponse>();
+    }
 
     public async Task<DailyMessageCountResponse[]> GetTopDays(ulong? channelId = null)
     {
@@ -99,6 +112,19 @@ public class ApiService
 
         return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>(
                    $"MessageCounts/top-days?channelId={channelId}") ??
+               Array.Empty<DailyMessageCountResponse>();
+    }
+
+    public async Task<DailyMessageCountResponse[]> GetTodaysTopUsers(ulong? channelId = null)
+    {
+        if (channelId == null)
+        {
+            return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/top-today") ??
+                   Array.Empty<DailyMessageCountResponse>();
+        }
+
+        return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>(
+                   $"MessageCounts/top-today?channelId={channelId}") ??
                Array.Empty<DailyMessageCountResponse>();
     }
 

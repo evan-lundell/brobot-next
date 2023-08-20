@@ -1,7 +1,7 @@
 @inject ApiService ApiService
 @inject IToastService ToastService
 
-@if (_topDailyMessageCounts == null)
+@if (_topUsersToday == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -10,7 +10,7 @@ else
     <div class="p-3">
         <div class="row">
             <div class="col-12">
-                <h3>My Top Days (All Time)</h3>
+                <h3>Top Users (Today)</h3>
             </div>
         </div>
         <div class="row my-3">
@@ -27,30 +27,37 @@ else
         </div>
         <div class="row">
             <div class="col-12">
-                <ol>
-                    @foreach (var messageCount in _topDailyMessageCounts)
-                    {
-                        <li>@messageCount.CountDate.ToString("MM/dd/yyyy") - @messageCount.MessageCount</li>
-                    }
-                </ol>
+                @if (_topUsersToday.Length == 0)
+                {
+                    <p><em>No messages in this channel today...</em></p>
+                }
+                else
+                {
+                    <ol>
+                        @foreach (var messageCount in _topUsersToday)
+                        {
+                            <li>@messageCount.User.Username - @messageCount.MessageCount</li>
+                        }
+                    </ol>
+                }
             </div>
         </div>
     </div>
 }
 
 @code {
-    private DailyMessageCountResponse[]? _topDailyMessageCounts;
+    private DailyMessageCountResponse[]? _topUsersToday;
     private ChannelResponse[]? _channels;
 
-    private Dictionary<ulong, DailyMessageCountResponse[]> _topDailyMessageCache = new();
+    private Dictionary<ulong, DailyMessageCountResponse[]> _topUsersTodayCache = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             _channels = await ApiService.GetChannels();
-            _topDailyMessageCounts = await ApiService.GetTopDays();
-            _topDailyMessageCache.Add(0, _topDailyMessageCounts);
+            _topUsersToday = await ApiService.GetTodaysTopUsers();
+            _topUsersTodayCache.Add(0, _topUsersToday);
         }
         catch (Exception e)
         {
@@ -62,28 +69,27 @@ else
     {
         if (!ulong.TryParse(eventArgs.Value?.ToString(), out var channelId))
         {
-            if (_topDailyMessageCache.TryGetValue(0, out var value))
+            if (_topUsersTodayCache.TryGetValue(0, out var value))
             {
-                _topDailyMessageCounts = value;
+                _topUsersToday = value;
             }
             else
             {
-                _topDailyMessageCounts = await ApiService.GetTopDays();
-                _topDailyMessageCache.Add(0, _topDailyMessageCounts);
+                _topUsersToday = await ApiService.GetTodaysTopUsers();
+                _topUsersTodayCache.Add(0, _topUsersToday);
             }
         }
         else
         {
-            if (_topDailyMessageCache.TryGetValue(channelId, out var value))
+            if (_topUsersTodayCache.TryGetValue(channelId, out var value))
             {
-                _topDailyMessageCounts = value;
+                _topUsersToday = value;
             }
             else
             {
-                _topDailyMessageCounts = await ApiService.GetTopDays(channelId);
-                _topDailyMessageCache.Add(channelId, _topDailyMessageCounts);
+                _topUsersToday = await ApiService.GetTodaysTopUsers(channelId);
+                _topUsersTodayCache.Add(channelId, _topUsersToday);
             }
         }
-
     }
 }

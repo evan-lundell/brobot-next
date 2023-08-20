@@ -125,6 +125,74 @@ public class MessageCountService
             MessageCount = c.MessageCount
         });
     }
+    
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetTopToday(UserModel userModel)
+    {
+        if (string.IsNullOrWhiteSpace(userModel.Timezone))
+        {
+            return Array.Empty<DailyMessageCountResponse>();
+        }
+        
+        var now = DateTimeOffset.UtcNow;
+        var userNow = now.AdjustToUsersTimezone(userModel.Timezone);
+        var counts = await _uow.DailyMessageCounts.GetTopForDate(DateOnly.FromDateTime(userNow.DateTime));
+        return counts.Select((c) => new DailyMessageCountResponse
+        {
+            CountDate = c.CountDate,
+            MessageCount = c.MessageCount,
+            User = _mapper.Map<UserResponse>(c.User)
+        });
+    }
+
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetTopTodayByChannel(UserModel userModel, ulong channelId)
+    {
+        if (string.IsNullOrWhiteSpace(userModel.Timezone))
+        {
+            return Array.Empty<DailyMessageCountResponse>();
+        }
+        
+        var now = DateTimeOffset.UtcNow;
+        var userNow = now.AdjustToUsersTimezone(userModel.Timezone);
+        var counts = await _uow.DailyMessageCounts.GetTopForDateByChannel(DateOnly.FromDateTime(userNow.DateTime), channelId);
+        return counts.Select((c) => new DailyMessageCountResponse
+        {
+            CountDate = c.CountDate,
+            MessageCount = c.MessageCount,
+            User = _mapper.Map<UserResponse>(c.User)
+        });
+    }
+
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetTotalDailyMessageCounts(int numOfDays, string? usersTimezone)
+    {
+        if (string.IsNullOrWhiteSpace(usersTimezone))
+        {
+            usersTimezone = "UTC";
+        }
+
+        var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);
+        var counts = await _uow.DailyMessageCounts.GetTotalDailyMessageCounts(startDate, currentDate);
+        var fakeUser = new UserModel
+        {
+            Username = ""
+        };
+        return GetDailyMessageCountResponses(counts, fakeUser, startDate, currentDate);
+    }
+    
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetTotalDailyMessageCountsByChannel(int numOfDays, ulong channelId, string? usersTimezone)
+    {
+        if (string.IsNullOrWhiteSpace(usersTimezone))
+        {
+            usersTimezone = "UTC";
+        }
+
+        var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);
+        var counts = await _uow.DailyMessageCounts.GetTotalDailyMessageCountsByChannel(startDate, currentDate, channelId);
+        var fakeUser = new UserModel
+        {
+            Username = ""
+        };
+        return GetDailyMessageCountResponses(counts, fakeUser, startDate, currentDate);
+    }
 
     private (DateOnly CurrentDate, DateOnly StartDate) GetDates(int numOfDays, string timezoneString)
     {

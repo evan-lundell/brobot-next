@@ -6,4 +6,9 @@ public interface IDailyMessageCountRepository : IRepository<DailyMessageCountMod
 {
     Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDays(ulong userId, int numOfDays);
     Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDaysInChannel(ulong userId, ulong channelId, int numOfDays);
+    Task<IEnumerable<DailyMessageCountModel>> GetTopForDate(DateOnly date);
+    Task<IEnumerable<DailyMessageCountModel>> GetTopForDateByChannel(DateOnly date, ulong channelId);
+    Task<IEnumerable<DailyMessageCountModel>> GetTotalDailyMessageCounts(DateOnly startDate, DateOnly endDate);
+
+    Task<IEnumerable<DailyMessageCountModel>> GetTotalDailyMessageCountsByChannel(DateOnly startDate, DateOnly endDate, ulong channelId);
 }
