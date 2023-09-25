@@ -62,7 +62,7 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
 
     public async Task<IEnumerable<ChannelModel>> FindByUser(ulong userId)
         => await Context.Channels.FromSql(
-                $"SELECT c.* FROM brobot.channel c INNER JOIN brobot.channel_user cu ON c.Id = cu.channel_id WHERE cu.user_id = {userId}")
+                $"SELECT c.* FROM brobot.channel c INNER JOIN brobot.channel_user cu ON c.Id = cu.channel_id WHERE cu.user_id = {userId} AND archived = false")
             .ToListAsync();
 
     public Task<ChannelModel?> GetByIdWithChannelUsers(ulong channelId)

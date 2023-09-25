@@ -92,4 +92,19 @@ public class MessageCountsController : ControllerBase
 
         return Ok(counts);
     }
+
+    [HttpGet("total-top-days")]
+    public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetTotalTopDays([FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
+    {
+        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
+        {
+            return Unauthorized();
+        }
+
+        var counts = channelId == null
+            ? await _messageCountService.GetTotalTopDays(numOfDays)
+            : await _messageCountService.GetTotalTopDaysByChannel(channelId.Value, numOfDays);
+
+        return Ok(counts);
+    }
 }

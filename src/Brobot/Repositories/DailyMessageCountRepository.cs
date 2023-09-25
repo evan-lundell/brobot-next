@@ -69,4 +69,22 @@ public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel
                 $"SELECT 0 as user_id, channel_id, count_date, SUM(message_count) AS message_count FROM daily_message_count WHERE count_date >= '{startDate.ToString("yyyy-MM-dd")}' AND count_date <= '{endDate.ToString("yyyy-MM-dd")}' AND channel_id = {channelId} GROUP BY count_date, channel_id ORDER BY count_date DESC")
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalTopDays(int numOfDays)
+    {
+        return await Context.DailyMessageCounts
+            .FromSqlRaw(
+                $"SELECT 0 AS user_id, 0 AS channel_id, count_date, SUM(message_count) AS message_count FROM daily_message_count GROUP BY count_date ORDER BY message_count DESC LIMIT {numOfDays}"
+            )
+            .ToListAsync();
+    }
+    
+    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalTopDaysByChannel(ulong channelId, int numOfDays)
+    {
+        return await Context.DailyMessageCounts
+            .FromSqlRaw(
+                $"SELECT 0 AS user_id, channel_id, count_date, SUM(message_count) AS message_count FROM daily_message_count WHERE channel_id = {channelId} GROUP BY channel_id, count_date ORDER BY message_count DESC LIMIT {numOfDays}"
+            )
+            .ToListAsync();
+    }
 }

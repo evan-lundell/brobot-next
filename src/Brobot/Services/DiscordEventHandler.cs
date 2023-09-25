@@ -46,8 +46,8 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         _client.Log += Log;
         _client.Ready += Ready;
         _client.InteractionCreated += InteractionCreated;
-        _client.GuildAvailable += GuildAvailable;
-        _client.GuildUnavailable += GuildUnavailable;
+        // _client.GuildAvailable += GuildAvailable;
+        // _client.GuildUnavailable += GuildUnavailable;
         _client.GuildUpdated += GuildUpdated;
         _client.ChannelCreated += ChannelCreated;
         _client.ChannelDestroyed += ChannelDestroyed;
@@ -71,8 +71,8 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         _client.Log -= Log;
         _client.Ready -= Ready;
         _client.InteractionCreated -= InteractionCreated;
-        _client.GuildAvailable -= GuildAvailable;
-        _client.GuildUnavailable -= GuildUnavailable;
+        // _client.GuildAvailable -= GuildAvailable;
+        // _client.GuildUnavailable -= GuildUnavailable;
         _client.ChannelCreated -= ChannelCreated;
         _client.ChannelDestroyed -= ChannelDestroyed;
         _client.ChannelUpdated -= ChannelUpdated;
