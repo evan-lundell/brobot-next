@@ -189,5 +189,6 @@ public static class Program
         builder.Services.AddScoped<ScheduledMessageService>();
         builder.Services.AddHttpClient<SongDataService>();
         builder.Services.AddScoped<MessageCountService>();
+        builder.Services.AddScoped<SecretSantaService>();
     }
 }

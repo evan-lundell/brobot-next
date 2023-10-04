@@ -13,6 +13,7 @@ public interface IUnitOfWork : IDisposable
     IDailyMessageCountRepository DailyMessageCounts { get; }
     IPlaylistRepository Playlists { get; }
     IPlaylistSongRepository PlaylistSongs { get; }
+    ISecretSantaGroupRepository SecretSantaGroups { get; }
     Task<IDbContextTransaction> BeginTransaction();
     Task CommitTransaction(IDbContextTransaction transaction);
     Task<int> CompleteAsync();

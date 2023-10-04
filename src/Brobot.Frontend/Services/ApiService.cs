@@ -7,10 +7,11 @@ namespace Brobot.Frontend.Services;
 public class ApiService
 {
     private readonly HttpClient _client;
-    
+
     public IHotOpService HotOpService { get; }
     public IPlaylistService PlaylistService { get; }
     public IScheduledMessageService ScheduledMessageService { get; }
+    public ISecretSantaService SecretSantaService { get; }
 
     public ApiService(HttpClient client)
     {
@@ -18,6 +19,7 @@ public class ApiService
         HotOpService = new HotOpService(client);
         PlaylistService = new PlaylistService(client);
         ScheduledMessageService = new ScheduledMessageService(client);
+        SecretSantaService = new SecretSantaService(client);
     }
 
     public async Task<LoginResponse?> RefreshToken()
@@ -51,7 +53,7 @@ public class ApiService
     }
 
     public Task SyncDiscordUser(string authCode)
-        =>  _client.PostAsJsonAsync("auth/sync-discord-user", new SyncDiscordUserRequest
+        => _client.PostAsJsonAsync("auth/sync-discord-user", new SyncDiscordUserRequest
         {
             AuthorizationCode = authCode
         });
@@ -81,14 +83,14 @@ public class ApiService
         if (channelId == null)
         {
             return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/daily") ??
-                         Array.Empty<DailyMessageCountResponse>();
+                   Array.Empty<DailyMessageCountResponse>();
         }
 
         return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>(
                    $"MessageCounts/daily?channelId={channelId.Value}") ??
                Array.Empty<DailyMessageCountResponse>();
     }
-    
+
     public async Task<DailyMessageCountResponse[]> GetTotalDailyMessageCount(ulong? channelId = null)
     {
         if (channelId == null)
@@ -136,4 +138,7 @@ public class ApiService
 
     public async Task<IdentityUserResponse[]> GetIdentityUsers()
         => await _client.GetFromJsonAsync<IdentityUserResponse[]>("Auth/users") ?? Array.Empty<IdentityUserResponse>();
+
+    public async Task<UserResponse[]> GetUsers()
+        => await _client.GetFromJsonAsync<UserResponse[]>("Users/all") ?? Array.Empty<UserResponse>();
 }
