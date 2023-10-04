@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 // ReSharper disable VirtualMemberCallInConstructor
+// ReSharper disable CollectionNeverUpdated.Global
 
 namespace Brobot.Models;
 
@@ -29,6 +30,10 @@ public class UserModel
     public virtual ICollection<DailyMessageCountModel> DailyCounts { get; set; }
     public virtual ICollection<PlaylistModel> Playlists { get; set; }
 
+    public ICollection<SecretSantaGroupUserModel> SecretSantaGroupUsers { get; set; }
+    public ICollection<SecretSantaPairModel> Givers { get; set; }
+    public ICollection<SecretSantaPairModel> Recipients { get; set; }
+
     public UserModel()
     {
         GuildUsers = new HashSet<GuildUserModel>();
@@ -38,5 +43,8 @@ public class UserModel
         HotOpSessions = new HashSet<HotOpSessionModel>();
         DailyCounts = new HashSet<DailyMessageCountModel>();
         Playlists = new HashSet<PlaylistModel>();
+        SecretSantaGroupUsers = new HashSet<SecretSantaGroupUserModel>();
+        Givers = new HashSet<SecretSantaPairModel>();
+        Recipients = new HashSet<SecretSantaPairModel>();
     }
 }

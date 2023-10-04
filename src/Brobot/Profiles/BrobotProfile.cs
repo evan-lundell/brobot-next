@@ -24,5 +24,13 @@ public class BrobotProfile : Profile
         CreateMap<HotOpRequest, HotOpModel>();
         CreateMap<ScoreboardDto, ScoreboardResponse>();
         CreateMap<ScoreboardItemDto, ScoreboardItemResponse>();
+        CreateMap<SecretSantaGroupModel, SecretSantaGroupResponse>()
+            .ForMember(
+                (response) => response.Users,
+                (opt) => opt.MapFrom((model) => model.SecretSantaGroupUsers.Select((ssgu) => ssgu.User)));
+
+        CreateMap<SecretSantaPairModel, SecretSantaPairResponse>()
+            .ForMember((ssp) => ssp.Giver, (opt) => opt.MapFrom((model) => model.GiverUser))
+            .ForMember((ssp) => ssp.Recipient, (opt) => opt.MapFrom((model) => model.RecipientUser));
     }
 }

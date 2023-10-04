@@ -13,6 +13,8 @@ public class BrobotDbContext : DbContext
     public DbSet<DailyMessageCountModel> DailyMessageCounts => Set<DailyMessageCountModel>();
     public DbSet<PlaylistModel> Playlists => Set<PlaylistModel>();
     public DbSet<PlaylistSongModel> PlaylistSongs => Set<PlaylistSongModel>();
+    public DbSet<SecretSantaGroupModel> SecretSantaGroups => Set<SecretSantaGroupModel>();
+    public DbSet<SecretSantaPairModel> SecretSantaPairs => Set<SecretSantaPairModel>();
 
     public BrobotDbContext(DbContextOptions<BrobotDbContext> options)
         : base(options)
@@ -329,5 +331,71 @@ public class BrobotDbContext : DbContext
         builder.Entity<PlaylistSongModel>()
             .HasIndex((ps) => new { ps.PlaylistId, ps.Order })
             .IsUnique();
+
+        builder.Entity<SecretSantaGroupModel>()
+            .ToTable(name: "secret_santa_group", schema: "brobot")
+            .HasKey((ssg) => ssg.Id);
+        builder.Entity<SecretSantaGroupModel>()
+            .Property((ssg) => ssg.Id)
+            .HasColumnName("id")
+            .IsRequired();
+        builder.Entity<SecretSantaGroupModel>()
+            .Property((ssg) => ssg.Name)
+            .HasColumnName("name")
+            .IsRequired()
+            .HasMaxLength(50);
+
+        builder.Entity<SecretSantaGroupUserModel>()
+            .ToTable(name: "secret_santa_group_user", schema: "brobot")
+            .HasKey((ssgu) => new { ssgu.UserId, ssgu.SecretSantaGroupId });
+        builder.Entity<SecretSantaGroupUserModel>()
+            .Property((ssgu) => ssgu.SecretSantaGroupId)
+            .HasColumnName("secret_santa_group_id");
+        builder.Entity<SecretSantaGroupUserModel>()
+            .Property((ssgu) => ssgu.UserId)
+            .HasColumnName("user_id");
+        builder.Entity<SecretSantaGroupUserModel>()
+            .HasOne((ssgu) => ssgu.SecretSantaGroup)
+            .WithMany((ssg) => ssg.SecretSantaGroupUsers)
+            .HasForeignKey((ssg) => ssg.SecretSantaGroupId);
+        builder.Entity<SecretSantaGroupUserModel>()
+            .HasOne((ssgu) => ssgu.User)
+            .WithMany((u) => u.SecretSantaGroupUsers)
+            .HasForeignKey((ssgu) => ssgu.UserId);
+
+        builder.Entity<SecretSantaPairModel>()
+            .ToTable(name: "secret_santa_pair", schema: "brobot")
+            .HasKey((ssp) => ssp.Id);
+        builder.Entity<SecretSantaPairModel>()
+            .Property((ssp) => ssp.Id)
+            .HasColumnName("id");
+        builder.Entity<SecretSantaPairModel>()
+            .Property((ssp) => ssp.SecretSantaGroupId)
+            .HasColumnName("secret_santa_group_id")
+            .IsRequired();
+        builder.Entity<SecretSantaPairModel>()
+            .Property((ssp) => ssp.Year)
+            .HasColumnName("year")
+            .IsRequired();
+        builder.Entity<SecretSantaPairModel>()
+            .Property((ssp) => ssp.GiverUserId)
+            .HasColumnName("giver_user_id")
+            .IsRequired();
+        builder.Entity<SecretSantaPairModel>()
+            .Property((ssp) => ssp.RecipientUserId)
+            .HasColumnName("recipient_user_id")
+            .IsRequired();
+        builder.Entity<SecretSantaPairModel>()
+            .HasOne((ssp) => ssp.SecretSantaGroup)
+            .WithMany((ssg) => ssg.SecretSantaPairs)
+            .HasForeignKey((ssp) => ssp.SecretSantaGroupId);
+        builder.Entity<SecretSantaPairModel>()
+            .HasOne((ssp) => ssp.GiverUser)
+            .WithMany((u) => u.Givers)
+            .HasForeignKey((ssp) => ssp.GiverUserId);
+        builder.Entity<SecretSantaPairModel>()
+            .HasOne((ssp) => ssp.RecipientUser)
+            .WithMany((u) => u.Recipients)
+            .HasForeignKey((ssp) => ssp.RecipientUserId);
     }
 }

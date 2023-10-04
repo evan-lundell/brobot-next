@@ -87,4 +87,12 @@ public class UsersController : ControllerBase
             PrimaryChannelId = discordUser.PrimaryChannelId
         });
     }
+
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<UserModel>>> GetAllUsers()
+    {
+        var users = await _uow.Users.GetAll();
+        return Ok(_mapper.Map<UserModel[]>(users));
+    }
 }

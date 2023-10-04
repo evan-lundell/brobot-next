@@ -19,6 +19,7 @@ public class UnitOfWork : IUnitOfWork
         DailyMessageCounts = new DailyMessageCountRepository(context);
         Playlists = new PlaylistRepository(context);
         PlaylistSongs = new PlaylistSongRepository(context);
+        SecretSantaGroups = new SecretSantaGroupRepository(context);
     }
 
     public IUserRepository Users { get; }
@@ -31,7 +32,8 @@ public class UnitOfWork : IUnitOfWork
     public IHotOpSessionRepository HotOpSessions { get; }
     public IDailyMessageCountRepository DailyMessageCounts { get; }
     public IPlaylistRepository Playlists { get; }
-    public IPlaylistSongRepository PlaylistSongs { get; set; }
+    public IPlaylistSongRepository PlaylistSongs { get; }
+    public ISecretSantaGroupRepository SecretSantaGroups { get; }
     
 
     public Task<int> CompleteAsync()
