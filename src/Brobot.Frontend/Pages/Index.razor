@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject JwtAuthenticationStateProvider JwtAuthenticationStateProvider
+@inject ApiService ApiService
 
 <PageTitle>Brobot</PageTitle>
 
@@ -7,18 +8,23 @@
     <Authorized>
         <div class="row">
             <div class="col-sm-5 rz-shadow-1 m-3">
-                <DailyMessagesChart />
+                <DailyMessagesChart Channels="_channels" />
             </div>
             <div class="col-sm-5 rz-shadow-1 m-3">
-                <TotalDailyMessagesChart />
+                <TotalDailyMessagesChart Channels="_channels" />
             </div>
         </div>
         <div class="row">
             <div class="col-sm-5 rz-shadow-1 m-3">
-                <TopUsersToday />
+                <TopUsersToday Channels="_channels" />
             </div>
             <div class="col-sm-5 rz-shadow-1 m-3">
-                <TopMessagesAllTime />
+                <TopMessagesAllTime Channels="_channels" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-5 rz-shadow-1 m-3">
+                <TotalTopDaysChart Channels="_channels" />
             </div>
         </div>
     </Authorized>
@@ -33,3 +39,16 @@
         }
     </NotAuthorized>
 </AuthorizeView>
+
+@code
+{
+    private ChannelResponse[]? _channels;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        if (JwtAuthenticationStateProvider.IsLoggedIn)
+        {
+            _channels = await ApiService.GetChannels();
+        }
+    }
+}

@@ -1,8 +1,8 @@
+@inherits DashboardGraphBase
 @inject ApiService ApiService
 @inject IToastService ToastService
-@inherits DashboardGraphBase
 
-@if (_topDailyMessageCounts == null)
+@if (_totalTopDaysCounts == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -11,7 +11,7 @@ else
     <div class="p-3">
         <div class="row">
             <div class="col-12">
-                <h3>My Top Days (All Time)</h3>
+                <h3>Top Days All Users (All Time)</h3>
             </div>
         </div>
         <div class="row my-3">
@@ -29,7 +29,7 @@ else
         <div class="row">
             <div class="col-12">
                 <ol>
-                    @foreach (var messageCount in _topDailyMessageCounts)
+                    @foreach (var messageCount in _totalTopDaysCounts)
                     {
                         <li>@messageCount.CountDate.ToString("MM/dd/yyyy") - @messageCount.MessageCount</li>
                     }
@@ -40,16 +40,15 @@ else
 }
 
 @code {
-    private DailyMessageCountResponse[]? _topDailyMessageCounts;
-
-    private Dictionary<ulong, DailyMessageCountResponse[]> _topDailyMessageCache = new();
+    private DailyMessageCountResponse[]? _totalTopDaysCounts;
+    private Dictionary<ulong, DailyMessageCountResponse[]> _totalTopDaysCache = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _topDailyMessageCounts = await ApiService.GetTopDays();
-            _topDailyMessageCache.Add(0, _topDailyMessageCounts);
+            _totalTopDaysCounts = await ApiService.GetTotalTopDays();
+            _totalTopDaysCache.Add(0, _totalTopDaysCounts);
         }
         catch (Exception e)
         {
@@ -61,28 +60,27 @@ else
     {
         if (!ulong.TryParse(eventArgs.Value?.ToString(), out var channelId))
         {
-            if (_topDailyMessageCache.TryGetValue(0, out var value))
+            if (_totalTopDaysCache.TryGetValue(0, out var value))
             {
-                _topDailyMessageCounts = value;
+                _totalTopDaysCounts = value;
             }
             else
             {
-                _topDailyMessageCounts = await ApiService.GetTopDays();
-                _topDailyMessageCache.Add(0, _topDailyMessageCounts);
+                _totalTopDaysCounts = await ApiService.GetTotalTopDays();
+                _totalTopDaysCache.Add(0, _totalTopDaysCounts);
             }
         }
         else
         {
-            if (_topDailyMessageCache.TryGetValue(channelId, out var value))
+            if (_totalTopDaysCache.TryGetValue(channelId, out var value))
             {
-                _topDailyMessageCounts = value;
+                _totalTopDaysCounts = value;
             }
             else
             {
-                _topDailyMessageCounts = await ApiService.GetTopDays(channelId);
-                _topDailyMessageCache.Add(channelId, _topDailyMessageCounts);
+                _totalTopDaysCounts = await ApiService.GetTotalTopDays(channelId);
+                _totalTopDaysCache.Add(channelId, _totalTopDaysCounts);
             }
         }
-
     }
 }
