@@ -1,3 +1,4 @@
+using System.Collections;
 using AutoMapper;
 using Brobot.Models;
 using Brobot.Repositories;
@@ -192,6 +193,36 @@ public class MessageCountService
             Username = ""
         };
         return GetDailyMessageCountResponses(counts, fakeUser, startDate, currentDate);
+    }
+    
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetTotalTopDays(int numOfDays)
+    {
+        var counts = await _uow.DailyMessageCounts.GetTotalTopDays(numOfDays);
+        var fakeUser = new UserResponse
+        {
+            Username = ""
+        };
+        return counts.Select((dmc) => new DailyMessageCountResponse
+        {
+            CountDate = dmc.CountDate,
+            MessageCount = dmc.MessageCount,
+            User = fakeUser
+        });
+    }
+    
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetTotalTopDaysByChannel(ulong channelId, int numOfDays)
+    {
+        var counts = await _uow.DailyMessageCounts.GetTotalTopDaysByChannel(channelId, numOfDays);
+        var fakeUser = new UserResponse
+        {
+            Username = ""
+        };
+        return counts.Select((dmc) => new DailyMessageCountResponse
+        {
+            CountDate = dmc.CountDate,
+            MessageCount = dmc.MessageCount,
+            User = fakeUser
+        });
     }
 
     private (DateOnly CurrentDate, DateOnly StartDate) GetDates(int numOfDays, string timezoneString)

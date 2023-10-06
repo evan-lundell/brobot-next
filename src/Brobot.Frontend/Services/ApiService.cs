@@ -130,6 +130,19 @@ public class ApiService
                Array.Empty<DailyMessageCountResponse>();
     }
 
+    public async Task<DailyMessageCountResponse[]> GetTotalTopDays(ulong? channelId = null)
+    {
+        if (channelId == null)
+        {
+            return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>($"MessageCounts/total-top-days")
+                   ?? Array.Empty<DailyMessageCountResponse>();
+        }
+
+        return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>(
+                   $"MessageCounts/total-top-days?channelId={channelId.Value}") ??
+               Array.Empty<DailyMessageCountResponse>();
+    }
+
     public Task SendMessage(SendMessageRequest sendMessageRequest)
         => _client.PostAsJsonAsync("Messages/send", sendMessageRequest);
 

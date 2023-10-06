@@ -1,5 +1,6 @@
 @inject ApiService ApiService
 @inject IToastService ToastService
+@inherits DashboardGraphBase
 
 @if (_topUsersToday == null)
 {
@@ -18,7 +19,7 @@ else
                 <label class="form-label">Channel</label>
                 <select class="form-select" @onchange="OnChannelChange">
                     <option value="">All</option>
-                    @foreach (var channel in _channels ?? Array.Empty<ChannelResponse>())
+                    @foreach (var channel in Channels ?? Array.Empty<ChannelResponse>())
                     {
                         <option value="@channel.Id">@channel.Name</option>
                     }
@@ -47,7 +48,6 @@ else
 
 @code {
     private DailyMessageCountResponse[]? _topUsersToday;
-    private ChannelResponse[]? _channels;
 
     private Dictionary<ulong, DailyMessageCountResponse[]> _topUsersTodayCache = new();
 
@@ -55,7 +55,6 @@ else
     {
         try
         {
-            _channels = await ApiService.GetChannels();
             _topUsersToday = await ApiService.GetTodaysTopUsers();
             _topUsersTodayCache.Add(0, _topUsersToday);
         }
