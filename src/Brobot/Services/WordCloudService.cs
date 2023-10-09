@@ -45,9 +45,7 @@ public class WordCloudService
                 { " ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "(", ")", "\"", "@" };
 
             bool doneWithMonth = false;
-            // TODO: Uncomment this line and get ride of the following
-            // int lastMonth = DateTime.UtcNow.Month - 1;
-            int lastMonth = DateTime.UtcNow.Month;
+            int lastMonth = DateTime.UtcNow.Month - 1;
             while (!doneWithMonth)
             {
                 IAsyncEnumerable<IReadOnlyCollection<IMessage>> previousMessages = fromMessageId.HasValue
