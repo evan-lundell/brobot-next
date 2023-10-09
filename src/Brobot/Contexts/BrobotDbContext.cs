@@ -15,6 +15,7 @@ public class BrobotDbContext : DbContext
     public DbSet<PlaylistSongModel> PlaylistSongs => Set<PlaylistSongModel>();
     public DbSet<SecretSantaGroupModel> SecretSantaGroups => Set<SecretSantaGroupModel>();
     public DbSet<SecretSantaPairModel> SecretSantaPairs => Set<SecretSantaPairModel>();
+    public DbSet<StopWordModel> StopWords => Set<StopWordModel>();
 
     public BrobotDbContext(DbContextOptions<BrobotDbContext> options)
         : base(options)
@@ -56,6 +57,11 @@ public class BrobotDbContext : DbContext
             .HasColumnName("archived")
             .HasDefaultValue(false)
             .IsRequired();
+        builder.Entity<ChannelModel>()
+            .Property((c) => c.MonthlyWordCloud)
+            .HasColumnName("monthly_word_cloud")
+            .IsRequired()
+            .HasDefaultValue(false);
         builder.Entity<ChannelModel>()
             .Property((c) => c.GuildId)
             .HasColumnName("guild_id")
@@ -397,5 +403,19 @@ public class BrobotDbContext : DbContext
             .HasOne((ssp) => ssp.RecipientUser)
             .WithMany((u) => u.Recipients)
             .HasForeignKey((ssp) => ssp.RecipientUserId);
+
+        builder.Entity<StopWordModel>()
+            .ToTable(name: "stop_word", schema: "brobot")
+            .HasKey((sw) => sw.Id);
+        builder.Entity<StopWordModel>()
+            .Property((sw) => sw.Id)
+            .HasColumnName("id");
+        builder.Entity<StopWordModel>()
+            .Property((sw) => sw.Word)
+            .HasColumnName("word")
+            .IsRequired();
+        builder.Entity<StopWordModel>()
+            .HasIndex((sw) => sw.Word)
+            .IsUnique();
     }
 }

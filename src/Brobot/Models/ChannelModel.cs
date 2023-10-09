@@ -7,6 +7,7 @@ public class ChannelModel
     public ulong Id { get; set; }
     public required string Name { get; set; }
     public bool Archived { get; set; }
+    public bool MonthlyWordCloud { get; set; }
 
     public ulong GuildId { get; set; }
     public required GuildModel Guild { get; set; }

@@ -20,6 +20,7 @@ public class UnitOfWork : IUnitOfWork
         Playlists = new PlaylistRepository(context);
         PlaylistSongs = new PlaylistSongRepository(context);
         SecretSantaGroups = new SecretSantaGroupRepository(context);
+        StopWords = new StopWordRepository(context);
     }
 
     public IUserRepository Users { get; }
@@ -34,7 +35,7 @@ public class UnitOfWork : IUnitOfWork
     public IPlaylistRepository Playlists { get; }
     public IPlaylistSongRepository PlaylistSongs { get; }
     public ISecretSantaGroupRepository SecretSantaGroups { get; }
-    
+    public IStopWordRepository StopWords { get; }
 
     public Task<int> CompleteAsync()
     {
