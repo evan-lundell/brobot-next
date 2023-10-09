@@ -144,7 +144,7 @@ public static class Program
             });
             builder.Services.AddCronJob<WordCloudWorker>((options) =>
             {
-                options.CronExpression = "49 20 * * *";
+                options.CronExpression = "0 13 1 * *";
             });
         }
 
