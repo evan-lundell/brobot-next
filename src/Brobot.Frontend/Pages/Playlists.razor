@@ -112,13 +112,13 @@ else
             {
                 await _grid.Reload();
             }
+            ToastService.ShowSuccess("Successfully saved playlist");
         }
         catch (Exception ex)
         {
             ToastService.ShowError($"Failed to save playlist. {ex.Message}");
         }
         
-        ToastService.ShowSuccess("Successfully saved playlist");
         if (_newPlaylistModal != null)
         {
             await _newPlaylistModal.HideModal();

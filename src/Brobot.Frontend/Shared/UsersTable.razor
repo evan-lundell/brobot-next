@@ -1,41 +1,37 @@
 @inject ApiService ApiService
+@inherits LoadableComponentBase
 
-@if (_userResponses == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <div class="rz-shadow-1">
-        <table class="table">
-            <thead>
+<h3>Users</h3>
+
+<div class="rz-shadow-1">
+    <table class="table">
+        <thead>
+        <tr>
+            <th>User</th>
+            <th>Discord</th>
+            <th></th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var user in _userResponses ?? Array.Empty<IdentityUserResponse>())
+        {
             <tr>
-                <th>User</th>
-                <th>Discord</th>
-                <th></th>
-                <th></th>
+                <td>@(user.Email ?? user.Username ?? "unknown")</td>
+                <td>
+                    @if (user.IsDiscordAuthenticated)
+                    {
+                        <span class="oi oi-check"></span>
+                    }
+                </td>
+                <td><a href="#">Edit</a></td>
+                <td><a href="#">Delete</a></td>
             </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in _userResponses)
-                {
-                    <tr>
-                        <td>@(user.Email ?? user.Username ?? "unknown")</td>
-                        <td>
-                            @if (user.IsDiscordAuthenticated)
-                            {
-                                <span class="oi oi-check"></span>
-                            }
-                        </td>
-                        <td><a href="#">Edit</a></td>
-                        <td><a href="#">Delete</a></td>
-                    </tr>
-                    
-                }
-            </tbody>
-        </table>
-    </div>
-}
+
+        }
+        </tbody>
+    </table>
+</div>
 
 @code {
     private IdentityUserResponse[]? _userResponses;
@@ -43,5 +39,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         _userResponses = await ApiService.GetIdentityUsers();
+        await UpdateLoaded(true);
     }
 }

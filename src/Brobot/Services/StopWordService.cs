@@ -26,8 +26,8 @@ public class StopWordService
 
             _isOutdated = false;
         }
-
-        return _stopWords.Contains(word);
+        
+        return _stopWords.Contains(word.ToLower());
     }
 
     public void StopWordsUpdated()

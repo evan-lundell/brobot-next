@@ -11,7 +11,7 @@ namespace Brobot.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "admin")]
+[Authorize(Roles = "Admin")]
 public class StopWordsController : ControllerBase
 {
     private readonly IUnitOfWork _uow;
@@ -35,6 +35,7 @@ public class StopWordsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<StopWordResponse>> CreateStopWord(StopWordRequest stopWordRequest)
     {
+        stopWordRequest.Word = stopWordRequest.Word.ToLower();
         if (await _uow.StopWords.StopWordExists(stopWordRequest.Word))
         {
             return BadRequest("Stop word already exists");
