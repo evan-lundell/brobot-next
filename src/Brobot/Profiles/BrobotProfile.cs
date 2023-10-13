@@ -32,5 +32,8 @@ public class BrobotProfile : Profile
         CreateMap<SecretSantaPairModel, SecretSantaPairResponse>()
             .ForMember((ssp) => ssp.Giver, (opt) => opt.MapFrom((model) => model.GiverUser))
             .ForMember((ssp) => ssp.Recipient, (opt) => opt.MapFrom((model) => model.RecipientUser));
+
+        CreateMap<StopWordModel, StopWordResponse>();
+        CreateMap<StopWordRequest, StopWordModel>();
     }
 }

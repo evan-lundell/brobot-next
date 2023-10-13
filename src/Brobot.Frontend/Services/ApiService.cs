@@ -12,6 +12,7 @@ public class ApiService
     public IPlaylistService PlaylistService { get; }
     public IScheduledMessageService ScheduledMessageService { get; }
     public ISecretSantaService SecretSantaService { get; }
+    public IStopWordService StopWordService { get; }
 
     public ApiService(HttpClient client)
     {
@@ -20,6 +21,7 @@ public class ApiService
         PlaylistService = new PlaylistService(client);
         ScheduledMessageService = new ScheduledMessageService(client);
         SecretSantaService = new SecretSantaService(client);
+        StopWordService = new StopWordService(client);
     }
 
     public async Task<LoginResponse?> RefreshToken()

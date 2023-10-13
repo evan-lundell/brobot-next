@@ -32,7 +32,7 @@
 
     [Parameter]
     public ChannelResponse[]? Channels { get; set; } = Array.Empty<ChannelResponse>();
-
+    
     private bool DisableSend => _isSending || string.IsNullOrWhiteSpace(_message) || _selectedChannelId == null;
     
     private string? _message;

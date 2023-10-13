@@ -1,0 +1,120 @@
+@inherits LoadableComponentBase
+@inject ApiService ApiService
+@inject IToastService ToastService
+
+<h3>Stop Words</h3>
+
+<div class="row">
+    <div class="offset-md-2 col-md-2 offset-lg-4 col-lg-1">
+        <button type="button" class="btn btn-block btn-primary" @onclick="NewStopWord">Add</button>
+    </div>
+    <div class="col-md-2 col-lg-1">
+        <button type="button" class="btn btn-block btn-danger" @onclick="DeleteStopWord">Remove</button>
+    </div>
+</div>
+<div class="row my-2">
+    <div class="col-6">
+        <RadzenListBox @bind-Value="_selectedStopWord" Data="_stopWords" Style="width: 100%;height:200px" />
+    </div>
+</div>
+<FormModal
+    Id="newStopWordModal"
+    @ref="_newStopWordModal"
+    Title="New Stop Word"
+    Model="@_newStopWord"
+    OnValidSubmit="SubmitNewStopWord">
+    <ModalBody>
+        <div class="row">
+            <div class="col-12">
+                <label class="form-label">Word</label>
+                <InputText class="form-control" @bind-Value="_newStopWord.Word"></InputText>
+            </div>
+        </div>
+    </ModalBody>
+</FormModal>
+<ConfirmationModal
+    Id="deleteStopWordModal"
+    @ref="_deleteStopWordModal"
+    Title="Delete Stop Word?"
+    OnConfirmationClosed="DeleteStopWordModalClosed"></ConfirmationModal>
+
+@code {
+    private List<string>? _stopWords;
+
+    private string? _selectedStopWord;
+
+    private StopWordRequest _newStopWord = new()
+    {
+        Word = string.Empty
+    };
+    
+    private FormModal? _newStopWordModal;
+    private ConfirmationModal? _deleteStopWordModal;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        _stopWords = (await ApiService.StopWordService.GetAll())
+            .Select((sw) => sw.Word)
+            .Order()
+            .ToList();
+        await UpdateLoaded(true);
+    }
+
+    private async Task NewStopWord()
+    {
+        if (_newStopWordModal != null)
+        {
+            await _newStopWordModal.ShowModal();
+        }
+    }
+
+    private async Task SubmitNewStopWord()
+    {
+        try
+        {
+            var newStopWord = await ApiService.StopWordService.Create(_newStopWord);
+            _stopWords?.Add(newStopWord.Word);
+            _stopWords = _stopWords?.Order().ToList();
+            ToastService.ShowSuccess("Successfully added stop word");
+            _newStopWord = new StopWordRequest
+            {
+                Word = string.Empty
+            };
+        }
+        catch (Exception e)
+        {
+            ToastService.ShowError(e.Message);
+        }
+
+        if (_newStopWordModal != null)
+        {
+            await _newStopWordModal.HideModal();
+        }
+    }
+
+    private async Task DeleteStopWord()
+    {
+        if (_deleteStopWordModal != null)
+        {
+            await _deleteStopWordModal.ShowModal();
+        }
+    }
+
+    private async Task DeleteStopWordModalClosed(bool confirmed)
+    {
+        try
+        {
+            if (confirmed && _selectedStopWord != null)
+            {
+                await ApiService.StopWordService.DeleteByWord(_selectedStopWord);
+                _stopWords?.Remove(_selectedStopWord);
+                _selectedStopWord = null;
+                ToastService.ShowSuccess("Successfully deleted stop word");
+            }
+        }
+        catch (Exception e)
+        {
+            ToastService.ShowError("Failed to delete stop word");
+        }
+    }
+}

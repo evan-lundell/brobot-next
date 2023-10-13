@@ -1,24 +1,48 @@
 @page "/admin"
 @inject ApiService ApiService
+@attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Admin</PageTitle>
 
-@if (_channels == null)
+<div class="@(Loaded ? string.Empty : "hidden")">
+    <div class="row my-3">
+        <div class="col-12">
+            <SendMessage Channels="@_channels"/>
+        </div>
+    </div>
+    <div class="row my-3">
+        <div class="col-12">
+            <UsersTable @bind-Loaded="_usersTableLoaded" />
+        </div>
+    </div>
+    <div class="row my-3">
+        <div class="col-12">
+            <SecretSanta @bind-Loaded="_secretSantaLoaded"/>
+        </div>
+    </div>
+    <div class="row my-3">
+        <div class="col-12">
+            <StopWords @bind-Loaded="_stopWordsLoaded" />
+        </div>
+    </div>
+</div>
+
+@if (!Loaded)
 {
     <p><em>Loading...</em></p>
-}
-else
-{
-    <SendMessage Channels="@_channels" />
-    <UsersTable />
 }
 
 @code {
     private ChannelResponse[]? _channels;
+    
+    private bool _usersTableLoaded;
+    private bool _secretSantaLoaded;
+    private bool _stopWordsLoaded;
 
+    private bool Loaded => _channels != null && _usersTableLoaded && _secretSantaLoaded && _stopWordsLoaded;
+    
     protected override async Task OnInitializedAsync()
     {
         _channels = await ApiService.GetChannels();
     }
-
 }
