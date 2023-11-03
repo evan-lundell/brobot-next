@@ -73,6 +73,7 @@ public static class Program
 
     private static void CreateServices(WebApplicationBuilder builder, string[] args)
     {
+        builder.Services.AddLogging();
         builder.Services.AddControllersWithViews();
         builder.Services.AddRazorPages();
         builder.Services.AddEndpointsApiExplorer();
