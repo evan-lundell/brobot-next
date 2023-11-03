@@ -4,21 +4,17 @@ using Brobot.Repositories;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using Victoria.Node;
-using Victoria.Node.EventArgs;
-using Victoria.Player;
 // ReSharper disable MemberCanBeMadeStatic.Local
 
 namespace Brobot.Services;
 
-public class DiscordEventHandler : IDisposable, IAsyncDisposable
+public class DiscordEventHandler : IDisposable
 {
     private readonly DiscordSocketClient _client;
     private readonly IServiceProvider _services;
     private readonly ISyncService _sync;
     private readonly InteractionService _commands;
     private readonly HotOpService _hotOpService;
-    private readonly LavaNode _node;
     private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
 
@@ -27,7 +23,6 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         IServiceProvider services,
         ISyncService sync,
         HotOpService hotOpService,
-        LavaNode node,
         IConfiguration configuration,
         ILogger<DiscordEventHandler> logger)
     {
@@ -36,7 +31,6 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         _sync = sync;
         _commands = new InteractionService(client);
         _hotOpService = hotOpService;
-        _node = node;
         _configuration = configuration;
         _logger = logger;
     }
@@ -61,7 +55,6 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         _client.ThreadUpdated += ThreadUpdated;
         _client.ThreadMemberJoined += ThreadMemberJoined;
         _client.ThreadMemberLeft += ThreadMemberLeft;
-        _node.OnTrackEnd += OnTrackEnd;
     }
 
 #pragma warning disable CA1816
@@ -84,7 +77,6 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         _client.ThreadUpdated -= ThreadUpdated;
         _client.ThreadMemberJoined -= ThreadMemberJoined;
         _client.ThreadMemberLeft -= ThreadMemberLeft;
-        _node.OnTrackEnd -= OnTrackEnd;
     }
 
     private Task PresenceUpdated(SocketUser socketUser, SocketPresence formerPresence, SocketPresence currentPresence)
@@ -234,15 +226,6 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         {
             _ = _sync.SyncOnStartup();
         }
-
-        try
-        {
-            await _node.ConnectAsync();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
     }
 
     private Task Log(LogMessage logMessage)
@@ -253,34 +236,6 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
             Console.WriteLine(logMessage.Exception.Message);
         }
         return Task.CompletedTask;
-    }
-
-    private async Task OnTrackEnd(TrackEndEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
-    {
-        _logger.LogInformation("Track ended");
-
-        var player = arg.Player;
-        if (player.Vueue.Count == 0)
-        {
-            _logger.LogInformation("Queue empty");
-            return;
-        }
-        
-        if (arg.Reason != TrackEndReason.Finished)
-        {
-            _logger.LogInformation("Not playing next, track end reason {Reason}", arg.Reason.ToString());
-            return;
-        }
-
-        
-        if (!player.Vueue.TryDequeue(out LavaTrack nextTrack))
-        {
-            _logger.LogInformation("Not playing next, unable to dequeue next track");
-            return;
-        }
-
-        _logger.LogInformation("Queuing next track");
-        await player.PlayAsync(nextTrack);
     }
 
     private async Task ThreadCreated(SocketThreadChannel thread)
@@ -421,20 +376,5 @@ public class DiscordEventHandler : IDisposable, IAsyncDisposable
         }
         existingChannelModel.ChannelUsers.Remove(channelUserModel);
         await uow.CompleteAsync();
-    }
-
-#pragma warning disable CA1816
-    public async ValueTask DisposeAsync()
-#pragma warning restore CA1816
-    {
-        foreach (var player in _node.Players)
-        {
-            if (player.VoiceChannel != null)
-            {
-                await _node.LeaveAsync(player.VoiceChannel);
-            }
-        }
-        await _node.DisconnectAsync();
-        Dispose();
     }
 }
