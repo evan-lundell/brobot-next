@@ -11,11 +11,6 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
-  lavalink:
-    container_name: lavalink
-    image: fredboat/lavalink
-    volumes:
-      - ./Lavalink:/opt/Lavalink:ro
   brobot:
     container_name: brobot
     build:
@@ -36,8 +31,3 @@ services:
     depends_on:
       brobot-db:
         condition: service_started
-      lavalink:
-        condition: service_started
-        
-
-      

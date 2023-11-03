@@ -142,21 +142,8 @@ public static class Program
             {
                 options.CronExpression = "* * * * *";
             });
-            builder.Services.AddCronJob<WordCloudWorker>((options) =>
-            {
-                options.CronExpression = "0 13 1 * *";
-            });
         }
-
-        builder.Services.AddLogging();
-        var nodeConfig = new NodeConfiguration
-        {
-            Authorization = builder.Configuration["LavalinkPassword"],
-            Hostname = builder.Configuration["LavalinkHost"],
-            Port = 2333
-        };
-        builder.Services.AddSingleton(nodeConfig);
-        builder.Services.AddSingleton<LavaNode>();
+        
         builder.Services.AddAuthentication()
         .AddJwtBearer((options) =>
         {

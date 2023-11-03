@@ -11,13 +11,5 @@ services:
       - POSTGRES_PASSWORD=D3vPa55!
     ports:
       - 5432:5432
-  lavalink:
-    container_name: lavalink
-    image: fredboat/lavalink
-    volumes:
-      - ./Lavalink:/opt/Lavalink:ro
-    ports:
-      - 2333:2333
-
 volumes:
   postgres-data:
