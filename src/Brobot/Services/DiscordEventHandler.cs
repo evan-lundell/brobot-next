@@ -96,6 +96,15 @@ public class DiscordEventHandler : IDisposable
     {
         return Task.Run(async () =>
         {
+            if (socketMessage.Author.IsBot)
+            {
+                return;
+            }
+            
+            using var scope = _services.CreateScope();
+            var messageCountService = scope.ServiceProvider.GetRequiredService<MessageCountService>();
+            await messageCountService.AddToDailyCount(socketMessage.Author.Id, socketMessage.Channel.Id);
+            
             switch (socketMessage.Content.ToLower())
             {
                 case "good bot":
@@ -106,14 +115,11 @@ public class DiscordEventHandler : IDisposable
                     break;
             }
 
-            if (socketMessage.Author.IsBot)
+            if (socketMessage.Content.Contains("twitter.com"))
             {
-                return;
+                var newMessage = socketMessage.Content.Replace("twitter.com", "vxtwitter.com");
+                await socketMessage.Channel.SendMessageAsync(newMessage);
             }
-
-            using var scope = _services.CreateScope();
-            var messageCountService = scope.ServiceProvider.GetRequiredService<MessageCountService>();
-            await messageCountService.AddToDailyCount(socketMessage.Author.Id, socketMessage.Channel.Id);
         });
     }
 
