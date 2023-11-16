@@ -115,7 +115,7 @@ public class DiscordEventHandler : IDisposable
                     break;
             }
 
-            if (socketMessage.Content.Contains("twitter.com"))
+            if (socketMessage.Content.Contains("twitter.com") && !socketMessage.Content.Contains("vxtwitter.com") && !socketMessage.Content.Contains("fxtwitter.com"))
             {
                 var newMessage = socketMessage.Content.Replace("twitter.com", "vxtwitter.com");
                 await socketMessage.Channel.SendMessageAsync(newMessage);
