@@ -115,9 +115,15 @@ public class DiscordEventHandler : IDisposable
                     break;
             }
 
-            if (socketMessage.Content.Contains("twitter.com") && !socketMessage.Content.Contains("vxtwitter.com") && !socketMessage.Content.Contains("fxtwitter.com"))
+            if (socketMessage.Content.Contains("https://twitter.com"))
             {
-                var newMessage = socketMessage.Content.Replace("twitter.com", "vxtwitter.com");
+                var newMessage = socketMessage.Content.Replace("https://twitter.com", "https://vxtwitter.com");
+                await socketMessage.Channel.SendMessageAsync(newMessage);
+            }
+
+            if (socketMessage.Content.Contains("https://x.com"))
+            {
+                var newMessage = socketMessage.Content.Replace("https://x.com", "https://vxtwitter.com");
                 await socketMessage.Channel.SendMessageAsync(newMessage);
             }
         });
