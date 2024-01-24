@@ -115,16 +115,20 @@ public class DiscordEventHandler : IDisposable
                     break;
             }
 
-            if (socketMessage.Content.Contains("https://twitter.com"))
+            var fixTwitterLinks = bool.Parse(_configuration["FixTwitterLinks"] ?? "false");
+            if (fixTwitterLinks)
             {
-                var newMessage = socketMessage.Content.Replace("https://twitter.com", "https://vxtwitter.com");
-                await socketMessage.Channel.SendMessageAsync(newMessage);
-            }
+                if (socketMessage.Content.Contains("https://twitter.com"))
+                {
+                    var newMessage = socketMessage.Content.Replace("https://twitter.com", "https://vxtwitter.com");
+                    await socketMessage.Channel.SendMessageAsync(newMessage);
+                }
 
-            if (socketMessage.Content.Contains("https://x.com"))
-            {
-                var newMessage = socketMessage.Content.Replace("https://x.com", "https://vxtwitter.com");
-                await socketMessage.Channel.SendMessageAsync(newMessage);
+                if (socketMessage.Content.Contains("https://x.com"))
+                {
+                    var newMessage = socketMessage.Content.Replace("https://x.com", "https://vxtwitter.com");
+                    await socketMessage.Channel.SendMessageAsync(newMessage);
+                }
             }
         });
     }
