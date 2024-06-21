@@ -4,7 +4,6 @@ using Brobot.Models;
 using Brobot.Profiles;
 using Brobot.Repositories;
 using Brobot.Services;
-using Discord;
 using Discord.WebSocket;
 using Moq;
 

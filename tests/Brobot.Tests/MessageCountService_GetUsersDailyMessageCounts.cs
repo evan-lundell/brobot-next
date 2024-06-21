@@ -4,8 +4,6 @@ using Brobot.Models;
 using Brobot.Profiles;
 using Brobot.Repositories;
 using Brobot.Services;
-using Brobot.Shared.Responses;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Brobot.Tests;
@@ -20,13 +18,12 @@ public class MessageCountService_GetUsersDailyMessageCounts
     {
         // Arrange
         var unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
-        var logger = new Mock<ILogger<MessageCountService>>();
         if (_mapper == null)
         {
             throw new Exception($"{nameof(_mapper)} is null");
         }
 
-        var service = new MessageCountService(unitOfWorkMock.Object, logger.Object, _mapper);
+        var service = new MessageCountService(unitOfWorkMock.Object, _mapper);
         var user = new UserModel
         {
             Id = 1,
@@ -93,12 +90,11 @@ public class MessageCountService_GetUsersDailyMessageCounts
                 m.Find(It.IsAny<Expression<Func<DailyMessageCountModel, bool>>>()))
             .ReturnsAsync(messageCountModels);
         unitOfWorkMock.Setup((uow) => uow.DailyMessageCounts).Returns(dailyMessageCountsRepoMock.Object);
-        var logger = new Mock<ILogger<MessageCountService>>();
         if (_mapper == null)
         {
             throw new Exception($"{nameof(_mapper)} is null");
         }
-        var service = new MessageCountService(unitOfWorkMock.Object, logger.Object, _mapper);
+        var service = new MessageCountService(unitOfWorkMock.Object, _mapper);
         
         // Act
         var results = await service.GetUsersTotalDailyMessageCounts(user, numOfDays);

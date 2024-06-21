@@ -74,7 +74,7 @@ public class HotOpService_GetScoreboard
         // Assert
         Assert.That(scoreboard.Scores.Count(), Is.EqualTo(3));
         var index = 0;
-        var expectedValues = new string[]
+        var expectedValues = new[]
         {
             "FirstPlace",
             "SecondPlace",
