@@ -6,9 +6,7 @@ using Brobot.Shared;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using TimeZoneConverter;
 
 namespace Brobot.Controllers;
 
@@ -18,22 +16,16 @@ namespace Brobot.Controllers;
 public class HotOpsController : ControllerBase
 {
     private readonly IUnitOfWork _uow;
-    private readonly ILogger<HotOpsController> _logger;
     private readonly HotOpService _hotOpService;
-    private readonly UserManager<IdentityUser> _userManager;
     private readonly IMapper _mapper;
 
     public HotOpsController(
         IUnitOfWork uow, 
-        ILogger<HotOpsController> logger,
         HotOpService hotOpService,
-        UserManager<IdentityUser> userManager,
         IMapper mapper)
     {
         _uow = uow;
-        _logger = logger;
         _hotOpService = hotOpService;
-        _userManager = userManager;
         _mapper = mapper;
     }
 
@@ -201,7 +193,7 @@ public class HotOpsController : ControllerBase
     [HttpGet("{id:int}/scoreboard")]
     public async Task<ActionResult<IEnumerable<ScoreboardItemResponse>>> GetHotOpScoreboard(int id)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
+        if (HttpContext.Items["DiscordUser"] is not UserModel)
         {
             return Unauthorized();
         }

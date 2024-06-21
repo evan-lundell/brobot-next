@@ -1,6 +1,5 @@
 using Brobot.Repositories;
 using Brobot.Services;
-using Discord.WebSocket;
 
 namespace Brobot.Workers;
 
@@ -26,7 +25,7 @@ public class WordCloudWorker : CronWorkerBase
             using var scope = _services.CreateScope();
             var wordCloudService = scope.ServiceProvider.GetRequiredService<WordCloudService>();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var eligibleChannels = await uow.Channels.Find((c) => c.Archived == false && c.MonthlyWordCloud);
+            var eligibleChannels = await uow.Channels.Find(c => c.Archived == false && c.MonthlyWordCloud);
             foreach (var channel in eligibleChannels)
             {
                 await wordCloudService.GenerateWordCloud(channel);

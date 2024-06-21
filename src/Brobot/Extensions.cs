@@ -2,6 +2,8 @@ using Brobot.Middlewares;
 using Brobot.Workers;
 using TimeZoneConverter;
 
+namespace Brobot;
+
 public static class Extensions
 {
     public static void AddIfNotNull<T>(this List<T> list, T? value)

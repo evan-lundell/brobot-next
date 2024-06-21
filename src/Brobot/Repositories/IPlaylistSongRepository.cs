@@ -2,6 +2,4 @@ using Brobot.Models;
 
 namespace Brobot.Repositories;
 
-public interface IPlaylistSongRepository : IRepository<PlaylistSongModel, int>
-{
-}
+public interface IPlaylistSongRepository : IRepository<PlaylistSongModel, int>;

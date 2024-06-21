@@ -3,12 +3,12 @@ using Brobot.Contexts;
 using Brobot.Repositories;
 using Brobot.Services;
 using Brobot.Workers;
+using Discord;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Victoria.Node;
 
 namespace Brobot;
 
@@ -77,7 +77,7 @@ public static class Program
         builder.Services.AddControllersWithViews();
         builder.Services.AddRazorPages();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen((options) =>
+        builder.Services.AddSwaggerGen(options =>
         {
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
@@ -105,7 +105,7 @@ public static class Program
         });
         builder.Services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
         {
-            GatewayIntents = Discord.GatewayIntents.All,
+            GatewayIntents = GatewayIntents.All,
             MessageCacheSize = 100
         }));
         builder.Services.AddDbContext<BrobotDbContext>(
@@ -113,15 +113,15 @@ public static class Program
         );
         builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
         builder.Services.AddSingleton<Random>();
-        builder.Services.AddHttpClient<IGiphyService, GiphyService>((configure) =>
+        builder.Services.AddHttpClient<IGiphyService, GiphyService>(configure =>
         {
             configure.BaseAddress = new Uri(builder.Configuration["GiphyBaseUrl"] ?? "");
         });
-        builder.Services.AddHttpClient<IRandomFactService, RandomFactService>((configure) =>
+        builder.Services.AddHttpClient<IRandomFactService, RandomFactService>(configure =>
         {
             configure.BaseAddress = new Uri(builder.Configuration["RandomFactBaseUrl"] ?? "");
         });
-        builder.Services.AddHttpClient<IDictionaryService, DictionaryService>((configure) =>
+        builder.Services.AddHttpClient<IDictionaryService, DictionaryService>(configure =>
         {
             configure.BaseAddress = new Uri(builder.Configuration["DictionaryBaseUrl"] ?? "");
         });
@@ -131,22 +131,26 @@ public static class Program
 
         if (!args.Contains("--no-jobs"))
         {
-            builder.Services.AddCronJob<ReminderWorker>((options) =>
+            builder.Services.AddCronJob<ReminderWorker>(options =>
             {
                 options.CronExpression = "* * * * *";
             });
-            builder.Services.AddCronJob<BirthdayWorker>((options) =>
+            builder.Services.AddCronJob<BirthdayWorker>(options =>
             {
                 options.CronExpression = "0 12 * * *";
             });
-            builder.Services.AddCronJob<HotOpWorker>((options) =>
+            builder.Services.AddCronJob<HotOpWorker>(options =>
             {
                 options.CronExpression = "* * * * *";
+            });
+            builder.Services.AddCronJob<WordCloudWorker>(options =>
+            {
+                options.CronExpression = "0 13 1 * *";
             });
         }
         
         builder.Services.AddAuthentication()
-        .AddJwtBearer((options) =>
+        .AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters
             {
@@ -158,11 +162,11 @@ public static class Program
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSigningKey"] ?? ""))
             };
         });
-        builder.Services.AddDbContext<UsersDbContext>((options) =>
+        builder.Services.AddDbContext<UsersDbContext>(options =>
         {
             options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
         });
-        builder.Services.AddIdentityCore<IdentityUser>((options) =>
+        builder.Services.AddIdentityCore<IdentityUser>(options =>
         {
             options.User.RequireUniqueEmail = true;
             options.Password.RequireDigit = true;

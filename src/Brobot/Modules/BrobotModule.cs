@@ -1,4 +1,3 @@
-using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Services;
 using Discord.Interactions;
@@ -20,8 +19,8 @@ public class BrobotModule : InteractionModuleBase
     private readonly ScheduledMessageService _scheduledMessageService;
     private readonly ILogger _logger;
 
-    private readonly string[] _emojiLookup = new string[]
-    {
+    private readonly string[] _emojiLookup =
+    [
         ":one:",
         ":two:",
         ":three:",
@@ -31,7 +30,7 @@ public class BrobotModule : InteractionModuleBase
         ":seven:",
         ":eight:",
         ":nine:"
-    };
+    ];
 
     public BrobotModule(
         IUnitOfWork uow,
@@ -269,7 +268,7 @@ public class BrobotModule : InteractionModuleBase
         {
             builder.AppendLine($"{_emojiLookup[i]}: {options[i]}");
         }
-        await RespondAsync($"**{question}**\n\n{builder.ToString()}");
+        await RespondAsync($"**{question}**\n\n{builder}");
     }
 
     [SlashCommand("sarcasm", "Reposts text in sarcasm font")]
@@ -279,7 +278,7 @@ public class BrobotModule : InteractionModuleBase
         var builder = new StringBuilder();
         foreach (var c in text)
         {
-            if (c >= 'A' && c <= 'z')
+            if (c is >= 'A' and <= 'z')
             {
                 builder.Append(capitalize ? c.ToString().ToUpper() : c.ToString().ToLower());
                 capitalize = !capitalize;

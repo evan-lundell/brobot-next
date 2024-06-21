@@ -96,7 +96,7 @@ public class MessageCountsController : ControllerBase
     [HttpGet("total-top-days")]
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetTotalTopDays([FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
+        if (HttpContext.Items["DiscordUser"] is not UserModel)
         {
             return Unauthorized();
         }

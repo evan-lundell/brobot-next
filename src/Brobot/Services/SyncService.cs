@@ -73,7 +73,7 @@ public class SyncService : ISyncService
 
         var guild = _client.GetGuild(current.Guild.Id);
         var userName = "";
-        var auditLog = (await guild.GetAuditLogsAsync(limit: 1, actionType: Discord.ActionType.ChannelUpdated).FlattenAsync()).First();
+        var auditLog = (await guild.GetAuditLogsAsync(limit: 1, actionType: ActionType.ChannelUpdated).FlattenAsync()).First();
 
         if (auditLog != null)
         {
@@ -262,10 +262,7 @@ public class SyncService : ISyncService
                     {
                         continue;
                     }
-                    if (!userIds.Contains(user.Id))
-                    {
-                        userIds.Add(user.Id);
-                    }
+                    userIds.Add(user.Id);
                     if (!userModels.ContainsKey(user.Id))
                     {
                         var newUser = new UserModel
