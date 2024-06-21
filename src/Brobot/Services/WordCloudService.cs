@@ -45,8 +45,7 @@ public class WordCloudService
                 [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "(", ")", "\"", "@"];
 
             bool doneWithMonth = false;
-            // var lastMonth = DateTime.UtcNow.AddMonths(-1).Month;
-            var lastMonth = DateTime.UtcNow.Month;
+            var lastMonth = DateTime.UtcNow.AddMonths(-1).Month;
             Dictionary<string, int> userMessageCount = new();
             while (!doneWithMonth)
             {
