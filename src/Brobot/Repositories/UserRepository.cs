@@ -14,7 +14,7 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
     public override async Task Add(UserModel entity)
     {
         var existingUser = await GetById(entity.Id);
-        if (existingUser != null && existingUser.Archived)
+        if (existingUser is { Archived: true })
         {
             existingUser.Archived = false;
             return;
@@ -78,7 +78,7 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
     {
         var formattedIds = identityUserIds.Select((id) => $"'{id}'");
         return await Context.Users
-            .FromSqlRaw(
+            .FromSql(
                 $"SELECT * FROM brobot.discord_user WHERE identity_user_id IN ({string.Join(", ", formattedIds)})")
             .ToListAsync();
     }

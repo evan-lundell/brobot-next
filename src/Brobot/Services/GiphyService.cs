@@ -24,7 +24,7 @@ public class GiphyService : IGiphyService
         }
         queryStringBuilder.Add("rating", "pg-13");
 
-        var response = await _http.GetStringAsync($"random?{queryStringBuilder.ToString()}");
+        var response = await _http.GetStringAsync($"random?{queryStringBuilder}");
         var giphy = JsonConvert.DeserializeObject<GiphyResponse>(response);
         return giphy?.Data?.Url ?? "";
     }

@@ -33,7 +33,7 @@ public class JwtService
 
         if (userId.HasValue)
         {
-            claims.Add(new Claim(Brobot.Shared.Claims.ClaimTypes.DiscordId, userId.Value.ToString()));
+            claims.Add(new Claim(Shared.Claims.ClaimTypes.DiscordId, userId.Value.ToString()));
         }
 
         if (!string.IsNullOrWhiteSpace(role))

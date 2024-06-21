@@ -21,7 +21,7 @@ public class StopWordService
             {
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 var stopWordModels = await uow.StopWords.GetAll();
-                _stopWords = stopWordModels.Select((sw) => sw.Word).ToHashSet();
+                _stopWords = stopWordModels.Select(sw => sw.Word).ToHashSet();
             }
 
             _isOutdated = false;

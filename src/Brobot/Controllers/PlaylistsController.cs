@@ -6,7 +6,6 @@ using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Controllers;
 
@@ -17,18 +16,15 @@ public class PlaylistsController : ControllerBase
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
-    private readonly ILogger<PlaylistsController> _logger;
     private readonly SongDataService _songDataService;
     private readonly IConfiguration _configuration;
 
     public PlaylistsController(
         IUnitOfWork uow,
         IMapper mapper,
-        ILogger<PlaylistsController> logger,
         SongDataService songDataService,
         IConfiguration configuration)
     {
-        _logger = logger;
         _songDataService = songDataService;
         _configuration = configuration;
         _uow = uow;

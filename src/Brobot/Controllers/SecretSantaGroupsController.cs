@@ -1,7 +1,4 @@
-using AutoMapper;
 using Brobot.Exceptions;
-using Brobot.Models;
-using Brobot.Repositories;
 using Brobot.Services;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
@@ -16,14 +13,10 @@ namespace Brobot.Controllers;
 public class SecretSantaGroupsController : ControllerBase
 {
     private readonly SecretSantaService _secretSantaService;
-    private readonly IUnitOfWork _uow;
 
-    public SecretSantaGroupsController(
-        SecretSantaService secretSantaService,
-        IUnitOfWork uow)
+    public SecretSantaGroupsController(SecretSantaService secretSantaService)
     {
         _secretSantaService = secretSantaService;
-        _uow = uow;
     }
 
     [HttpGet]

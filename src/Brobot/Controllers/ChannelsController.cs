@@ -3,7 +3,6 @@ using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brobot.Controllers;
@@ -13,16 +12,13 @@ namespace Brobot.Controllers;
 public class ChannelsController : ControllerBase
 {
     private readonly IUnitOfWork _uow;
-    private readonly UserManager<IdentityUser> _userManager;
     private readonly IMapper _mapper;
 
     public ChannelsController(
         IUnitOfWork uow,
-        UserManager<IdentityUser> userManager,
         IMapper mapper)
     {
         _uow = uow;
-        _userManager = userManager;
         _mapper = mapper;
     }
 

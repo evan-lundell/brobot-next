@@ -1,4 +1,3 @@
-using System.Collections;
 using AutoMapper;
 using Brobot.Models;
 using Brobot.Repositories;
@@ -10,13 +9,11 @@ namespace Brobot.Services;
 public class MessageCountService
 {
     private readonly IUnitOfWork _uow;
-    private readonly ILogger _logger;
     private readonly IMapper _mapper;
 
-    public MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> logger, IMapper mapper)
+    public MessageCountService(IUnitOfWork uow, IMapper mapper)
     {
         _uow = uow;
-        _logger = logger;
         _mapper = mapper;
     }
 

@@ -1,16 +1,8 @@
 namespace Brobot.Exceptions;
 
-public class ModelNotFoundException<TModel, TKey> : ModelNotFoundException
+public class ModelNotFoundException<TModel, TKey>(TKey id) : ModelNotFoundException
 {
-    private readonly TKey _id;
-    public override string Message => $"{typeof(TModel).Name} {_id} not found";
-
-    public ModelNotFoundException(TKey id)
-    {
-        _id = id;
-    }
+    public override string Message => $"{typeof(TModel).Name} {id} not found";
 }
 
-public abstract class ModelNotFoundException : Exception
-{
-}
+public abstract class ModelNotFoundException : Exception;

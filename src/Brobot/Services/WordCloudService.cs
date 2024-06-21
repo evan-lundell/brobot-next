@@ -33,7 +33,7 @@ public class WordCloudService
     {
         try
         {
-            var wordCount = new Dictionary<string, int>();
+            Dictionary<string, int> wordCount = new();
             var socketChannel = await _client.GetChannelAsync(channel.Id);
             if (socketChannel is not SocketTextChannel socketTextChannel)
             {
@@ -42,10 +42,12 @@ public class WordCloudService
 
             ulong? fromMessageId = null;
             string[] separators =
-                { " ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "(", ")", "\"", "@" };
+                [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "(", ")", "\"", "@"];
 
             bool doneWithMonth = false;
-            int lastMonth = DateTime.UtcNow.Month - 1;
+            // var lastMonth = DateTime.UtcNow.AddMonths(-1).Month;
+            var lastMonth = DateTime.UtcNow.Month;
+            Dictionary<string, int> userMessageCount = new();
             while (!doneWithMonth)
             {
                 IAsyncEnumerable<IReadOnlyCollection<IMessage>> previousMessages = fromMessageId.HasValue
@@ -61,6 +63,8 @@ public class WordCloudService
                         break;
                     }
 
+                    userMessageCount.TryAdd(message.Author.Username, 0);
+                    userMessageCount[message.Author.Username] += 1;
                     var wordSplit = message.Content.Split(separators, StringSplitOptions.RemoveEmptyEntries);
                     foreach (var word in wordSplit)
                     {
@@ -80,12 +84,13 @@ public class WordCloudService
                 return;
             }
 
+            var countString = string.Join("\n", userMessageCount.OrderByDescending(x => x.Value).Select(c => $"{c.Key}: {c.Value}"));
             var frequencies = wordCount
                 .OrderByDescending((w) => w.Value)
                 .Take(100)
                 .Select((w) => new WordCloudEntry(w.Key, w.Value));
            GenerateFile(frequencies);
-            await socketTextChannel.SendFileAsync(WordcloudPath, string.Empty);
+            await socketTextChannel.SendFileAsync(WordcloudPath, countString);
             File.Delete(WordcloudPath);
         }
         catch (Exception e)

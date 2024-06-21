@@ -36,34 +36,56 @@ public abstract class CronWorkerBase : IHostedService, IDisposable
 
     private async Task ScheduleJob(CancellationToken cancellationToken)
     {
-        var next = _expression.GetNextOccurrence(DateTime.UtcNow);
-        if (next.HasValue)
+        try
         {
-            var delay = next.Value - DateTime.UtcNow;
-            if (delay.TotalMilliseconds <= 0)
+            var next = _expression.GetNextOccurrence(DateTime.UtcNow);
+            if (next.HasValue)
             {
-                await ScheduleJob(cancellationToken);
-            }
-            // Sometimes the minutely cron job fires a second early, so adding a second to the timer to offset
-            _timer = new System.Timers.Timer(delay.TotalMilliseconds + 1000);
-            _timer.Elapsed += async (sender, args) =>
-            {
-                _timer.Dispose();
-                _timer = null;
-
-                if (!cancellationToken.IsCancellationRequested)
-                {
-                    await DoWork(cancellationToken);
-                }
-
-                if (!cancellationToken.IsCancellationRequested)
+                var delay = next.Value - DateTime.UtcNow;
+                if (delay.TotalMilliseconds <= 0)
                 {
                     await ScheduleJob(cancellationToken);
                 }
-            };
 
-            _timer.Start();
+                // Timer only supports up to int.MaxValue. If delay exceeds that, delay the max value and do nothing
+                if (delay.TotalMilliseconds > int.MaxValue)
+                {
+                    _timer = new System.Timers.Timer(int.MaxValue);
+                    _timer.Elapsed += (_, _) =>
+                    {
+                        _timer.Dispose();
+                        _timer = null;
+                    };
+                }
+                else
+                {
+                    // Sometimes the minutely cron job fires a second early, so adding a second to the timer to offset
+                    _timer = new System.Timers.Timer(delay.TotalMilliseconds + 1000);
+                    _timer.Elapsed += async (_, _) =>
+                    {
+                        _timer.Dispose();
+                        _timer = null;
+
+                        if (!cancellationToken.IsCancellationRequested)
+                        {
+                            await DoWork(cancellationToken);
+                        }
+
+                        if (!cancellationToken.IsCancellationRequested)
+                        {
+                            await ScheduleJob(cancellationToken);
+                        }
+                    };
+                }
+
+                _timer.Start();
+            }
         }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
         await Task.CompletedTask;
     }
 
