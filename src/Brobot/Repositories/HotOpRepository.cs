@@ -1,3 +1,4 @@
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using Brobot.Contexts;
 using Brobot.Models;
@@ -32,27 +33,30 @@ public class HotOpRepository : RepositoryBase<HotOpModel, int>, IHotOpRepository
 
     public async Task<IEnumerable<HotOpModel>> GetUsersHotOps(ulong userId, HotOpQueryType type = HotOpQueryType.All)
     {
-        var whereClause = $"WHERE cu.user_id = {userId}";
         var utcNow = DateTime.UtcNow;
+        IQueryable<HotOpModel> query = Context.HotOps
+            .Include(ho => ho.Channel)
+            .Include(ho => ho.User)
+            .Where(ho => ho.Channel.ChannelUsers.Any(cu => cu.UserId == userId));
+
         switch (type)
         {
             case HotOpQueryType.Completed:
-                whereClause += $" AND end_date < {utcNow}";
+                query = query.Where(ho => ho.EndDate < utcNow);
                 break;
             case HotOpQueryType.Current:
-                whereClause += $" AND start_date < {utcNow} AND end_date > {utcNow}";
+                query = query.Where(ho => ho.StartDate < utcNow && ho.EndDate > utcNow);
                 break;
             case HotOpQueryType.Upcoming:
-                whereClause += $" AND start_date > {utcNow}";
+                query = query.Where(ho => ho.StartDate > utcNow);
                 break;
+            case HotOpQueryType.All:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(type), type, null);
         }
-
-        var hotOps = await Context.HotOps.FromSql(
-            $"SELECT ho.* FROM brobot.hot_op ho INNER JOIN brobot.channel_user cu ON ho.channel_id = cu.channel_id {whereClause}")
-            .Include(ho => ho.Channel)
-            .Include(ho => ho.User)
-            .ToListAsync();
-        return hotOps;
+        
+        return await query.ToListAsync();
     }
 
     public override async Task<IEnumerable<HotOpModel>> Find(Expression<Func<HotOpModel, bool>> expression)
