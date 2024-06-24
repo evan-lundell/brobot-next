@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-using System.Threading.Channels;
 using AutoMapper;
 using Brobot.Contexts;
 using Brobot.Models;
@@ -8,7 +6,6 @@ using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Moq;
 using TimeZoneConverter;
 
 namespace Brobot.Tests;
@@ -16,8 +13,8 @@ namespace Brobot.Tests;
 [TestFixture]
 public class MessageCountServiceTests
 {
-    private BrobotDbContext _context = default!;
-    private MessageCountService _messageCountService = default!;
+    private BrobotDbContext _context;
+    private MessageCountService _messageCountService;
 
     [SetUp]
     public void SetUp()
