@@ -21,7 +21,7 @@ public class DiscordUserMiddleware
             var discordUser = await uow.Users.GetFromIdentityUserId(discordUserIdClaim.Value);
             if (discordUser != null)
             {
-                httpContext.Items["DiscordUser"] = discordUser;
+                httpContext.Features.Set(discordUser);
             }
         }
 
