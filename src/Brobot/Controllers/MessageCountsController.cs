@@ -2,6 +2,7 @@ using Brobot.Models;
 using Brobot.Services;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brobot.Controllers;
@@ -21,11 +22,7 @@ public class MessageCountsController : ControllerBase
     [HttpGet("daily")]
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetDailyMessageCounts([FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         if (string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             return Ok(Array.Empty<DailyMessageCountResponse>());
@@ -41,11 +38,7 @@ public class MessageCountsController : ControllerBase
     [HttpGet("top-days")]
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetUsersTopDays([FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         if (string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             return Ok(Array.Empty<DailyMessageCountResponse>());
@@ -60,11 +53,7 @@ public class MessageCountsController : ControllerBase
     [HttpGet("top-today")]
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetTopToday([FromQuery] ulong? channelId)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         if (string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             return Ok(Array.Empty<DailyMessageCountResponse>());
@@ -80,11 +69,7 @@ public class MessageCountsController : ControllerBase
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetTotalDailyMessageCounts(
         [FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var counts = channelId == null
             ? await _messageCountService.GetTotalDailyMessageCounts(numOfDays, discordUser.Timezone)
             : await _messageCountService.GetTotalDailyMessageCountsByChannel(numOfDays, channelId.Value,
@@ -96,11 +81,6 @@ public class MessageCountsController : ControllerBase
     [HttpGet("total-top-days")]
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetTotalTopDays([FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel)
-        {
-            return Unauthorized();
-        }
-
         var counts = channelId == null
             ? await _messageCountService.GetTotalTopDays(numOfDays)
             : await _messageCountService.GetTotalTopDaysByChannel(channelId.Value, numOfDays);
