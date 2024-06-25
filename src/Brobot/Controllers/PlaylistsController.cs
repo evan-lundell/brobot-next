@@ -5,6 +5,7 @@ using Brobot.Services;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brobot.Controllers;
@@ -34,11 +35,7 @@ public class PlaylistsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PlaylistResponse>>> GetPlaylists()
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var playlists = await _uow.Playlists.GetPlaylistsFromUser(discordUser.Id);
         return Ok(_mapper.Map<IEnumerable<PlaylistResponse>>(playlists));
     }
@@ -46,11 +43,7 @@ public class PlaylistsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<PlaylistResponse>> GetPlaylist(int id)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var playlistModel = await _uow.Playlists.GetById(id);
         if (playlistModel == null)
         {
@@ -68,11 +61,7 @@ public class PlaylistsController : ControllerBase
     [HttpGet("{playlistId}/songs")]
     public async Task<ActionResult<IEnumerable<PlaylistSongResponse>>> GetSongsFromPlaylist(int playlistId)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var playlistModel = await _uow.Playlists.GetById(playlistId);
         if (playlistModel == null)
         {
@@ -90,11 +79,7 @@ public class PlaylistsController : ControllerBase
     [HttpGet("{playlistId}/songs/{playlistSongId}")]
     public async Task<ActionResult<PlaylistSongResponse>> GetPlaylistSong(int playlistId, int playlistSongId)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var playlistModel = await _uow.Playlists.GetById(playlistId);
         if (playlistModel == null)
         {
@@ -118,11 +103,7 @@ public class PlaylistsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<PlaylistResponse>> CreatePlaylist(PlaylistRequest playlistRequest)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }   
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var playlistModel = _mapper.Map<PlaylistModel>(playlistRequest);
         playlistModel.User = discordUser;
         playlistModel.UserId = discordUser.Id;
@@ -134,11 +115,7 @@ public class PlaylistsController : ControllerBase
     [HttpPost("{playlistId}/songs")]
     public async Task<ActionResult<PlaylistSongResponse>> CreatePlaylistSong(int playlistId, PlaylistSongRequest playlistSongRequest)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var playlistModel = await _uow.Playlists.GetById(playlistId);
         if (playlistModel == null)
         {
@@ -172,11 +149,7 @@ public class PlaylistsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<PlaylistResponse>> UpdatePlaylist(int id, PlaylistRequest playlistRequest)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var existingPlaylist = await _uow.Playlists.GetById(id);
         if (existingPlaylist == null)
         {
@@ -199,11 +172,7 @@ public class PlaylistsController : ControllerBase
         int songId,
         PlaylistSongRequest playlistSongRequest)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-        
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var playlistModel = await _uow.Playlists.GetById(playlistId);
         if (playlistModel == null)
         {
@@ -271,11 +240,7 @@ public class PlaylistsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePlaylist(int id)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var existingPlaylist = await _uow.Playlists.GetById(id);
         if (existingPlaylist == null)
         {
@@ -295,11 +260,7 @@ public class PlaylistsController : ControllerBase
     [HttpDelete("{playlistId}/songs/{playlistSongId}")]
     public async Task<IActionResult> DeletePlaylistSong(int playlistId, int playlistSongId)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var existingPlaylist = await _uow.Playlists.GetById(playlistId);
         if (existingPlaylist == null)
         {

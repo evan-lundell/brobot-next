@@ -4,6 +4,7 @@ using Brobot.Repositories;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,11 +33,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<UserResponse> GetUser()
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         return Ok(_mapper.Map<UserResponse>(discordUser));
     }
 
@@ -44,11 +41,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<UserSettingsResponse> GetUserSettings()
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var settings = new UserSettingsResponse
         {
             Birthdate = discordUser.Birthdate,
@@ -68,12 +61,7 @@ public class UsersController : ControllerBase
             return Unauthorized();
         }
 
-        var discordUser = await _uow.Users.GetFromIdentityUserId(identityUser.Id);
-        if (discordUser == null)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         discordUser.Birthdate = userSettingsRequest.BirthDate;
         discordUser.Timezone = userSettingsRequest.Timezone;
         discordUser.PrimaryChannelId = userSettingsRequest.PrimaryChannelId;
@@ -94,4 +82,5 @@ public class UsersController : ControllerBase
         var users = await _uow.Users.GetAll();
         return Ok(_mapper.Map<UserModel[]>(users));
     }
+
 }
