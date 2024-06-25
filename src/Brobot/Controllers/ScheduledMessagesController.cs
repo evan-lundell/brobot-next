@@ -5,6 +5,7 @@ using Brobot.Services;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using TimeZoneConverter;
 
@@ -33,11 +34,7 @@ public class ScheduledMessagesController : ControllerBase
         [FromQuery] DateTime? scheduledBefore = null,
         [FromQuery] DateTime? scheduledAfter = null)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         if (limit > 50)
         {
             return BadRequest("Limit cannot be greater than 50");
@@ -69,11 +66,7 @@ public class ScheduledMessagesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ScheduledMessageResponse>> CreateScheduledMessage(ScheduledMessageRequest scheduledMessage)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         if (scheduledMessage.ChannelId == null)
         {
             return BadRequest("Channel Id not given");
@@ -102,11 +95,7 @@ public class ScheduledMessagesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<ScheduledMessageResponse>> UpdateScheduledMessage(int id, ScheduledMessageRequest scheduledMessageRequest)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var scheduledMessage = await _uow.ScheduledMessages.GetById(id);
         if (scheduledMessage == null)
         {
@@ -152,11 +141,7 @@ public class ScheduledMessagesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteScheduledMessage(int id)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-        
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var scheduledMessage = await _uow.ScheduledMessages.GetById(id);
         if (scheduledMessage == null)
         {

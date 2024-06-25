@@ -3,6 +3,7 @@ using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brobot.Controllers;
@@ -26,11 +27,7 @@ public class ChannelsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<ChannelResponse>>> GetChannels()
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var channels = await _uow.Channels.FindByUser(discordUser.Id);
         return Ok(_mapper.Map<IEnumerable<ChannelResponse>>(channels));
     }

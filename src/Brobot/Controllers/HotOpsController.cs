@@ -6,6 +6,7 @@ using Brobot.Shared;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brobot.Controllers;
@@ -32,11 +33,7 @@ public class HotOpsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<HotOpResponse>>> GetHotOps([FromQuery] HotOpQueryType type = HotOpQueryType.All)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         IEnumerable<HotOpModel>? hotOpModels;
         switch (type)
         {
@@ -71,11 +68,7 @@ public class HotOpsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<HotOpResponse>> CreateHotOp(HotOpRequest hotOpRequest)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-        
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
         {
             return BadRequest("Start date must be before end date");
@@ -118,11 +111,7 @@ public class HotOpsController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<HotOpResponse>> UpdateHotOp(int id, HotOpRequest hotOpRequest)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var hotOpModel = await _uow.HotOps.GetById(id);
         if (hotOpModel == null)
         {
@@ -169,11 +158,7 @@ public class HotOpsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteHotOp(int id)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel discordUser)
-        {
-            return Unauthorized();
-        }
-
+        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         var hotOpModel = await _uow.HotOps.GetById(id);
         if (hotOpModel == null)
         {
@@ -193,11 +178,6 @@ public class HotOpsController : ControllerBase
     [HttpGet("{id:int}/scoreboard")]
     public async Task<ActionResult<IEnumerable<ScoreboardItemResponse>>> GetHotOpScoreboard(int id)
     {
-        if (HttpContext.Items["DiscordUser"] is not UserModel)
-        {
-            return Unauthorized();
-        }
-
         var hotOp = await _uow.HotOps.GetById(id);
         if (hotOp == null)
         {
