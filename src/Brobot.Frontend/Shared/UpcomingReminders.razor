@@ -1,17 +1,16 @@
 <h3>UpcomingReminders</h3>
 
-<div class="row my-2">
-    <div class="offset-xs-6 offset-lg-9 col-xs-6 col-lg-3">
-        <button type="button" class="btn btn-primary" @onclick="NewScheduledMessage">New Reminder</button>
-    </div>
-</div>
-
 @if (!GridReady)
 {
     <p><em>Loading..</em></p>
 }
 else
 {
+    <div class="row my-2">
+        <div class="offset-xs-6 offset-lg-9 col-xs-6 col-lg-3">
+            <button type="button" class="btn btn-primary" @onclick="NewScheduledMessage">New Reminder</button>
+        </div>
+    </div>
     <RadzenDataGrid @ref="_grid" Data="@_reminders" TItem="ScheduledMessageResponse" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true" PageSize="10">
         <Columns>
             <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="MessageText" Title="Message"/>
