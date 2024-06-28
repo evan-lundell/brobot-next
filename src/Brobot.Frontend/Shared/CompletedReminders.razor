@@ -6,7 +6,7 @@
 }
 else
 {
-    <RadzenDataGrid @ref="_grid" Data="_reminders" TItem="ScheduledMessageResponse" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true">
+    <RadzenDataGrid @ref="_grid" Data="_reminders" TItem="ScheduledMessageResponse" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true" PageSize="10">
         <Columns>
             <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="MessageText" Title="Message" />
             <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="Channel.Name" Title="Channel" />

@@ -15,8 +15,6 @@ public class ScheduledMessageService : ApiServiceBase<ScheduledMessageRequest, S
     {
         Dictionary<string, string?> queryParams = new()
         {
-            { "limit", "10" },
-            { "skip", ((page - 1) * 10).ToString() },
             { "scheduledAfter", DateTime.UtcNow.ToString("o") }
         };
         var url = QueryHelpers.AddQueryString(BaseUrl, queryParams);
@@ -27,8 +25,6 @@ public class ScheduledMessageService : ApiServiceBase<ScheduledMessageRequest, S
     {
         Dictionary<string, string?> queryParams = new()
         {
-            { "limit", "10" },
-            { "skip", ((page - 1) * 10).ToString() },
             { "scheduledBefore", DateTime.UtcNow.ToString("o") }
         };
         return GetAll(QueryHelpers.AddQueryString(BaseUrl, queryParams));

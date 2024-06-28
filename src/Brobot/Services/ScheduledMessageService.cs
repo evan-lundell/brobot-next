@@ -13,8 +13,8 @@ public class ScheduledMessageService
         _uow = uow;
     }
     
-    public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(UserModel user, int limit, int skip,
-        DateTime? scheduledBefore, DateTime? scheduledAfter)
+    public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(UserModel user, int? limit = null, int skip = 0,
+        DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
         var scheduledMessages = (await _uow.ScheduledMessages.GetScheduledMessagesByUser(user.Id, limit, skip, scheduledBefore, scheduledAfter)).ToList();
         foreach (var message in scheduledMessages)

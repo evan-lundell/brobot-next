@@ -16,7 +16,7 @@ public class GetScheduledMessagesByUserTests : ScheduledMessageServiceTestBase
             throw new Exception("User not found");
         }
 
-        var messages = (await ScheduledMessageService.GetScheduledMessagesByUser(user, 100, 0, null, null)).ToList();
+        var messages = (await ScheduledMessageService.GetScheduledMessagesByUser(user)).ToList();
         
         Assert.That(messages, Has.Count.EqualTo(expectedCount));
     }

@@ -26,7 +26,7 @@ public class ScheduledMessagesController : ControllerBase
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ScheduledMessageResponse>>> Get(
-        [FromQuery] int limit = 10,
+        [FromQuery] int? limit = null,
         [FromQuery] int skip = 0,
         [FromQuery] DateTime? scheduledBefore = null,
         [FromQuery] DateTime? scheduledAfter = null)

@@ -21,7 +21,7 @@ public class ScheduledMessageRepository : RepositoryBase<ScheduledMessageModel, 
         return messages;
     }
 
-    public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(ulong userId, int limit = 10,
+    public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(ulong userId, int? limit = null,
         int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
         var query = Context.ScheduledMessages
@@ -44,9 +44,13 @@ public class ScheduledMessageRepository : RepositoryBase<ScheduledMessageModel, 
             query = query.Skip(skip);
         }
 
+        query = query.OrderBy(sm => sm.SendDate);
+        if (limit.HasValue)
+        {
+            query = query.Take(limit.Value);
+        }
+
         return await query
-            .OrderBy(sm => sm.SendDate)
-            .Take(limit)
             .ToListAsync();
     }
 }
