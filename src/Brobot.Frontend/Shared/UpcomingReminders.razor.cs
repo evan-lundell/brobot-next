@@ -1,18 +1,19 @@
 using Blazored.Toast.Services;
 using Brobot.Frontend.Components;
+using Brobot.Frontend.Services;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Components;
 using Radzen.Blazor;
 
-namespace Brobot.Frontend.Pages;
+namespace Brobot.Frontend.Shared;
 
-public partial class Reminders : ComponentBase
+public partial class UpcomingReminders : ComponentBase, ITabbable
 {
     private List<ScheduledMessageResponse>? _reminders;
     private ChannelResponse[]? _channels;
 
-    private bool PageReady => _reminders != null && _channels != null;
+    private bool GridReady => _reminders != null && _channels != null;
 
     private ScheduledMessageRequest _editScheduleMessage = new ScheduledMessageRequest
     {
@@ -24,13 +25,19 @@ public partial class Reminders : ComponentBase
 
     private ScheduledMessageResponse? _reminderToDelete;
     private RadzenDataGrid<ScheduledMessageResponse>? _grid;
+    
+    [Inject]
+    public required ApiService ApiService { get; set; }
+    
+    [Inject] 
+    public required IToastService ToastService { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _reminders = (await ApiService.ScheduledMessageService.GetAll())
-                .OrderBy((r) => r.SendDate)
+            _reminders = (await ApiService.ScheduledMessageService.GetUnsentScheduledMessages())
+                .OrderBy(r => r.SendDate)
                 .ToList();
             _channels = await ApiService.GetChannels();
         }
@@ -71,7 +78,7 @@ public partial class Reminders : ComponentBase
                 : await ApiService.ScheduledMessageService.Update(_editScheduleMessage.Id.Value, _editScheduleMessage);
 
 
-            var existingReminder = _reminders?.FirstOrDefault((r) => r.Id == message.Id);
+            var existingReminder = _reminders?.FirstOrDefault(r => r.Id == message.Id);
             if (existingReminder == null)
             {
                 _reminders?.Add(message);
@@ -129,5 +136,21 @@ public partial class Reminders : ComponentBase
         }
 
         _reminderToDelete = null;
+    }
+
+    
+    public async Task TabSelected()
+    {
+        try
+        {
+            _reminders ??= (await ApiService.ScheduledMessageService.GetUnsentScheduledMessages())
+                .OrderBy(r => r.SendDate)
+                .ToList();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to get reminders. {ex.Message}");
+        }
     }
 }

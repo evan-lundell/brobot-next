@@ -15,7 +15,7 @@ public class PlaylistRepository : RepositoryBase<PlaylistModel, int>, IPlaylistR
     public override async Task<IEnumerable<PlaylistModel>> GetAll()
     {
         var playlists = await Context.Playlists
-            .Include((p) => p.Songs)
+            .Include(p => p.Songs)
             .ToListAsync();
         return playlists;
     }
@@ -23,14 +23,14 @@ public class PlaylistRepository : RepositoryBase<PlaylistModel, int>, IPlaylistR
     public override Task<PlaylistModel?> GetById(int id)
     {
         return Context.Playlists
-            .Include((p) => p.Songs)
-            .SingleOrDefaultAsync((p) => p.Id == id);
+            .Include(p => p.Songs)
+            .SingleOrDefaultAsync(p => p.Id == id);
     }
 
     public override async Task<IEnumerable<PlaylistModel>> Find(Expression<Func<PlaylistModel, bool>> expression)
     {
         var playlists = await Context.Playlists
-            .Include((p) => p.Songs)
+            .Include(p => p.Songs)
             .Where(expression)
             .ToListAsync();
         return playlists;
@@ -39,9 +39,9 @@ public class PlaylistRepository : RepositoryBase<PlaylistModel, int>, IPlaylistR
     public async Task<IEnumerable<PlaylistModel>> GetPlaylistsFromUser(ulong userId)
         => await Context.Playlists
             .AsNoTracking()
-            .Include((p) => p.Songs)
-            .Include((p) => p.User)
-            .Where((p) => p.UserId == userId)
+            .Include(p => p.Songs)
+            .Include(p => p.User)
+            .Where(p => p.UserId == userId)
             .ToListAsync();
 
 }

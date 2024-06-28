@@ -85,9 +85,9 @@ public class WordCloudService
 
             var countString = string.Join("\n", userMessageCount.OrderByDescending(x => x.Value).Select(c => $"{c.Key}: {c.Value}"));
             var frequencies = wordCount
-                .OrderByDescending((w) => w.Value)
+                .OrderByDescending(w => w.Value)
                 .Take(100)
-                .Select((w) => new WordCloudEntry(w.Key, w.Value));
+                .Select(w => new WordCloudEntry(w.Key, w.Value));
            GenerateFile(frequencies);
             await socketTextChannel.SendFileAsync(WordcloudPath, countString);
             File.Delete(WordcloudPath);

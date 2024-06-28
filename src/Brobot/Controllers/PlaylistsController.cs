@@ -73,7 +73,7 @@ public class PlaylistsController : ControllerBase
             return Unauthorized();
         }
 
-        return Ok(_mapper.Map<IEnumerable<PlaylistSongResponse>>(playlistModel.Songs.OrderBy((s) => s.Order)));
+        return Ok(_mapper.Map<IEnumerable<PlaylistSongResponse>>(playlistModel.Songs.OrderBy(s => s.Order)));
     }
 
     [HttpGet("{playlistId}/songs/{playlistSongId}")]
@@ -179,7 +179,7 @@ public class PlaylistsController : ControllerBase
             return NotFound();
         }
 
-        var existingSong = playlistModel.Songs.FirstOrDefault((s) => s.Id == songId);
+        var existingSong = playlistModel.Songs.FirstOrDefault(s => s.Id == songId);
         if (existingSong == null)
         {
             return NotFound("Playlist song not found");
@@ -205,9 +205,9 @@ public class PlaylistsController : ControllerBase
 
                 if (existingOrder < playlistSongRequest.Order)
                 {
-                    foreach (var song in playlistModel.Songs.Where((s) =>
+                    foreach (var song in playlistModel.Songs.Where(s =>
                                      s.Order > existingOrder && s.Order <= playlistSongRequest.Order)
-                                 .OrderBy((s) => s.Order))
+                                 .OrderBy(s => s.Order))
                     {
                         song.Order--;
                         await _uow.CompleteAsync();
@@ -215,9 +215,9 @@ public class PlaylistsController : ControllerBase
                 }
                 else
                 {
-                    foreach (var song in playlistModel.Songs.Where((s) =>
+                    foreach (var song in playlistModel.Songs.Where(s =>
                                      s.Order < existingOrder && s.Order >= playlistSongRequest.Order)
-                                 .OrderByDescending((s) => s.Order))
+                                 .OrderByDescending(s => s.Order))
                     {
                         song.Order++;
                         await _uow.CompleteAsync();

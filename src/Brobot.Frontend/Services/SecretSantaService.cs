@@ -22,7 +22,7 @@ public class SecretSantaService : ApiServiceBase<SecretSantaGroupRequest, Secret
         }
         
         var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        throw new Exception(errorResponse?.Title ?? $"Failed to add user");
+        throw new Exception(errorResponse?.Title ?? "Failed to add user");
     }
 
     public async Task RemoveUserFromGroup(int secretSantaGroupId, ulong userId)
@@ -31,7 +31,7 @@ public class SecretSantaService : ApiServiceBase<SecretSantaGroupRequest, Secret
         if (!response.IsSuccessStatusCode)
         {
             var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-            throw new Exception(errorResponse?.Title ?? $"Failed to remove user");
+            throw new Exception(errorResponse?.Title ?? "Failed to remove user");
         }
     }
 

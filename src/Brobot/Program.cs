@@ -53,7 +53,7 @@ public static class Program
         {
             var eventHandler = app.Services.GetRequiredService<DiscordEventHandler>();
             eventHandler.Start();
-            await client.LoginAsync(Discord.TokenType.Bot, app.Configuration["BrobotToken"] ?? "");
+            await client.LoginAsync(TokenType.Bot, app.Configuration["BrobotToken"] ?? "");
             await client.StartAsync();
         }
 

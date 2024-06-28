@@ -97,7 +97,7 @@ public class SecretSantaService
         }
 
         var secretSantaGroupUserModel =
-            secretSantaGroupModel.SecretSantaGroupUsers.FirstOrDefault((ssgu) => ssgu.UserId == userId);
+            secretSantaGroupModel.SecretSantaGroupUsers.FirstOrDefault(ssgu => ssgu.UserId == userId);
         if (secretSantaGroupUserModel == null)
         {
             return _mapper.Map<SecretSantaGroupResponse>(secretSantaGroupModel);
@@ -130,7 +130,7 @@ public class SecretSantaService
         while (availableGivers.Count > 0)
         {
             var giver = availableGivers[0];
-            var validRecipients = availableRecipients.Where((r) => IsAllowedPair(giver, r, previousYearPairs)).ToArray();
+            var validRecipients = availableRecipients.Where(r => IsAllowedPair(giver, r, previousYearPairs)).ToArray();
             
             if (validRecipients.Length == 0)
             {
@@ -184,6 +184,6 @@ public class SecretSantaService
             return false;
         }
 
-        return !previousYearPairs.Any((p) => p.GiverUserId == giver.Id && p.RecipientUserId == recipient.Id);
+        return !previousYearPairs.Any(p => p.GiverUserId == giver.Id && p.RecipientUserId == recipient.Id);
     }
 }

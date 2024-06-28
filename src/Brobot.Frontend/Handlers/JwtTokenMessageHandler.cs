@@ -13,13 +13,13 @@ public class JwtTokenMessageHandler : DelegatingHandler
 
     public JwtTokenMessageHandler(Uri allowedBaseAddress, JwtAuthenticationStateProvider loginStateService)
     {
-        this._allowedBaseAddress = allowedBaseAddress;
-        this._loginStateService = loginStateService;
+        _allowedBaseAddress = allowedBaseAddress;
+        _loginStateService = loginStateService;
     }
 
     protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        return this.SendAsync(request, cancellationToken).Result;
+        return SendAsync(request, cancellationToken).Result;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -29,7 +29,7 @@ public class JwtTokenMessageHandler : DelegatingHandler
 
         if (isSelfApiAccess)
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this._loginStateService.Token ?? string.Empty);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _loginStateService.Token ?? string.Empty);
         }
 
         var httpResponseMessage = await base.SendAsync(request, cancellationToken);

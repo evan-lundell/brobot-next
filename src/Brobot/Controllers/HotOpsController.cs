@@ -39,7 +39,7 @@ public class HotOpsController : ControllerBase
         {
             case HotOpQueryType.Upcoming:
                 var now = DateTimeOffset.UtcNow;
-                 hotOpModels = await _uow.HotOps.Find((ho) => ho.UserId == discordUser.Id && ho.StartDate > now);
+                 hotOpModels = await _uow.HotOps.Find(ho => ho.UserId == discordUser.Id && ho.StartDate > now);
                 break;
             case HotOpQueryType.Current:
                 hotOpModels = await _uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current);
@@ -48,7 +48,7 @@ public class HotOpsController : ControllerBase
                 hotOpModels = await _uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed);
                 break;
             default:
-                hotOpModels = await _uow.HotOps.Find((ho) => ho.UserId == discordUser.Id);
+                hotOpModels = await _uow.HotOps.Find(ho => ho.UserId == discordUser.Id);
                 break;
         }
 

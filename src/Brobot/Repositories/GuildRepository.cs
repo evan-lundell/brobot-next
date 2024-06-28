@@ -33,8 +33,8 @@ public class GuildRepository : RepositoryBase<GuildModel, ulong>, IGuildReposito
     [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
     public override async Task AddRange(IEnumerable<GuildModel> entities)
     {
-        var guildIds = entities.Select((e) => e.Id);
-        var existingGuilds = await Find((g) => guildIds.Contains(g.Id));
+        var guildIds = entities.Select(e => e.Id);
+        var existingGuilds = await Find(g => guildIds.Contains(g.Id));
         foreach (var existingGuild in existingGuilds)
         {
             if (!existingGuild.Archived)
@@ -43,7 +43,7 @@ public class GuildRepository : RepositoryBase<GuildModel, ulong>, IGuildReposito
             }
             existingGuild.Archived = false;
         }
-        await base.AddRange(entities.ExceptBy(existingGuilds.Select(eg => eg.Id), (e) => e.Id));
+        await base.AddRange(entities.ExceptBy(existingGuilds.Select(eg => eg.Id), e => e.Id));
     }
 
     public override void Remove(GuildModel entity)

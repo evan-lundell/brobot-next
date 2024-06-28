@@ -79,14 +79,13 @@ public class JwtService
         {
             return new Claim(key, str, ClaimValueTypes.String);
         }
-        else if (jsonValue.TryGetValue<double>(out var num))
+
+        if (jsonValue.TryGetValue<double>(out var num))
         {
             return new Claim(key, num.ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Double);
         }
-        else
-        {
-            throw new Exception("Unsupported JWT claim type");
-        }
+
+        throw new Exception("Unsupported JWT claim type");
     }
 
     private byte[] FromUrlBase64(string jwtSegment)

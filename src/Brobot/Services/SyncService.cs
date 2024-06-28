@@ -26,8 +26,8 @@ public class SyncService : ISyncService
             return;
         }
         var userModels = (await uow.Users.GetAllWithGuildsAndChannels())
-            .Where((u) => u.Archived == false)
-            .ToDictionary((u) => u.Id);
+            .Where(u => u.Archived == false)
+            .ToDictionary(u => u.Id);
         var newChannel = new ChannelModel
         {
             Id = channel.Id,
@@ -111,8 +111,8 @@ public class SyncService : ISyncService
         }
 
         var userIds = (await uow.Users.GetAllWithGuildsAndChannels())
-            .Where((u) => u.Archived == false)
-            .ToDictionary((u) => u.Id);
+            .Where(u => u.Archived == false)
+            .ToDictionary(u => u.Id);
         var newGuild = new GuildModel
         {
             Id = guild.Id,
@@ -120,7 +120,7 @@ public class SyncService : ISyncService
         };
         await uow.Guilds.Add(newGuild);
 
-        foreach (var channel in guild.Channels.Where((c) => c is SocketTextChannel && !(c is SocketVoiceChannel)))
+        foreach (var channel in guild.Channels.Where(c => c is SocketTextChannel && !(c is SocketVoiceChannel)))
         {
             var newChannel = new ChannelModel
             {
@@ -132,7 +132,7 @@ public class SyncService : ISyncService
             await uow.Channels.Add(newChannel);
 
             var userAddedToGuild = false;
-            foreach (var user in channel.Users.Where((u) => !u.IsBot))
+            foreach (var user in channel.Users.Where(u => !u.IsBot))
             {
                 if (!userIds.ContainsKey(user.Id))
                 {
@@ -205,9 +205,9 @@ public class SyncService : ISyncService
         using var scope = _services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var client = _services.GetRequiredService<DiscordSocketClient>();
-        var guildModels = (await uow.Guilds.Find((g) => g.Archived == false)).ToDictionary((g) => g.Id);
-        var channelModels = (await uow.Channels.Find((c) => c.Archived == false)).ToDictionary((c) => c.Id);
-        var userModels = (await uow.Users.GetAllWithGuildsAndChannels()).Where((u) => u.Archived == false).ToDictionary((u) => u.Id);
+        var guildModels = (await uow.Guilds.Find(g => g.Archived == false)).ToDictionary(g => g.Id);
+        var channelModels = (await uow.Channels.Find(c => c.Archived == false)).ToDictionary(c => c.Id);
+        var userModels = (await uow.Users.GetAllWithGuildsAndChannels()).Where(u => u.Archived == false).ToDictionary(u => u.Id);
 
         var guildIds = new HashSet<ulong>();
         var channelIds = new HashSet<ulong>();
@@ -304,17 +304,17 @@ public class SyncService : ISyncService
         }
 
         // Remove old entities
-        foreach (var guild in guildModels.Values.Where((g) => !guildIds.Contains(g.Id)))
+        foreach (var guild in guildModels.Values.Where(g => !guildIds.Contains(g.Id)))
         {
             uow.Guilds.Remove(guild);
         }
 
-        foreach (var channel in channelModels.Values.Where((c) => !channelIds.Contains(c.Id)))
+        foreach (var channel in channelModels.Values.Where(c => !channelIds.Contains(c.Id)))
         {
             uow.Channels.Remove(channel);
         }
 
-        foreach (var user in userModels.Values.Where((u) => !userIds.Contains(u.Id)))
+        foreach (var user in userModels.Values.Where(u => !userIds.Contains(u.Id)))
         {
             uow.Users.Remove(user);
         }

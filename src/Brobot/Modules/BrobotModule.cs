@@ -1,10 +1,10 @@
+using System.Text;
 using Brobot.Repositories;
 using Brobot.Services;
-using Discord.Interactions;
-using TimeZoneConverter;
-using System.Text;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
+using TimeZoneConverter;
 
 namespace Brobot.Modules;
 
@@ -299,8 +299,6 @@ public class BrobotModule : InteractionModuleBase
     {
         try
         {
-
-
             if (!DateTime.TryParse(reminderDate, out DateTime reminderDateFormatted))
             {
                 await RespondAsync("Invalid date format. Please use yyyy-MM-dd HH:mm");
@@ -309,14 +307,13 @@ public class BrobotModule : InteractionModuleBase
 
             reminderDateFormatted = DateTime.SpecifyKind(reminderDateFormatted, DateTimeKind.Utc);
             var user = await _uow.Users.GetById(Context.User.Id);
-            var channel = await _uow.Channels.GetById(Context.Channel.Id);
-            if (user == null || channel == null)
+            if (user == null)
             {
-                await RespondAsync("An error has occured");
+                await RespondAsync("An error has occured", ephemeral: true);
                 return;
             }
 
-            await _scheduledMessageService.CreateScheduledMessage(message, user, reminderDateFormatted, channel);
+            await _scheduledMessageService.CreateScheduledMessage(message, user, reminderDateFormatted, Context.Channel.Id);
             await RespondAsync("Reminder has been created");
         }
         catch (Exception ex)

@@ -1,10 +1,11 @@
 using Cronos;
+using Timer = System.Timers.Timer;
 
 namespace Brobot.Workers;
 
 public abstract class CronWorkerBase : IHostedService, IDisposable
 {
-    private System.Timers.Timer? _timer;
+    private Timer? _timer;
     private readonly CronExpression _expression;
 
     protected CronWorkerBase(string? cronExpression)
@@ -50,7 +51,7 @@ public abstract class CronWorkerBase : IHostedService, IDisposable
                 // Timer only supports up to int.MaxValue. If delay exceeds that, delay the max value and do nothing
                 if (delay.TotalMilliseconds > int.MaxValue)
                 {
-                    _timer = new System.Timers.Timer(int.MaxValue);
+                    _timer = new Timer(int.MaxValue);
                     _timer.Elapsed += (_, _) =>
                     {
                         _timer.Dispose();
@@ -60,7 +61,7 @@ public abstract class CronWorkerBase : IHostedService, IDisposable
                 else
                 {
                     // Sometimes the minutely cron job fires a second early, so adding a second to the timer to offset
-                    _timer = new System.Timers.Timer(delay.TotalMilliseconds + 1000);
+                    _timer = new Timer(delay.TotalMilliseconds + 1000);
                     _timer.Elapsed += async (_, _) =>
                     {
                         _timer.Dispose();

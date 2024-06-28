@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-using System.Threading.Channels;
 using AutoMapper;
 using Brobot.Contexts;
 using Brobot.Models;
@@ -8,7 +6,6 @@ using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Moq;
 using TimeZoneConverter;
 
 namespace Brobot.Tests;
@@ -363,7 +360,7 @@ public class MessageCountServiceTests
         var timezone = TZConvert.GetTimeZoneInfo("america/chicago");
         var offset = timezone.GetUtcOffset(DateTime.UtcNow);
 
-        var counts = (await _messageCountService.GetTotalTopDaysByChannel((ulong)1, 10)).ToList();
+        var counts = (await _messageCountService.GetTotalTopDaysByChannel(1, 10)).ToList();
         
         Assert.Multiple(() =>
         {

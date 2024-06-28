@@ -1,0 +1,73 @@
+<h3>UpcomingReminders</h3>
+
+@if (!GridReady)
+{
+    <p><em>Loading..</em></p>
+}
+else
+{
+    <div class="row my-2">
+        <div class="offset-xs-6 offset-lg-9 col-xs-6 col-lg-3">
+            <button type="button" class="btn btn-primary" @onclick="NewScheduledMessage">New Reminder</button>
+        </div>
+    </div>
+    <RadzenDataGrid @ref="_grid" Data="@_reminders" TItem="ScheduledMessageResponse" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true" PageSize="10">
+        <Columns>
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="MessageText" Title="Message"/>
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="SendDate" Title="Send Date">
+                <Template Context="message">
+                    @(message.SendDate?.ToString("yyy-MM-dd hh:mm tt"))
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="Channel.Name" Title="Channel"/>
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse">
+                <Template Context="message">
+                    <button class="btn btn-primary" @onclick="() => EditScheduledMessage(message)">Edit</button>
+                    <button class="btn btn-danger" @onclick="async () => await ShowDeleteConfirmationModal(message)">Delete</button>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+    <FormModal
+        Id="editScheduleMessage"
+        @ref="_scheduledMessageModal"
+        Model="_editScheduleMessage"
+        OnValidSubmit="SubmitEditMessage"
+        Title="@(_editScheduleMessage.Id.HasValue ? "Edit Reminder" : "New Reminder")">
+        <ModalBody>
+            <div class="row my-2">
+                <div class="col-12 form-group">
+                    <label class="form-label">Message</label>
+                    <InputTextArea class="form-control" @bind-Value="_editScheduleMessage.MessageText"></InputTextArea>
+                </div>
+            </div>
+            <div class="row my-2">
+                <div class="col-12 form-group">
+                    <label class="form-label">Reminder Date/Time</label>
+                    <InputDate class="form-control" Type="InputDateType.DateTimeLocal" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="_editScheduleMessage.SendDate"/>
+                </div>
+            </div>
+            <div class="row my-2">
+                <div class="col-12 form-group">
+                    <label class="form-label">Channel</label>
+                    <InputSelect class="form-select" @bind-Value="_editScheduleMessage.ChannelId">
+                        <option value="">Select a channel...</option>
+                        @foreach (var channel in _channels ?? Array.Empty<ChannelResponse>())
+                        {
+                            <option value="@channel.Id">@channel.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+            </div>
+        </ModalBody>
+    </FormModal>
+    <ConfirmationModal
+        @ref="_deleteConfirmationModal"
+        Id="deleteConfirmation"
+        Title="Delete Reminder?"
+        OnConfirmationClosed="DeleteConfirmationClosed">
+        <ModalBody>
+            <p>Are you sure you want to delete this reminder?</p>
+        </ModalBody>
+    </ConfirmationModal>
+}

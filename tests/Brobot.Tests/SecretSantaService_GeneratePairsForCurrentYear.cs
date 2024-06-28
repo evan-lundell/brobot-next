@@ -19,9 +19,9 @@ public class SecretSantaService_GeneratePairsForCurrentYear
         // Arrange
         var unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
         var secretSantaRepositoryMock = new Mock<ISecretSantaGroupRepository>(MockBehavior.Strict);
-        secretSantaRepositoryMock.Setup((ssr) => ssr.GetById(It.IsAny<int>()))
+        secretSantaRepositoryMock.Setup(ssr => ssr.GetById(It.IsAny<int>()))
             .Returns(Task.FromResult<SecretSantaGroupModel?>(null));
-        unitOfWorkMock.Setup((uow) => uow.SecretSantaGroups).Returns(secretSantaRepositoryMock.Object);
+        unitOfWorkMock.Setup(uow => uow.SecretSantaGroups).Returns(secretSantaRepositoryMock.Object);
         var discordClientMock = new Mock<DiscordSocketClient>();
         var mapperMock = new Mock<IMapper>();
 
@@ -43,12 +43,12 @@ public class SecretSantaService_GeneratePairsForCurrentYear
         var secretSantaGroupModel = SetupSecretSantaGroupModel(currentYear);        
 
         var secretSantaRepositoryMock = new Mock<ISecretSantaGroupRepository>(MockBehavior.Strict);
-        secretSantaRepositoryMock.Setup((ssr) => ssr.GetById(1))
+        secretSantaRepositoryMock.Setup(ssr => ssr.GetById(1))
             .ReturnsAsync(() => secretSantaGroupModel);
-        secretSantaRepositoryMock.Setup((ssr) => ssr.GetPairs(1, currentYear))
+        secretSantaRepositoryMock.Setup(ssr => ssr.GetPairs(1, currentYear))
             .ReturnsAsync(() => secretSantaGroupModel.SecretSantaPairs);
         
-        unitOfWorkMock.Setup((uow) => uow.SecretSantaGroups).Returns(() => secretSantaRepositoryMock.Object);
+        unitOfWorkMock.Setup(uow => uow.SecretSantaGroups).Returns(() => secretSantaRepositoryMock.Object);
         var discordClientMock = new Mock<DiscordSocketClient>();
         var mapperMock = new Mock<IMapper>();
         var random = new Random();
@@ -69,19 +69,19 @@ public class SecretSantaService_GeneratePairsForCurrentYear
         var secretSantaGroupModel = SetupSecretSantaGroupModel(lastYear);
         
         var secretSantaRepositoryMock = new Mock<ISecretSantaGroupRepository>(MockBehavior.Strict);
-        secretSantaRepositoryMock.Setup((ssr) => ssr.GetById(1))
+        secretSantaRepositoryMock.Setup(ssr => ssr.GetById(1))
             .ReturnsAsync(() => secretSantaGroupModel);
-        secretSantaRepositoryMock.Setup((ssr) => ssr.GetPairs(1, lastYear))
+        secretSantaRepositoryMock.Setup(ssr => ssr.GetPairs(1, lastYear))
             .ReturnsAsync(() => secretSantaGroupModel.SecretSantaPairs);
-        secretSantaRepositoryMock.Setup((ssr) => ssr.GetPairs(1, DateTime.Now.Year))
+        secretSantaRepositoryMock.Setup(ssr => ssr.GetPairs(1, DateTime.Now.Year))
             .ReturnsAsync(Array.Empty<SecretSantaPairModel>);
         
-        unitOfWorkMock.Setup((uow) => uow.SecretSantaGroups).Returns(() => secretSantaRepositoryMock.Object);
-        unitOfWorkMock.Setup((uow) => uow.CompleteAsync())
+        unitOfWorkMock.Setup(uow => uow.SecretSantaGroups).Returns(() => secretSantaRepositoryMock.Object);
+        unitOfWorkMock.Setup(uow => uow.CompleteAsync())
             .ReturnsAsync(() => 0);
         var discordClientMock = new Mock<DiscordSocketClient>();
         var profile = new BrobotProfile();
-        var configuration = new MapperConfiguration((config) => config.AddProfile(profile));
+        var configuration = new MapperConfiguration(config => config.AddProfile(profile));
         var mapper = new Mapper(configuration);
         var random = new Random();
         var secretSantaService =
@@ -97,7 +97,7 @@ public class SecretSantaService_GeneratePairsForCurrentYear
         {
             Assert.IsFalse(giverIds.Contains(pair.Giver.Id));
             Assert.IsFalse(recipientIds.Contains(pair.Recipient.Id));
-            var lastYearPair = secretSantaGroupModel.SecretSantaPairs.FirstOrDefault((ssp) =>
+            var lastYearPair = secretSantaGroupModel.SecretSantaPairs.FirstOrDefault(ssp =>
                 ssp.Year == lastYear && ssp.GiverUserId == pair.Giver.Id && ssp.RecipientUserId == pair.Recipient.Id);
             Assert.IsNull(lastYearPair);
             giverIds.Add(pair.Giver.Id);

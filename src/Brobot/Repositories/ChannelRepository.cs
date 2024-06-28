@@ -32,8 +32,8 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
     [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
     public override async Task AddRange(IEnumerable<ChannelModel> entities)
     {
-        var channelIds = entities.Select((e) => e.Id);
-        var existingChannels = await Find((c) => channelIds.Contains(c.Id));
+        var channelIds = entities.Select(e => e.Id);
+        var existingChannels = await Find(c => channelIds.Contains(c.Id));
         foreach (var existingChannel in existingChannels)
         {
             if (!existingChannel.Archived)
@@ -44,7 +44,7 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
             existingChannel.Archived = false;
         }
 
-        await base.AddRange(entities.ExceptBy(existingChannels.Select((ec) => ec.Id), (c) => c.Id));
+        await base.AddRange(entities.ExceptBy(existingChannels.Select(ec => ec.Id), c => c.Id));
     }
 
     public override void Remove(ChannelModel entity)
@@ -67,6 +67,6 @@ public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRe
 
     public Task<ChannelModel?> GetByIdWithChannelUsers(ulong channelId)
         => Context.Channels
-            .Include((c) => c.ChannelUsers)
-            .SingleOrDefaultAsync((c) => c.Id == channelId);
+            .Include(c => c.ChannelUsers)
+            .SingleOrDefaultAsync(c => c.Id == channelId);
 }
