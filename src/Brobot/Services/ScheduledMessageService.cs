@@ -108,17 +108,16 @@ public class ScheduledMessageService
             scheduledMessage.ChannelId = channelId.Value;
         }
 
+        var user = scheduledMessage.CreatedBy;
+        var offset = TimeSpan.FromHours(0);
+        if (!string.IsNullOrEmpty(user.Timezone))
+        {
+            var tz = TZConvert.GetTimeZoneInfo(user.Timezone);
+            offset = tz.GetUtcOffset(DateTime.UtcNow);
+        }
         if (sendDate.HasValue)
         {
-            var user = scheduledMessage.CreatedBy;
-            var offset = TimeSpan.FromHours(0);
-            if (!string.IsNullOrEmpty(user.Timezone))
-            {
-                var tz = TZConvert.GetTimeZoneInfo(user.Timezone);
-                offset = tz.GetUtcOffset(DateTime.UtcNow);
-            }
-
-            var newSendDate = new DateTimeOffset(sendDate.Value, offset);
+            var newSendDate = new DateTimeOffset(sendDate.Value, offset).ToUniversalTime();
             if (newSendDate < DateTimeOffset.UtcNow)
             {
                 throw new Exception("Send date cannot be in the past");
@@ -127,6 +126,8 @@ public class ScheduledMessageService
         }
         
         await _uow.CompleteAsync();
+        
+        scheduledMessage.SendDate = scheduledMessage.SendDate?.ToOffset(offset);
         return scheduledMessage;
     }
     

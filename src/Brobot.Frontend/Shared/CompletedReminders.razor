@@ -1,0 +1,25 @@
+<h3>CompletedReminders</h3>
+
+@if (!GridReady)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <RadzenDataGrid @ref="_grid" Data="_reminders" TItem="ScheduledMessageResponse" PagerPosition="PagerPosition.Bottom" AllowPaging="true" AllowSorting="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="MessageText" Title="Message" />
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="Channel.Name" Title="Channel" />
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="SendDate" Title="Send Date">
+                <Template Context="message">
+                    @(message.SendDate?.ToString("yyyy-MM-dd hh:mm tt"))
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ScheduledMessageResponse" Property="SentDate" Title="Sent Date">
+                <Template Context="message">
+                    @(message.SentDate?.ToString("yyyy-MM-dd hh:mm tt"))
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}

@@ -16,10 +16,11 @@ public class ScheduledMessageService : ApiServiceBase<ScheduledMessageRequest, S
         Dictionary<string, string?> queryParams = new()
         {
             { "limit", "10" },
-            { "skip", (page * 10).ToString() },
+            { "skip", ((page - 1) * 10).ToString() },
             { "scheduledAfter", DateTime.UtcNow.ToString("o") }
         };
-        return await GetAll(QueryHelpers.AddQueryString(BaseUrl, queryParams));
+        var url = QueryHelpers.AddQueryString(BaseUrl, queryParams);
+        return await GetAll(url);
     }
 
     public Task<IEnumerable<ScheduledMessageResponse>> GetSentScheduledMessages(int page = 1)
@@ -27,7 +28,7 @@ public class ScheduledMessageService : ApiServiceBase<ScheduledMessageRequest, S
         Dictionary<string, string?> queryParams = new()
         {
             { "limit", "10" },
-            { "skip", (page * 10).ToString() },
+            { "skip", ((page - 1) * 10).ToString() },
             { "scheduledBefore", DateTime.UtcNow.ToString("o") }
         };
         return GetAll(QueryHelpers.AddQueryString(BaseUrl, queryParams));
