@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-using System.Threading.Channels;
 using AutoMapper;
 using Brobot.Contexts;
 using Brobot.Models;
@@ -7,8 +5,6 @@ using Brobot.Profiles;
 using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using Moq;
 using TimeZoneConverter;
 
 namespace Brobot.Tests;
@@ -16,15 +12,14 @@ namespace Brobot.Tests;
 [TestFixture]
 public class MessageCountServiceTests
 {
-    private BrobotDbContext _context = default!;
-    private MessageCountService _messageCountService = default!;
+    private BrobotDbContext _context;
+    private MessageCountService _messageCountService;
 
     [SetUp]
     public void SetUp()
     {
-        InMemoryDatabaseRoot root = new();
         var options = new DbContextOptionsBuilder<BrobotDbContext>()
-            .UseInMemoryDatabase("TestDatabase", root)
+            .UseInMemoryDatabase("TestDatabase")
             .Options;
         _context = new BrobotDbContext(options);
         var testGuild = new GuildModel
@@ -69,6 +64,13 @@ public class MessageCountServiceTests
         var mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile<BrobotProfile>()));
         var unitOfWork = new UnitOfWork(_context);
         _messageCountService = new MessageCountService(unitOfWork, mapper);
+    }
+    
+    [TearDown]
+    public void TearDown()
+    {
+        _context.Database.EnsureDeleted();
+        _context.Dispose();
     }
 
     private ChannelModel CreateChannel(ulong id, string name, GuildModel guild)
@@ -363,7 +365,7 @@ public class MessageCountServiceTests
         var timezone = TZConvert.GetTimeZoneInfo("america/chicago");
         var offset = timezone.GetUtcOffset(DateTime.UtcNow);
 
-        var counts = (await _messageCountService.GetTotalTopDaysByChannel((ulong)1, 10)).ToList();
+        var counts = (await _messageCountService.GetTotalTopDaysByChannel(1, 10)).ToList();
         
         Assert.Multiple(() =>
         {
