@@ -1,14 +1,14 @@
-using Brobot.Shared.Responses;
+using System.Security.Claims;
+using System.Web;
+using AutoMapper;
+using Brobot.Repositories;
+using Brobot.Services;
 using Brobot.Shared.Requests;
+using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Brobot.Services;
-using Brobot.Repositories;
 using Microsoft.AspNetCore.WebUtilities;
-using System.Web;
-using System.Security.Claims;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Controllers;
@@ -59,7 +59,7 @@ public class AuthController : ControllerBase
             return BadRequest(new RegisterResponse
             {
                 Succeeded = false,
-                Errors = result.Errors.Select((e) => e.Description)
+                Errors = result.Errors.Select(e => e.Description)
             });
         }
 
@@ -67,7 +67,7 @@ public class AuthController : ControllerBase
         return Ok(new RegisterResponse
         {
             Succeeded = result.Succeeded,
-            Errors = result.Errors.Select((e) => e.Description)
+            Errors = result.Errors.Select(e => e.Description)
         });
     }
 
@@ -140,7 +140,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        var user = _userManager.Users.FirstOrDefault((user) => user.SecurityStamp == cookie);
+        var user = _userManager.Users.FirstOrDefault(user => user.SecurityStamp == cookie);
         if (user == null)
         {
             return Ok(new LoginResponse
@@ -246,12 +246,12 @@ public class AuthController : ControllerBase
         var identityUsers = await _userManager.Users.ToListAsync();
         var identityUserResponses = _mapper.Map<IEnumerable<IdentityUserResponse>>(identityUsers);
         var discordUsers = await _uow.Users
-            .GetUsersFromIdentityUserIds(identityUsers.Select((iu) => iu.Id));
+            .GetUsersFromIdentityUserIds(identityUsers.Select(iu => iu.Id));
         foreach (var identityUserResponse in identityUserResponses)
         {
             identityUserResponse.IsDiscordAuthenticated =
                 // ReSharper disable once PossibleMultipleEnumeration
-                discordUsers.Any((du) => du.IdentityUserId == identityUserResponse.Id);
+                discordUsers.Any(du => du.IdentityUserId == identityUserResponse.Id);
         }
         
         return Ok(identityUserResponses);

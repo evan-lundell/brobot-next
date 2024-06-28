@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using Brobot.Contexts;
 using Brobot.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
@@ -46,11 +46,11 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
     public async Task<IEnumerable<UserModel>> GetAllWithGuildsAndChannels()
     {
         return await Context.Users
-            .Include((u) => u.GuildUsers)
-            .ThenInclude((gu) => gu.Guild)
-            .Include((u) => u.ChannelUsers)
-            .ThenInclude((cu) => cu.Channel)
-            .Include((u) => u.ScheduledMessages)
+            .Include(u => u.GuildUsers)
+            .ThenInclude(gu => gu.Guild)
+            .Include(u => u.ChannelUsers)
+            .ThenInclude(cu => cu.Channel)
+            .Include(u => u.ScheduledMessages)
             .AsSplitQuery()
             .ToListAsync();
     }
@@ -58,25 +58,25 @@ public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
     public Task<UserModel?> GetByIdWithIncludes(ulong id)
     {
         return Context.Users
-            .Include((u) => u.GuildUsers)
-            .ThenInclude((gu) => gu.Guild)
-            .Include((u) => u.ChannelUsers)
-            .ThenInclude((cu) => cu.Channel)
-            .Include((u) => u.ScheduledMessages)
+            .Include(u => u.GuildUsers)
+            .ThenInclude(gu => gu.Guild)
+            .Include(u => u.ChannelUsers)
+            .ThenInclude(cu => cu.Channel)
+            .Include(u => u.ScheduledMessages)
             .AsSplitQuery()
-            .SingleOrDefaultAsync((u) => u.Id == id);
+            .SingleOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task<UserModel?> GetFromIdentityUserId(string identityUserId)
     {
         var user = await Context.Users
-            .SingleOrDefaultAsync((u) => u.IdentityUserId == identityUserId);
+            .SingleOrDefaultAsync(u => u.IdentityUserId == identityUserId);
         return user;
     }
 
     public async Task<IEnumerable<UserModel>> GetUsersFromIdentityUserIds(IEnumerable<string> identityUserIds)
     {
-        var formattedIds = identityUserIds.Select((id) => $"'{id}'");
+        var formattedIds = identityUserIds.Select(id => $"'{id}'");
         return await Context.Users
             .FromSql(
                 $"SELECT * FROM brobot.discord_user WHERE identity_user_id IN ({string.Join(", ", formattedIds)})")

@@ -2,6 +2,7 @@ using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Services;
 using Discord.WebSocket;
+
 // ReSharper disable ClassNeverInstantiated.Global
 
 namespace Brobot.Workers;
@@ -30,13 +31,13 @@ public class HotOpWorker : CronWorkerBase
         var now = DateTime.UtcNow;
         var minuteStart = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, now.Kind);
 
-        var newHotOps = await uow.HotOps.Find((ho) => minuteStart <= ho.StartDate && minuteStart.AddMinutes(1) > ho.StartDate);
+        var newHotOps = await uow.HotOps.Find(ho => minuteStart <= ho.StartDate && minuteStart.AddMinutes(1) > ho.StartDate);
         foreach (var newHotOp in newHotOps)
         {
             await HandleNewHotOp(newHotOp);
         }
 
-        var endingHotOps = await uow.HotOps.Find((ho) => minuteStart <= ho.EndDate && minuteStart.AddMinutes(1) > ho.EndDate);
+        var endingHotOps = await uow.HotOps.Find(ho => minuteStart <= ho.EndDate && minuteStart.AddMinutes(1) > ho.EndDate);
         foreach (var endingHotOp in endingHotOps)
         {
             await HandleEndingHotOp(endingHotOp, uow);
@@ -55,7 +56,7 @@ public class HotOpWorker : CronWorkerBase
     private async Task HandleEndingHotOp(HotOpModel hotOp, IUnitOfWork uow)
     {
         var now = DateTime.UtcNow;
-        foreach (var openSession in hotOp.HotOpSessions.Where((hos) => hos.EndDateTime == null))
+        foreach (var openSession in hotOp.HotOpSessions.Where(hos => hos.EndDateTime == null))
         {
             openSession.EndDateTime = now;
         }

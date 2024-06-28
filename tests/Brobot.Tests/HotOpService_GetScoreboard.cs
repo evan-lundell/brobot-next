@@ -46,8 +46,8 @@ public class HotOpService_GetScoreboard
         var scoreboard = hotOpService.GetScoreboard(hotOpModel);
 
         // Assert
-        var userWithScoreEntry = scoreboard.Scores.FirstOrDefault((s) => s.UserId == userWithScore.Id);
-        var userWithoutScoreEntry = scoreboard.Scores.FirstOrDefault((s) => s.UserId == userWithoutScore.Id);
+        var userWithScoreEntry = scoreboard.Scores.FirstOrDefault(s => s.UserId == userWithScore.Id);
+        var userWithoutScoreEntry = scoreboard.Scores.FirstOrDefault(s => s.UserId == userWithoutScore.Id);
         Assert.That(userWithScoreEntry?.Score, Is.EqualTo(sessionLength * 10));
         Assert.That(userWithoutScoreEntry?.Score, Is.EqualTo(0));
     }

@@ -118,7 +118,7 @@ else
             var newSong = await ApiService.PlaylistService.CreatePlaylistSong(_playlist!.Id, _newSongRequest);
             var songs = _playlist.Songs.ToList();
             songs.Add(newSong);
-            _playlist.Songs = songs.OrderBy((s) => s.Order);
+            _playlist.Songs = songs.OrderBy(s => s.Order);
             if (_newSongModal != null)
             {
                 await _newSongModal.HideModal();

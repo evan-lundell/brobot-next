@@ -1,5 +1,6 @@
 using Brobot.Repositories;
 using Discord.WebSocket;
+
 // ReSharper disable ClassNeverInstantiated.Global
 
 namespace Brobot.Workers;

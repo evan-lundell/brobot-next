@@ -1,3 +1,4 @@
+using System.Net;
 using Brobot.Responses;
 using Newtonsoft.Json;
 
@@ -15,7 +16,7 @@ public class DictionaryService : IDictionaryService
     public async Task<string> GetDefinition(string word)
     {
         var response = await _http.GetAsync($"api/v2/entries/en/{word}");
-        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return "That's not a word dummy";
         }
