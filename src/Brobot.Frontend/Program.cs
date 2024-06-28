@@ -1,11 +1,11 @@
 using Blazored.Toast;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Brobot.Frontend;
 using Brobot.Frontend.Handlers;
 using Brobot.Frontend.Providers;
 using Brobot.Frontend.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -20,8 +20,8 @@ if (appUri == null)
 builder.Services.AddAuthorizationCore();
 builder.Services.AddSingleton<JwtAuthenticationStateProvider>();
 builder.Services.AddSingleton<AuthenticationStateProvider>(provider => provider.GetRequiredService<JwtAuthenticationStateProvider>());
-builder.Services.AddScoped((provider) => new JwtTokenMessageHandler(appUri, provider.GetRequiredService<JwtAuthenticationStateProvider>()));
-builder.Services.AddHttpClient<ApiService>((client) => client.BaseAddress = appUri)
+builder.Services.AddScoped(provider => new JwtTokenMessageHandler(appUri, provider.GetRequiredService<JwtAuthenticationStateProvider>()));
+builder.Services.AddHttpClient<ApiService>(client => client.BaseAddress = appUri)
     .AddHttpMessageHandler<JwtTokenMessageHandler>();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddLogging();

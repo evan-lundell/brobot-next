@@ -1,6 +1,6 @@
-using Brobot.Shared.Responses;
 using System.Net.Http.Json;
 using Brobot.Shared.Requests;
+using Brobot.Shared.Responses;
 
 namespace Brobot.Frontend.Services;
 
@@ -136,7 +136,7 @@ public class ApiService
     {
         if (channelId == null)
         {
-            return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>($"MessageCounts/total-top-days")
+            return await _client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/total-top-days")
                    ?? Array.Empty<DailyMessageCountResponse>();
         }
 

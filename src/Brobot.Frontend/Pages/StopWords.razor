@@ -54,7 +54,7 @@
     protected override async Task OnInitializedAsync()
     {
         _stopWords = (await ApiService.StopWordService.GetAll())
-            .Select((sw) => sw.Word)
+            .Select(sw => sw.Word)
             .Order()
             .ToList();
         await UpdateLoaded(true);

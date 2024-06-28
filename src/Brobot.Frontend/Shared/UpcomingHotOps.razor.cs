@@ -69,7 +69,7 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
                 ? await ApiService.HotOpService.Create(_editHotOpRequest)
                 : await ApiService.HotOpService.Update(_editHotOpRequest.Id.Value, _editHotOpRequest);
 
-            var existingHotOp = _hotOps?.FirstOrDefault((ho) => ho.Id == hotOp.Id);
+            var existingHotOp = _hotOps?.FirstOrDefault(ho => ho.Id == hotOp.Id);
             if (existingHotOp == null)
             {
                 _hotOps?.Add(hotOp);

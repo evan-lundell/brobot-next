@@ -1,4 +1,3 @@
-using Blazored.Toast.Services;
 using Brobot.Frontend.Components;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
@@ -29,8 +28,8 @@ public partial class Reminders : ComponentBase
     {
         try
         {
-            _reminders = (await ApiService.ScheduledMessageService.GetAll())
-                .OrderBy((r) => r.SendDate)
+            _reminders = (await ApiService.ScheduledMessageService.GetUnsentScheduledMessages())
+                .OrderBy(r => r.SendDate)
                 .ToList();
             _channels = await ApiService.GetChannels();
         }
@@ -71,7 +70,7 @@ public partial class Reminders : ComponentBase
                 : await ApiService.ScheduledMessageService.Update(_editScheduleMessage.Id.Value, _editScheduleMessage);
 
 
-            var existingReminder = _reminders?.FirstOrDefault((r) => r.Id == message.Id);
+            var existingReminder = _reminders?.FirstOrDefault(r => r.Id == message.Id);
             if (existingReminder == null)
             {
                 _reminders?.Add(message);
