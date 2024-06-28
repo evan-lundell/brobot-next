@@ -15,7 +15,7 @@ public class ScheduledMessageRepository : RepositoryBase<ScheduledMessageModel, 
     {
         time ??= DateTime.UtcNow;
         var messages = await Context.ScheduledMessages
-            .Where((m) => time >= m.SendDate && time < m.SendDate.Value.AddMinutes(1) && m.SentDate == null)
+            .Where(m => time >= m.SendDate && time < m.SendDate.Value.AddMinutes(1) && m.SentDate == null)
             .ToListAsync();
 
         return messages;
@@ -25,27 +25,28 @@ public class ScheduledMessageRepository : RepositoryBase<ScheduledMessageModel, 
         int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
         var query = Context.ScheduledMessages
-            .Include((sm) => sm.Channel)
-            .Include((sm) => sm.CreatedBy)
-            .Where((sm) => sm.CreatedById == userId)
-            .Take(limit);
+            .Include(sm => sm.Channel)
+            .Include(sm => sm.CreatedBy)
+            .Where(sm => sm.CreatedById == userId);
 
+        if (scheduledBefore.HasValue)
+        {
+            query = query.Where(sm => sm.SendDate.HasValue && sm.SendDate.Value < scheduledBefore);
+        }
+
+        if (scheduledAfter.HasValue)
+        {
+            query = query.Where(sm => sm.SendDate.HasValue && sm.SendDate >= scheduledAfter);
+        }
+        
         if (skip > 0)
         {
             query = query.Skip(skip);
         }
 
-        if (scheduledBefore.HasValue)
-        {
-            query = query.Where((sm) => sm.SendDate.HasValue && sm.SendDate.Value < scheduledBefore);
-        }
-
-        if (scheduledAfter.HasValue)
-        {
-            query = query.Where((sm) => sm.SendDate.HasValue && sm.SendDate >= scheduledAfter);
-        }
-
-        query = query.OrderBy((sm) => sm.SendDate);
-        return await query.ToListAsync();
+        return await query
+            .OrderBy(sm => sm.SendDate)
+            .Take(limit)
+            .ToListAsync();
     }
 }

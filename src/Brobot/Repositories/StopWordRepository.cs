@@ -15,11 +15,11 @@ public class StopWordRepository : RepositoryBase<StopWordModel, int>, IStopWordR
     public async Task<bool> StopWordExists(string word)
     {
         var existingWord =
-            await Context.StopWords.SingleOrDefaultAsync((sw) => word == sw.Word);
+            await Context.StopWords.SingleOrDefaultAsync(sw => word == sw.Word);
 
         return existingWord != null;
     }
 
     public Task<StopWordModel?> GetByWord(string word)
-        => Context.StopWords.SingleOrDefaultAsync((sw) => word == sw.Word);
+        => Context.StopWords.SingleOrDefaultAsync(sw => word == sw.Word);
 }

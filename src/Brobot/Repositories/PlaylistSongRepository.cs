@@ -13,6 +13,6 @@ public class PlaylistSongRepository : RepositoryBase<PlaylistSongModel, int>, IP
 
     public override Task<PlaylistSongModel?> GetById(int id)
         => Context.PlaylistSongs
-            .Include((ps) => ps.Playlist)
-            .SingleOrDefaultAsync((ps) => ps.Id == id);
+            .Include(ps => ps.Playlist)
+            .SingleOrDefaultAsync(ps => ps.Id == id);
 }

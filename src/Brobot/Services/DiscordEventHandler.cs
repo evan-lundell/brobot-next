@@ -4,6 +4,7 @@ using Brobot.Repositories;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+
 // ReSharper disable MemberCanBeMadeStatic.Local
 
 namespace Brobot.Services;
@@ -385,7 +386,7 @@ public class DiscordEventHandler : IDisposable
         }
 
         var channelUserModel =
-            existingChannelModel.ChannelUsers.FirstOrDefault((cu) => cu.UserId == existingDiscordUser.Id);
+            existingChannelModel.ChannelUsers.FirstOrDefault(cu => cu.UserId == existingDiscordUser.Id);
         if (channelUserModel == null)
         {
             return;

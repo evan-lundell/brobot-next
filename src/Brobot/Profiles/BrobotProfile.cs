@@ -26,12 +26,12 @@ public class BrobotProfile : Profile
         CreateMap<ScoreboardItemDto, ScoreboardItemResponse>();
         CreateMap<SecretSantaGroupModel, SecretSantaGroupResponse>()
             .ForMember(
-                (response) => response.Users,
-                (opt) => opt.MapFrom((model) => model.SecretSantaGroupUsers.Select((ssgu) => ssgu.User)));
+                response => response.Users,
+                opt => opt.MapFrom(model => model.SecretSantaGroupUsers.Select(ssgu => ssgu.User)));
 
         CreateMap<SecretSantaPairModel, SecretSantaPairResponse>()
-            .ForMember((ssp) => ssp.Giver, (opt) => opt.MapFrom((model) => model.GiverUser))
-            .ForMember((ssp) => ssp.Recipient, (opt) => opt.MapFrom((model) => model.RecipientUser));
+            .ForMember(ssp => ssp.Giver, opt => opt.MapFrom(model => model.GiverUser))
+            .ForMember(ssp => ssp.Recipient, opt => opt.MapFrom(model => model.RecipientUser));
 
         CreateMap<StopWordModel, StopWordResponse>();
         CreateMap<StopWordRequest, StopWordModel>();

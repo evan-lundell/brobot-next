@@ -26,7 +26,7 @@ public class MessageCountService
         }
         
         var (currentDate, startDate) = GetDates(numOfDays, userModel.Timezone);
-        var counts = await _uow.DailyMessageCounts.Find((dmc) =>
+        var counts = await _uow.DailyMessageCounts.Find(dmc =>
             dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate >= startDate && dmc.CountDate <= currentDate);
         return GetDailyMessageCountResponses(counts, userModel, startDate, currentDate);
     }
@@ -39,7 +39,7 @@ public class MessageCountService
         }
 
         var (currentDate, startDate) = GetDates(numOfDays, userModel.Timezone);
-        var counts = await _uow.DailyMessageCounts.Find((dmc) =>
+        var counts = await _uow.DailyMessageCounts.Find(dmc =>
             dmc.UserId == userModel.Id && dmc.CountDate >= startDate && dmc.CountDate <= currentDate);
         return GetDailyMessageCountResponses(counts, userModel, startDate, currentDate);
     }
@@ -59,7 +59,7 @@ public class MessageCountService
             countDate = DateOnly.FromDateTime(DateTime.UtcNow + timezone.GetUtcOffset(DateTime.UtcNow));
         }
         var dailyMessageCount = (await _uow.DailyMessageCounts
-                .Find((dmc) => dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate))
+                .Find(dmc => dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate))
             .FirstOrDefault();
         
         if (dailyMessageCount == null)
@@ -99,7 +99,7 @@ public class MessageCountService
 
         var counts = await _uow.DailyMessageCounts.GetUsersTopDays(userModel.Id, numOfDays);
         var userResponse = _mapper.Map<UserResponse>(userModel);
-        return counts.Select((c) => new DailyMessageCountResponse
+        return counts.Select(c => new DailyMessageCountResponse
         {
             User = userResponse,
             CountDate = c.CountDate,
@@ -116,7 +116,7 @@ public class MessageCountService
 
         var userResponse = _mapper.Map<UserResponse>(userModel);
         var counts = await _uow.DailyMessageCounts.GetUsersTopDaysInChannel(userModel.Id, channelId, numOfDays);
-        return counts.Select((c) => new DailyMessageCountResponse
+        return counts.Select(c => new DailyMessageCountResponse
         {
             User = userResponse,
             CountDate = c.CountDate,
@@ -134,7 +134,7 @@ public class MessageCountService
         var now = DateTimeOffset.UtcNow;
         var userNow = now.AdjustToUsersTimezone(userModel.Timezone);
         var counts = await _uow.DailyMessageCounts.GetTopForDate(DateOnly.FromDateTime(userNow.DateTime));
-        return counts.Select((c) => new DailyMessageCountResponse
+        return counts.Select(c => new DailyMessageCountResponse
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
@@ -152,7 +152,7 @@ public class MessageCountService
         var now = DateTimeOffset.UtcNow;
         var userNow = now.AdjustToUsersTimezone(userModel.Timezone);
         var counts = await _uow.DailyMessageCounts.GetTopForDateByChannel(DateOnly.FromDateTime(userNow.DateTime), channelId);
-        return counts.Select((c) => new DailyMessageCountResponse
+        return counts.Select(c => new DailyMessageCountResponse
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
@@ -199,7 +199,7 @@ public class MessageCountService
         {
             Username = ""
         };
-        return counts.Select((dmc) => new DailyMessageCountResponse
+        return counts.Select(dmc => new DailyMessageCountResponse
         {
             CountDate = dmc.CountDate,
             MessageCount = dmc.MessageCount,
@@ -214,7 +214,7 @@ public class MessageCountService
         {
             Username = ""
         };
-        return counts.Select((dmc) => new DailyMessageCountResponse
+        return counts.Select(dmc => new DailyMessageCountResponse
         {
             CountDate = dmc.CountDate,
             MessageCount = dmc.MessageCount,
@@ -235,14 +235,14 @@ public class MessageCountService
     {
         var userResponse = _mapper.Map<UserResponse>(userModel);
         var countsResponse = counts
-            .GroupBy((c) => c.CountDate)
-            .Select((x) => new DailyMessageCountResponse
+            .GroupBy(c => c.CountDate)
+            .Select(x => new DailyMessageCountResponse
             {
                 CountDate = x.First().CountDate,
-                MessageCount = x.Sum((mc) => mc.MessageCount),
+                MessageCount = x.Sum(mc => mc.MessageCount),
                 User = userResponse
             })
-            .ToDictionary((c) => c.CountDate);
+            .ToDictionary(c => c.CountDate);
             
         var countsWithEmptyDays = new List<DailyMessageCountResponse>();
         var nextDate = startDate;

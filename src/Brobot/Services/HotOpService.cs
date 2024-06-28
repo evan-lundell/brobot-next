@@ -3,6 +3,7 @@ using Brobot.Models;
 using Brobot.Repositories;
 using Discord;
 using Discord.WebSocket;
+
 // ReSharper disable MemberCanBeMadeStatic.Global
 
 namespace Brobot.Services;
@@ -33,8 +34,8 @@ public class HotOpService
         var utcNow = DateTime.UtcNow;
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var now = DateTime.UtcNow;
-        var activeHotOps = await uow.HotOps.Find((ho) => ho.StartDate <= now && ho.EndDate >= now);
-        var users = (await uow.Users.Find((u) => u.Archived == false)).ToDictionary((u) => u.Id);
+        var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now);
+        var users = (await uow.Users.Find(u => u.Archived == false)).ToDictionary(u => u.Id);
 
         foreach (var hotOp in activeHotOps)
         {
@@ -45,8 +46,8 @@ public class HotOpService
                 if (currentVoiceState.VoiceChannel != null)
                 {
                     var sessions = currentVoiceState.VoiceChannel.ConnectedUsers
-                        .Where((u) => u.IsBot == false && u.Id != socketUser.Id)
-                        .Select((u) => new HotOpSessionModel
+                        .Where(u => u.IsBot == false && u.Id != socketUser.Id)
+                        .Select(u => new HotOpSessionModel
                         {
                             HotOp = hotOp,
                             HotOpId = hotOp.Id,
@@ -59,10 +60,10 @@ public class HotOpService
                 // if the hot op owner left a voice channel, add end date to each session
                 if (previousVoiceState.VoiceChannel != null)
                 {
-                    var existingSessions = await uow.HotOpSessions.Find((hos) => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
+                    var existingSessions = await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
                     foreach (var existingSession in existingSessions)
                     {
-                        if (previousVoiceState.VoiceChannel.ConnectedUsers.Any((cu) => cu.Id == existingSession.UserId))
+                        if (previousVoiceState.VoiceChannel.ConnectedUsers.Any(cu => cu.Id == existingSession.UserId))
                         {
                             existingSession.EndDateTime = utcNow;
                         }
@@ -100,7 +101,7 @@ public class HotOpService
                         continue;
                     }
 
-                    var session = (await uow.HotOpSessions.Find((hos) => hos.HotOpId == hotOp.Id && hos.UserId == socketUser.Id && hos.EndDateTime == null)).FirstOrDefault();
+                    var session = (await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.UserId == socketUser.Id && hos.EndDateTime == null)).FirstOrDefault();
                     if (session != null)
                     {
                         session.EndDateTime = utcNow;
@@ -114,14 +115,14 @@ public class HotOpService
 
     public ScoreboardDto GetScoreboard(HotOpModel hotOp)
     {
-        var scores = hotOp.Channel.ChannelUsers.Select((cu) => new ScoreboardItemDto
+        var scores = hotOp.Channel.ChannelUsers.Select(cu => new ScoreboardItemDto
         {
             UserId = cu.UserId,
             Username = cu.User.Username,
             Score = 0
         })
-            .Where((s) => s.UserId != hotOp.UserId)
-            .ToDictionary((s) => s.UserId);
+            .Where(s => s.UserId != hotOp.UserId)
+            .ToDictionary(s => s.UserId);
 
         foreach (var session in hotOp.HotOpSessions)
         {
@@ -143,7 +144,7 @@ public class HotOpService
         var scoreboard = new ScoreboardDto
         {
             HotOpId = hotOp.Id,
-            Scores = scores.Values.OrderByDescending((s) => s.Score),
+            Scores = scores.Values.OrderByDescending(s => s.Score),
             OwnerUsername = hotOp.User.Username
         };
 
@@ -162,7 +163,7 @@ public class HotOpService
 
         foreach (var score in scoreboard.Scores)
         {
-            builder.AddField((x) =>
+            builder.AddField(x =>
             {
                 x.Name = score.Username;
                 x.Value = score.Score;
