@@ -192,5 +192,6 @@ public static class Program
         builder.Services.AddScoped<SecretSantaService>();
         builder.Services.AddSingleton<StopWordService>();
         builder.Services.AddTransient<WordCloudService>();
+        builder.Services.AddSingleton<WordCountService>();
     }
 }
