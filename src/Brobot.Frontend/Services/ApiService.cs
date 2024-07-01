@@ -156,4 +156,12 @@ public class ApiService
 
     public async Task<UserResponse[]> GetUsers()
         => await _client.GetFromJsonAsync<UserResponse[]>("Users/all") ?? Array.Empty<UserResponse>();
+
+    public async Task<MonthlyWordCloudResponse> GetWordCloud(ulong channelId, int monthsBack = 1)
+    {
+        var requestUrl = $"api/WordCloud?channelId={channelId}&monthsBack={monthsBack}";
+        var response = await _client.GetFromJsonAsync<MonthlyWordCloudResponse>(requestUrl);
+        return response ?? new MonthlyWordCloudResponse
+            { Image = [], UserMessageCounts = new Dictionary<string, int>() };
+    }
 }

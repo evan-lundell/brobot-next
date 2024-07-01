@@ -14,7 +14,7 @@
             <label class="form-label">Channel</label>
             <InputSelect class="form-select" @bind-Value="_selectedChannelId">
                 <option value="">Select a channel...</option>
-                @foreach (var channel in Channels ?? Array.Empty<ChannelResponse>())
+                @foreach (var channel in Channels ?? [])
                 {
                     <option value="@channel.Id">@channel.Name</option>
                 }
@@ -31,7 +31,7 @@
 @code {
 
     [Parameter]
-    public ChannelResponse[]? Channels { get; set; } = Array.Empty<ChannelResponse>();
+    public ChannelResponse[]? Channels { get; set; } = [];
     
     private bool DisableSend => _isSending || string.IsNullOrWhiteSpace(_message) || _selectedChannelId == null;
     

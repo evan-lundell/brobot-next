@@ -1,4 +1,5 @@
 using Brobot.Models;
+using Brobot.Shared.Responses;
 using Discord;
 using Discord.WebSocket;
 using KnowledgePicker.WordCloud;
@@ -17,8 +18,6 @@ public class WordCloudService
     private readonly StopWordService _stopWordService;
     private readonly ILogger<WordCloudService> _logger;
 
-    private const string WordcloudPath = "wordcloud.png";
-
     public WordCloudService(
         DiscordSocketClient client,
         StopWordService stopWordService,
@@ -29,7 +28,7 @@ public class WordCloudService
         _logger = logger;
     }
 
-    public async Task GenerateWordCloud(ChannelModel channel)
+    public async Task<MonthlyWordCloudResponse> GenerateWordCloud(ChannelModel channel, int monthsBack = 1)
     {
         try
         {
@@ -37,7 +36,11 @@ public class WordCloudService
             var socketChannel = await _client.GetChannelAsync(channel.Id);
             if (socketChannel is not SocketTextChannel socketTextChannel)
             {
-                return;
+                return new MonthlyWordCloudResponse
+                {
+                    Image = [],
+                    UserMessageCounts = new Dictionary<string, int>()
+                };
             }
 
             ulong? fromMessageId = null;
@@ -45,7 +48,9 @@ public class WordCloudService
                 [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "(", ")", "\"", "@"];
 
             bool doneWithMonth = false;
-            var lastMonth = DateTime.UtcNow.AddMonths(-1).Month;
+            var targetMonth = DateTime.UtcNow.AddMonths(monthsBack * -1);
+            var startDateTime = new DateTimeOffset(targetMonth.Year, targetMonth.Month, 1, 0, 0, 0, TimeSpan.Zero);
+            var endDateTime = startDateTime.AddMonths(1);
             Dictionary<string, int> userMessageCount = new();
             while (!doneWithMonth)
             {
@@ -56,7 +61,11 @@ public class WordCloudService
                 var messages = await previousMessages.FlattenAsync();
                 foreach (var message in messages)
                 {
-                    if (message.Timestamp.Month != lastMonth)
+                    if (message.Timestamp > endDateTime)
+                    {
+                        continue;
+                    }
+                    if (message.Timestamp < startDateTime)
                     {
                         doneWithMonth = true;
                         break;
@@ -80,25 +89,36 @@ public class WordCloudService
 
             if (wordCount.Count == 0)
             {
-                return;
+                return new MonthlyWordCloudResponse
+                {
+                    Image = [],
+                    UserMessageCounts = new Dictionary<string, int>()
+                };;
             }
 
-            var countString = string.Join("\n", userMessageCount.OrderByDescending(x => x.Value).Select(c => $"{c.Key}: {c.Value}"));
             var frequencies = wordCount
                 .OrderByDescending(w => w.Value)
                 .Take(100)
                 .Select(w => new WordCloudEntry(w.Key, w.Value));
-           GenerateFile(frequencies);
-            await socketTextChannel.SendFileAsync(WordcloudPath, countString);
-            File.Delete(WordcloudPath);
+           var image = GenerateFile(frequencies);
+           return new MonthlyWordCloudResponse
+           {
+               Image = image,
+               UserMessageCounts = userMessageCount
+           };
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Failed to generate word cloud for {ChannelId}", channel.Id);
+            return new MonthlyWordCloudResponse
+            {
+                Image = [],
+                UserMessageCounts = new Dictionary<string, int>()
+            };
         }
     }
 
-    private void GenerateFile(IEnumerable<WordCloudEntry> entries)
+    private byte[] GenerateFile(IEnumerable<WordCloudEntry> entries)
     {
         var wordCloud = new WordCloudInput(entries)
         {
@@ -119,7 +139,6 @@ public class WordCloudService
         using var bitmap = wcg.Draw();
         canvas.DrawBitmap(bitmap, 0, 0);
         using var data = final.Encode(SKEncodedImageFormat.Png, 100);
-        using var writer = File.Create(WordcloudPath);
-        data.SaveTo(writer);
+        return data.ToArray();
     }
 }
