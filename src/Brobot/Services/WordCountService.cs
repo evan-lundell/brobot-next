@@ -10,7 +10,7 @@ public class WordCountService
     private readonly ILogger<WordCountService> _logger;
     private readonly DiscordSocketClient _client;
     private readonly string[] _separators =
-        [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "\"", "@", "*", "<", ">", "[", "]", "(", ")", "-", ";", "*", "{", "}"];
+        [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "\"", "@", "*", "<", ">", "[", "]", "(", ")", "-", ";", "*", "{", "}", "+", "=", "#", "~"];
     
     public WordCountService(ILogger<WordCountService> logger, DiscordSocketClient client)
     {
