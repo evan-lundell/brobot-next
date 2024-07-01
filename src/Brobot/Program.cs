@@ -145,7 +145,6 @@ public static class Program
             });
             builder.Services.AddCronJob<WordCountWorker>(options =>
             {
-                // TODO: This should be set to 6 am
                 options.CronExpression = "0 6 * * *";
             });
         }
