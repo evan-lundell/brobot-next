@@ -1,3 +1,5 @@
+using Brobot.Repositories;
+using Brobot.Services;
 using Brobot.Shared.Requests;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Authorization;
