@@ -147,6 +147,10 @@ public static class Program
             {
                 options.CronExpression = "0 6 * * *";
             });
+            builder.Services.AddCronJob<WordCloudWorker>(options =>
+            {
+                options.CronExpression = "0 13 1 * *";
+            });
         }
         
         builder.Services.AddAuthentication()
@@ -187,6 +191,6 @@ public static class Program
         builder.Services.AddScoped<MessageCountService>();
         builder.Services.AddScoped<SecretSantaService>();
         builder.Services.AddSingleton<StopWordService>();
-        builder.Services.AddSingleton<WordCountService>();
+        builder.Services.AddTransient<WordCloudService>();
     }
 }
