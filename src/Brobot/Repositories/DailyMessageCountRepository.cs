@@ -42,7 +42,8 @@ public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel
                         {
                             Id = 0,
                             Name = "Global"
-                        }
+                        },
+                        Timezone = "america/chicago"
                     },
                     MessageCount = dmc.MessageCount
 
@@ -83,7 +84,8 @@ public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel
                         {
                             Id = 0,
                             Name = "Global"
-                        }
+                        },
+                        Timezone = "america/chicago"
                     },
                     MessageCount = dmc.MessageCount
 
@@ -121,7 +123,8 @@ public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel
                         {
                             Id = 0,
                             Name = "Global"
-                        }
+                        },
+                        Timezone = "america/chicago"
                     },
                     MessageCount = dmc.MessageCount
                 })
@@ -161,7 +164,8 @@ public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel
                         {
                             Id = 0,
                             Name = "Global"
-                        }
+                        },
+                        Timezone = "america/chicago"
                     },
                     MessageCount = dmc.MessageCount
                 })
@@ -199,7 +203,8 @@ public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel
                         {
                             Id = 0,
                             Name = "Global"
-                        }
+                        },
+                        Timezone = "america/chicago"
                     },
                     MessageCount = dmc.MessageCount
                 })
@@ -237,7 +242,8 @@ public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel
                         {
                             Id = 0,
                             Name = "Global"
-                        }
+                        },
+                        Timezone = "america/chicago"
                     },
                     MessageCount = dmc.MessageCount
                 })
@@ -266,7 +272,8 @@ public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel
                     {
                         Id = 0,
                         Name = "Global"
-                    }
+                    },
+                    Timezone = "america/chicago"
                 },
                 CountDate = g.Key.CountDate,
                 MessageCount = g.Sum(d => d.MessageCount)
@@ -299,7 +306,8 @@ public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel
                     {
                         Id = 0,
                         Name = "Global"
-                    }
+                    },
+                    Timezone = "america/chicago"
                 },
                 CountDate = g.Key.CountDate,
                 MessageCount = g.Sum(d => d.MessageCount)

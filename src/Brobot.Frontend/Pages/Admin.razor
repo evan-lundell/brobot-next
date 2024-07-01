@@ -25,11 +25,6 @@
             <StopWords @bind-Loaded="_stopWordsLoaded" />
         </div>
     </div>
-    <div class="row my-3">
-        <div class="col-12">
-            <WordCloud @bind-Loaded="_wordCloudLoaded" />
-        </div>
-    </div>
 </div>
 
 @if (!Loaded)
@@ -43,9 +38,8 @@
     private bool _usersTableLoaded;
     private bool _secretSantaLoaded;
     private bool _stopWordsLoaded;
-    private bool _wordCloudLoaded;
 
-    private bool Loaded => _channels != null && _usersTableLoaded && _secretSantaLoaded && _stopWordsLoaded && _wordCloudLoaded;
+    private bool Loaded => _channels != null && _usersTableLoaded && _secretSantaLoaded && _stopWordsLoaded;
     
     protected override async Task OnInitializedAsync()
     {

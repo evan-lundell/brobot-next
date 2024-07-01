@@ -8,7 +8,8 @@ public class ChannelModel
     public required string Name { get; set; }
     public bool Archived { get; set; }
     public bool MonthlyWordCloud { get; set; }
-
+    public string Timezone { get; set; } = "america/chicago";
+    
     public ulong GuildId { get; set; }
     public required GuildModel Guild { get; set; }
 

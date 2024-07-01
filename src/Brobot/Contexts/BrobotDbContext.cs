@@ -16,6 +16,7 @@ public class BrobotDbContext : DbContext
     public DbSet<SecretSantaGroupModel> SecretSantaGroups => Set<SecretSantaGroupModel>();
     public DbSet<SecretSantaPairModel> SecretSantaPairs => Set<SecretSantaPairModel>();
     public DbSet<StopWordModel> StopWords => Set<StopWordModel>();
+    public DbSet<WordCountModel> WordCounts => Set<WordCountModel>();
 
     public BrobotDbContext(DbContextOptions<BrobotDbContext> options)
         : base(options)
@@ -70,6 +71,11 @@ public class BrobotDbContext : DbContext
             .HasOne(c => c.Guild)
             .WithMany(g => g.Channels)
             .HasForeignKey(c => c.GuildId);
+        builder.Entity<ChannelModel>()
+            .Property(c => c.Timezone)
+            .IsRequired(true)
+            .HasMaxLength(255)
+            .HasDefaultValue("america/chicago");
 
         builder.Entity<UserModel>()
             .ToTable(name: "discord_user", schema: "brobot")
