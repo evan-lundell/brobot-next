@@ -2,7 +2,6 @@ using Brobot.Contexts;
 using Brobot.Dtos;
 using Brobot.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 
 namespace Brobot.Repositories;
 
@@ -13,12 +12,8 @@ public class WordCountRepository : RepositoryBase<WordCountModel, int>, IWordCou
     {
     }
 
-    public async Task<IEnumerable<WordCountDto>> GetWordCountsByChannelId(ulong channelId, int monthsBack = 1, int limit = 100)
+    public async Task<IEnumerable<WordCountDto>> GetWordCountsByChannelId(ulong channelId, DateOnly startDate, DateOnly endDate, int limit = 100)
     {
-        var startDateTime = DateTime.UtcNow.AddDays(-monthsBack);
-        var startDate = new DateOnly(startDateTime.Year, startDateTime.Month, 1);
-        var endDate = startDate.AddMonths(1);
-        
         var query = Context.WordCounts
             .GroupJoin(Context.StopWords, wc => wc.Word, sw => sw.Word, (wc, sw) => new { wc, sw })
             .SelectMany(temp => temp.sw.DefaultIfEmpty(), (temp, sw) => new { temp.wc, sw })

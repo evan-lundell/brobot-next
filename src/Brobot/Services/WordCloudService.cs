@@ -24,12 +24,18 @@ public class WordCloudService
     {
         try
         {
-            var wordCounts = (await _uow.WordCounts.GetWordCountsByChannelId(channelId, monthsBack)).ToList();
+            var startDateTime = DateTime.UtcNow.AddMonths(-monthsBack);
+            var startDate = new DateOnly(startDateTime.Year, startDateTime.Month, 1);
+            var endDate = startDate.AddMonths(1);
+            _logger.LogInformation("Generating word cloud for channel {ChannelId} from {StartDate} to {EndDate}", channelId, startDate, endDate);
+            var wordCounts = (await _uow.WordCounts.GetWordCountsByChannelId(channelId, startDate, endDate)).ToList();
             if (!wordCounts.Any())
             {
+                _logger.LogInformation("No word counts found for channel {ChannelId}", channelId);
                 return [];
             }
 
+            _logger.LogInformation("Word counts found for channel {ChannelId}: {Count}", channelId, wordCounts.Count);
             var entries = wordCounts.Select(wc => new WordCloudEntry(wc.Word, wc.Count));
             var wordCloud = new WordCloudInput(entries)
             {
@@ -49,6 +55,7 @@ public class WordCloudService
             using var bitmap = wcg.Draw();
             canvas.DrawBitmap(bitmap, 0, 0);
             using var data = final.Encode(SKEncodedImageFormat.Png, 100);
+            _logger.LogInformation("Word cloud generated for channel {ChannelId}, {Bytes} bytes", channelId, data.ToArray().Length);
             return data.ToArray();
         }
         catch (Exception e)
