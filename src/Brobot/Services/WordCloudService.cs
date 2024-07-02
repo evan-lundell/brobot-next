@@ -39,10 +39,10 @@ public class WordCloudService
             var entries = wordCounts.Select(wc => new WordCloudEntry(wc.Word, wc.Count));
             var wordCloud = new WordCloudInput(entries)
             {
-                Width = 1024,
-                Height = 576,
-                MinFontSize = 36,
-                MaxFontSize = 96,
+                Width = 1280,
+                Height = 720,
+                MinFontSize = 12,
+                MaxFontSize = 128
             };
             var sizer = new LogSizer(wordCloud);
             using var engine = new SkGraphicEngine(sizer, wordCloud);
