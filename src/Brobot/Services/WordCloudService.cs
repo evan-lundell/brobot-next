@@ -1,6 +1,4 @@
-using Brobot.Models;
-using Discord;
-using Discord.WebSocket;
+using Brobot.Repositories;
 using KnowledgePicker.WordCloud;
 using KnowledgePicker.WordCloud.Coloring;
 using KnowledgePicker.WordCloud.Drawing;
@@ -13,113 +11,57 @@ namespace Brobot.Services;
 
 public class WordCloudService
 {
-    private readonly DiscordSocketClient _client;
-    private readonly StopWordService _stopWordService;
+    private readonly IUnitOfWork _uow;
     private readonly ILogger<WordCloudService> _logger;
 
-    private const string WordcloudPath = "wordcloud.png";
-
-    public WordCloudService(
-        DiscordSocketClient client,
-        StopWordService stopWordService,
-        ILogger<WordCloudService> logger)
+    public WordCloudService(IUnitOfWork uow, ILogger<WordCloudService> logger)
     {
-        _client = client;
-        _stopWordService = stopWordService;
+        _uow = uow;
         _logger = logger;
     }
 
-    public async Task GenerateWordCloud(ChannelModel channel)
+    public async Task<byte[]> GenerateWordCloud(ulong channelId, int monthsBack = 1)
     {
         try
         {
-            Dictionary<string, int> wordCount = new();
-            var socketChannel = await _client.GetChannelAsync(channel.Id);
-            if (socketChannel is not SocketTextChannel socketTextChannel)
+            var startDateTime = DateTime.UtcNow.AddMonths(-monthsBack);
+            var startDate = new DateOnly(startDateTime.Year, startDateTime.Month, 1);
+            var endDate = startDate.AddMonths(1);
+            _logger.LogInformation("Generating word cloud for channel {ChannelId} from {StartDate} to {EndDate}", channelId, startDate, endDate);
+            var wordCounts = (await _uow.WordCounts.GetWordCountsByChannelId(channelId, startDate, endDate)).ToList();
+            if (!wordCounts.Any())
             {
-                return;
+                _logger.LogInformation("No word counts found for channel {ChannelId}", channelId);
+                return [];
             }
 
-            ulong? fromMessageId = null;
-            string[] separators =
-                [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "(", ")", "\"", "@"];
-
-            bool doneWithMonth = false;
-            var lastMonth = DateTime.UtcNow.AddMonths(-1).Month;
-            Dictionary<string, int> userMessageCount = new();
-            while (!doneWithMonth)
+            _logger.LogInformation("Word counts found for channel {ChannelId}: {Count}", channelId, wordCounts.Count);
+            var entries = wordCounts.Select(wc => new WordCloudEntry(wc.Word, wc.Count));
+            var wordCloud = new WordCloudInput(entries)
             {
-                IAsyncEnumerable<IReadOnlyCollection<IMessage>> previousMessages = fromMessageId.HasValue
-                    ? socketTextChannel.GetMessagesAsync(fromMessageId.Value, Direction.Before)
-                    : socketTextChannel.GetMessagesAsync();
-
-                var messages = await previousMessages.FlattenAsync();
-                foreach (var message in messages)
-                {
-                    if (message.Timestamp.Month != lastMonth)
-                    {
-                        doneWithMonth = true;
-                        break;
-                    }
-
-                    userMessageCount.TryAdd(message.Author.Username, 0);
-                    userMessageCount[message.Author.Username] += 1;
-                    var wordSplit = message.Content.Split(separators, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var word in wordSplit)
-                    {
-                        if (await _stopWordService.IsStopWord(word.ToLower()))
-                        {
-                            continue;
-                        }
-
-                        wordCount.TryAdd(word.ToLower(), 0);
-                        wordCount[word.ToLower()] += 1;
-                    }
-                }
-            }
-
-            if (wordCount.Count == 0)
-            {
-                return;
-            }
-
-            var countString = string.Join("\n", userMessageCount.OrderByDescending(x => x.Value).Select(c => $"{c.Key}: {c.Value}"));
-            var frequencies = wordCount
-                .OrderByDescending(w => w.Value)
-                .Take(100)
-                .Select(w => new WordCloudEntry(w.Key, w.Value));
-           GenerateFile(frequencies);
-            await socketTextChannel.SendFileAsync(WordcloudPath, countString);
-            File.Delete(WordcloudPath);
+                Width = 1280,
+                Height = 720,
+                MinFontSize = 12,
+                MaxFontSize = 128
+            };
+            var sizer = new LogSizer(wordCloud);
+            using var engine = new SkGraphicEngine(sizer, wordCloud);
+            var layout = new SpiralLayout(wordCloud);
+            var colorizer = new RandomColorizer();
+            var wcg = new WordCloudGenerator<SKBitmap>(wordCloud, engine, layout, colorizer);
+            using var final = new SKBitmap(wordCloud.Width, wordCloud.Height);
+            using var canvas = new SKCanvas(final);
+            canvas.Clear(SKColors.White);
+            using var bitmap = wcg.Draw();
+            canvas.DrawBitmap(bitmap, 0, 0);
+            using var data = final.Encode(SKEncodedImageFormat.Png, 100);
+            _logger.LogInformation("Word cloud generated for channel {ChannelId}, {Bytes} bytes", channelId, data.ToArray().Length);
+            return data.ToArray();
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to generate word cloud for {ChannelId}", channel.Id);
+            _logger.LogError(e, "Error generating word cloud");
+            return [];
         }
-    }
-
-    private void GenerateFile(IEnumerable<WordCloudEntry> entries)
-    {
-        var wordCloud = new WordCloudInput(entries)
-        {
-            Width = 1024,
-            Height = 576,
-            MinFontSize = 36,
-            MaxFontSize = 96
-        };
-            
-        var sizer = new LogSizer(wordCloud);
-        using var engine = new SkGraphicEngine(sizer, wordCloud);
-        var layout = new SpiralLayout(wordCloud);
-        var colorizer = new RandomColorizer();
-        var wcg = new WordCloudGenerator<SKBitmap>(wordCloud, engine, layout, colorizer);
-        using var final = new SKBitmap(wordCloud.Width, wordCloud.Height);
-        using var canvas = new SKCanvas(final);
-        canvas.Clear(SKColors.White);
-        using var bitmap = wcg.Draw();
-        canvas.DrawBitmap(bitmap, 0, 0);
-        using var data = final.Encode(SKEncodedImageFormat.Png, 100);
-        using var writer = File.Create(WordcloudPath);
-        data.SaveTo(writer);
     }
 }

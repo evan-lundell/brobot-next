@@ -156,4 +156,5 @@ public class ApiService
 
     public async Task<UserResponse[]> GetUsers()
         => await _client.GetFromJsonAsync<UserResponse[]>("Users/all") ?? Array.Empty<UserResponse>();
+    
 }

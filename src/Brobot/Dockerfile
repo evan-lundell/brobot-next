@@ -10,4 +10,5 @@ RUN dotnet publish ./src/Brobot/Brobot.csproj -c Release -o /app
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 as app
 WORKDIR /app
 COPY --from=build /app .
+RUN apt-get update && apt-get install -y libfontconfig1 libfreetype6
 ENTRYPOINT [ "dotnet", "Brobot.dll" ]
