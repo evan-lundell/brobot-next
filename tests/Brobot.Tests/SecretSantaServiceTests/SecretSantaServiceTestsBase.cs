@@ -6,6 +6,7 @@ using Brobot.Repositories;
 using Brobot.Services;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace Brobot.Tests.SecretSantaServiceTests;
@@ -15,15 +16,16 @@ public abstract class SecretSantaServiceTestsBase
 {
     protected BrobotDbContext Context;
     protected SecretSantaService SecretSantaService;
+    private ServiceProvider _serviceProvider;
     
     [SetUp]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<BrobotDbContext>()
-            .UseInMemoryDatabase("Brobot")
-            .Options;
-        Context = new BrobotDbContext(options);
-
+        ServiceCollection serviceCollection = new();
+        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase("Brobot"));
+        _serviceProvider = serviceCollection.BuildServiceProvider();
+        Context = _serviceProvider.GetRequiredService<BrobotDbContext>();
+        
         var group1 = Context.SecretSantaGroups.Add(new SecretSantaGroupModel
         {
             Id = 1,
@@ -62,7 +64,7 @@ public abstract class SecretSantaServiceTestsBase
         
         var discordClientMock = new Mock<DiscordSocketClient>();
         
-        Random random = new();
+        Random random = new(5000);
         SecretSantaService = new SecretSantaService(unitOfWork, mapper, discordClientMock.Object, random);
     }
     
@@ -71,6 +73,7 @@ public abstract class SecretSantaServiceTestsBase
     {
         Context.Database.EnsureDeleted();
         Context.Dispose();
+        _serviceProvider.Dispose();
     }
     
     private SecretSantaGroupUserModel CreateSecretSantaGroupUserModel(ulong userId, SecretSantaGroupModel secretSantaGroup)

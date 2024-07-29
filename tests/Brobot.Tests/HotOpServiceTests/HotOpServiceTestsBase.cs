@@ -13,6 +13,7 @@ public abstract class HotOpServiceTestsBase
     protected BrobotDbContext Context;
     protected HotOpService HotOpService;
     protected IUnitOfWork UnitOfWork;
+    private ServiceProvider _serviceProvider;
     
     [SetUp]
     public void Setup()
@@ -20,14 +21,14 @@ public abstract class HotOpServiceTestsBase
         ServiceCollection serviceCollection = new();
         serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase("Brobot"));
         serviceCollection.AddTransient<IUnitOfWork, UnitOfWork>();
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-        Context = serviceProvider.GetRequiredService<BrobotDbContext>();
+        _serviceProvider = serviceCollection.BuildServiceProvider();
+        Context = _serviceProvider.GetRequiredService<BrobotDbContext>();
 
         SetupDatabase();
 
         Context.SaveChanges();
         UnitOfWork = new UnitOfWork(Context);
-        HotOpService = new HotOpService(serviceProvider);
+        HotOpService = new HotOpService(_serviceProvider);
     }
     
     [TearDown]
@@ -35,6 +36,7 @@ public abstract class HotOpServiceTestsBase
     {
         Context.Database.EnsureDeleted();
         Context.Dispose();
+        _serviceProvider.Dispose();
     }
 
     protected virtual void SetupDatabase()
@@ -126,8 +128,8 @@ public abstract class HotOpServiceTestsBase
 
         /*
          * HotOp 4
-         * Owner: Test User 1
-         * Channel: Channel 1
+         * Owner: Test User 2
+         * Channel: Channel 2
          * Status: Current
          * No sessions
          */
@@ -143,6 +145,29 @@ public abstract class HotOpServiceTestsBase
         Context.HotOps.Add(hotOp4);
         channels[1].HotOps.Add(hotOp4);
         users[1].HotOps.Add(hotOp4);
+        
+        /*
+         * HotOp 5
+         * Owner: Test User 1
+         * Channel: Channel 2
+         * Status: Current
+         * - User 2: 100 minutes
+         * - User 3: 40 minutes
+         */
+        var hotOp5 = new HotOpModel
+        {
+            Channel = channels[1],
+            ChannelId = channels[1].Id,
+            User = users[0],
+            UserId = users[0].Id,
+            StartDate = DateTimeOffset.UtcNow.AddDays(-1),
+            EndDate = DateTimeOffset.UtcNow.AddDays(1)
+        };
+        Context.HotOps.Add(hotOp5);
+        channels[1].HotOps.Add(hotOp5);
+        users[0].HotOps.Add(hotOp5);
+        CreateHotOpSession(hotOp5, users[1], DateTimeOffset.UtcNow.AddHours(-23), 100);
+        CreateHotOpSession(hotOp5, users[2], DateTimeOffset.UtcNow.AddHours(-20).AddMinutes(10), 40);
     }
 
     protected ChannelModel CreateChannel(ulong id, GuildModel guild)
@@ -207,5 +232,17 @@ public abstract class HotOpServiceTestsBase
         };
         
         hotOpModel.HotOpSessions.Add(hotOpSession);
+    }
+    
+    protected async Task<HotOpModel?> GetHotOpById(int id)
+    {
+        return await Context.HotOps
+            .Include(ho => ho.User)
+            .Include(ho => ho.HotOpSessions)
+            .ThenInclude(hos => hos.User)
+            .Include(ho => ho.Channel)
+            .ThenInclude(c => c.ChannelUsers)
+            .ThenInclude(cu => cu.User)
+            .SingleOrDefaultAsync(ho => ho.Id == id);
     }
 }

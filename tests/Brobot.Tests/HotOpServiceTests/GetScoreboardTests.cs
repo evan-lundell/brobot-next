@@ -1,4 +1,5 @@
 using Brobot.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Tests.HotOpServiceTests;
 
@@ -29,5 +30,23 @@ public class GetScoreboardTests : HotOpServiceTestsBase
         var scoreboard = HotOpService.GetScoreboard(hotOp);
         
         Assert.That(scoreboard.Scores.First().Score, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task IgnoresUserNotInChannel()
+    {
+        var hotOp = await GetHotOpById(5);
+        if (hotOp == null)
+        {
+            throw new Exception("HotOp not found");
+        }
+        
+        var scoreboard = HotOpService.GetScoreboard(hotOp);
+        
+        Assert.Multiple(() =>
+        {
+            Assert.That(scoreboard.Scores.Count(), Is.EqualTo(1));
+            Assert.That(scoreboard.Scores.First().Username, Is.EqualTo("Test User 2"));
+        });
     }
 }

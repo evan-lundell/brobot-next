@@ -15,7 +15,7 @@ public class JwtService
     {
         _configuration = configuration;
     }
-    public string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null, ulong? userId = null)
+    public string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null)
     {
         var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSigningKey"] ?? ""));
         var credentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
@@ -31,9 +31,9 @@ public class JwtService
             new (JwtRegisteredClaimNames.Sub, user.Id)
         };
 
-        if (userId.HasValue)
+        if (discordUser?.Id != null)
         {
-            claims.Add(new Claim(Shared.Claims.ClaimTypes.DiscordId, userId.Value.ToString()));
+            claims.Add(new Claim(Shared.Claims.ClaimTypes.DiscordId, discordUser.Id.ToString()));
         }
 
         if (!string.IsNullOrWhiteSpace(role))

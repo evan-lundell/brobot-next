@@ -23,6 +23,12 @@ public class DictionaryServiceTests
         };
         _dictionaryService = new DictionaryService(_mockHttpClient);
     }
+    
+    [TearDown]
+    public void TearDown()
+    {
+        _mockHttpClient.Dispose();
+    }
 
     [Test]
     public async Task GetDefinition_ReturnsCorrectDefinition()

@@ -97,7 +97,7 @@ public class AuthController : ControllerBase
         var roles = await _userManager.GetRolesAsync(user);
 
         var discordUser = await _uow.Users.GetFromIdentityUserId(user.Id);
-        var jwt = _jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
+        var jwt = _jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault());
         // ReSharper disable once InvertIf
         if (!string.IsNullOrWhiteSpace(user.SecurityStamp))
         {
@@ -151,7 +151,7 @@ public class AuthController : ControllerBase
 
         var roles = await _userManager.GetRolesAsync(user);
         var discordUser = await _uow.Users.GetFromIdentityUserId(user.Id);
-        var jwtToken = _jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
+        var jwtToken = _jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault());
         return Ok(new LoginResponse
         {
             Succeeded = true,

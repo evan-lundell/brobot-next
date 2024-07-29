@@ -3,6 +3,7 @@ using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Brobot.Tests.ScheduledMessageServiceTests;
 
@@ -11,14 +12,18 @@ public abstract class ScheduledMessageServiceTestBase
 {
     protected BrobotDbContext Context;
     protected ScheduledMessageService ScheduledMessageService;
+    private ServiceProvider _serviceProvider;
     
     [SetUp]
     public void Setup()
     {
-        Context = new BrobotDbContext(new DbContextOptionsBuilder<BrobotDbContext>().UseInMemoryDatabase("Brobot").Options);
+        ServiceCollection serviceCollection = new();
+        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase("Brobot"));
+        serviceCollection.AddTransient<IUnitOfWork, UnitOfWork>();
+        _serviceProvider = serviceCollection.BuildServiceProvider();
+        Context = _serviceProvider.GetRequiredService<BrobotDbContext>();
         SetupDatabase();
-        var unitOfWork = new UnitOfWork(Context);
-        ScheduledMessageService = new ScheduledMessageService(unitOfWork);
+        ScheduledMessageService = new ScheduledMessageService(_serviceProvider.GetRequiredService<IUnitOfWork>());
     }
     
     [TearDown]
@@ -26,6 +31,7 @@ public abstract class ScheduledMessageServiceTestBase
     {
         Context.Database.EnsureDeleted();
         Context.Dispose();
+        _serviceProvider.Dispose();
     }
 
     protected virtual void SetupDatabase()
