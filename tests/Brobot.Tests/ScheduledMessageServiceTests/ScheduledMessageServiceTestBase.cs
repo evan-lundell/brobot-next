@@ -18,7 +18,7 @@ public abstract class ScheduledMessageServiceTestBase
     public void Setup()
     {
         ServiceCollection serviceCollection = new();
-        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase("Brobot"));
+        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseLazyLoadingProxies().UseInMemoryDatabase("Brobot"));
         serviceCollection.AddTransient<IUnitOfWork, UnitOfWork>();
         _serviceProvider = serviceCollection.BuildServiceProvider();
         Context = _serviceProvider.GetRequiredService<BrobotDbContext>();

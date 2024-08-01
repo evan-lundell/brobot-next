@@ -16,10 +16,6 @@ public class BrobotProfile : Profile
         CreateMap<UserModel, UserResponse>();
         CreateMap<DailyMessageCountModel, DailyMessageCountResponse>();
         CreateMap<IdentityUser, IdentityUserResponse>();
-        CreateMap<PlaylistModel, PlaylistResponse>();
-        CreateMap<PlaylistSongModel, PlaylistSongResponse>();
-        CreateMap<PlaylistRequest, PlaylistModel>();
-        CreateMap<PlaylistSongRequest, PlaylistSongModel>();
         CreateMap<HotOpModel, HotOpResponse>();
         CreateMap<HotOpRequest, HotOpModel>();
         CreateMap<ScoreboardDto, ScoreboardResponse>();

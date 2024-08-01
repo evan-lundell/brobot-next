@@ -11,8 +11,6 @@ public class BrobotDbContext : DbContext
     public DbSet<ScheduledMessageModel> ScheduledMessages => Set<ScheduledMessageModel>();
     public DbSet<HotOpModel> HotOps => Set<HotOpModel>();
     public DbSet<DailyMessageCountModel> DailyMessageCounts => Set<DailyMessageCountModel>();
-    public DbSet<PlaylistModel> Playlists => Set<PlaylistModel>();
-    public DbSet<PlaylistSongModel> PlaylistSongs => Set<PlaylistSongModel>();
     public DbSet<SecretSantaGroupModel> SecretSantaGroups => Set<SecretSantaGroupModel>();
     public DbSet<SecretSantaPairModel> SecretSantaPairs => Set<SecretSantaPairModel>();
     public DbSet<StopWordModel> StopWords => Set<StopWordModel>();
@@ -285,64 +283,6 @@ public class BrobotDbContext : DbContext
             .HasOne(dc => dc.Channel)
             .WithMany(c => c.DailyMessageCounts)
             .HasForeignKey(dc => dc.ChannelId);
-
-        builder.Entity<PlaylistModel>()
-            .ToTable(name: "playlist", schema: "brobot")
-            .HasKey(p => p.Id);
-        builder.Entity<PlaylistModel>()
-            .Property(p => p.Id)
-            .HasColumnName("id");
-        builder.Entity<PlaylistModel>()
-            .Property(p => p.Name)
-            .HasColumnName("name")
-            .IsRequired()
-            .HasMaxLength(256);
-        builder.Entity<PlaylistModel>()
-            .Property(p => p.UserId)
-            .HasColumnName("discord_user_id")
-            .IsRequired();
-        builder.Entity<PlaylistModel>()
-            .HasOne(p => p.User)
-            .WithMany(u => u.Playlists)
-            .HasForeignKey(p => p.UserId);
-
-        builder.Entity<PlaylistSongModel>()
-            .ToTable(name: "playlist_song", schema: "brobot")
-            .HasKey(ps => ps.Id);
-        builder.Entity<PlaylistSongModel>()
-            .Property(ps => ps.Id)
-            .HasColumnName("id");
-        builder.Entity<PlaylistSongModel>()
-            .Property(ps => ps.Name)
-            .HasColumnName("name")
-            .IsRequired()
-            .HasMaxLength(256);
-        builder.Entity<PlaylistSongModel>()
-            .Property(ps => ps.Artist)
-            .HasColumnName("artist")
-            .IsRequired()
-            .HasMaxLength(256);
-        builder.Entity<PlaylistSongModel>()
-            .Property(ps => ps.Url)
-            .HasColumnName("url")
-            .IsRequired()
-            .HasMaxLength(1024);
-        builder.Entity<PlaylistSongModel>()
-            .Property(ps => ps.PlaylistId)
-            .HasColumnName("playlist_id")
-            .IsRequired();
-        builder.Entity<PlaylistSongModel>()
-            .Property(ps => ps.Order)
-            .HasColumnName("order")
-            .IsRequired();
-        builder.Entity<PlaylistSongModel>()
-            .HasOne(ps => ps.Playlist)
-            .WithMany(p => p.Songs)
-            .HasForeignKey(ps => ps.PlaylistId)
-            .OnDelete(DeleteBehavior.Cascade);
-        builder.Entity<PlaylistSongModel>()
-            .HasIndex(ps => new { ps.PlaylistId, ps.Order })
-            .IsUnique();
 
         builder.Entity<SecretSantaGroupModel>()
             .ToTable(name: "secret_santa_group", schema: "brobot")

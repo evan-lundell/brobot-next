@@ -1,6 +1,3 @@
-using Brobot.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace Brobot.Tests.HotOpServiceTests;
 
 [TestFixture]
@@ -35,11 +32,7 @@ public class GetScoreboardTests : HotOpServiceTestsBase
     [Test]
     public async Task IgnoresUserNotInChannel()
     {
-        var hotOp = await GetHotOpById(5);
-        if (hotOp == null)
-        {
-            throw new Exception("HotOp not found");
-        }
+        var hotOp = await GetHotOp(5);
         
         var scoreboard = HotOpService.GetScoreboard(hotOp);
         
