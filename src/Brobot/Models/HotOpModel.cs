@@ -5,9 +5,9 @@ namespace Brobot.Models;
 public class HotOpModel
 {
     public int Id { get; set; }
-    public required UserModel User { get; set; }
+    public virtual required UserModel User { get; set; }
     public ulong UserId { get; set; }
-    public required ChannelModel Channel { get; set; }
+    public virtual required ChannelModel Channel { get; set; }
     public ulong ChannelId { get; set; }
     public DateTimeOffset StartDate { get; set; }
     public DateTimeOffset EndDate { get; set; }

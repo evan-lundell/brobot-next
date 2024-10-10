@@ -7,3 +7,9 @@ public enum HotOpQueryType
     Current,
     Completed
 }
+
+public enum UserVoiceStateAction 
+{
+    Connected,
+    Disconnected
+}
