@@ -6,10 +6,12 @@ namespace Brobot.Services;
 public class RandomFactService : IRandomFactService
 {
     private readonly HttpClient _http;
+    private readonly ILogger _logger;
 
-    public RandomFactService(HttpClient http)
+    public RandomFactService(HttpClient http, ILogger<RandomFactService> logger)
     {
         _http = http;
+        _logger = logger;
     }
     public async Task<string> GetFact()
     {

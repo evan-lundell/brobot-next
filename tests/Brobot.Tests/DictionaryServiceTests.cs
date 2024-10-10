@@ -2,6 +2,7 @@ using Moq;
 using Moq.Protected;
 using System.Net;
 using Brobot.Services;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Brobot.Tests;
@@ -190,5 +191,30 @@ public class DictionaryServiceTests
 
         // Assert
         Assert.That(result, Is.EqualTo("1: (verb) a test definition"));
+    }
+    
+    [Test]
+    public async Task GetDefinition_ReturnsEmptyStringOnNullResponse()
+    {
+        // Arrange
+        var word = "test";
+        _mockHttpMessageHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent("")
+            });
+
+        // Act
+        var result = await _dictionaryService.GetDefinition(word);
+
+        // Assert
+        Assert.That(result, Is.EqualTo("An error occured"));
     }
 }
