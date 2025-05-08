@@ -47,8 +47,7 @@ public class WordCloudService
             var sizer = new LogSizer(wordCloud);
             using var engine = new SkGraphicEngine(sizer, wordCloud);
             var layout = new SpiralLayout(wordCloud);
-            var colorizer = new RandomColorizer();
-            var wcg = new WordCloudGenerator<SKBitmap>(wordCloud, engine, layout, colorizer);
+            var colorizer = new RandomColorizer(); var wcg = new WordCloudGenerator<SKBitmap>(wordCloud, engine, layout, colorizer);
             using var final = new SKBitmap(wordCloud.Width, wordCloud.Height);
             using var canvas = new SKCanvas(final);
             canvas.Clear(SKColors.White);

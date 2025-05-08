@@ -1,6 +1,8 @@
+using System.Collections.Immutable;
 using System.Reflection;
 using Brobot.Models;
 using Brobot.Repositories;
+using Brobot.Shared;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -15,7 +17,6 @@ public class DiscordEventHandler : IDisposable
     private readonly IServiceProvider _services;
     private readonly ISyncService _sync;
     private readonly InteractionService _commands;
-    private readonly HotOpService _hotOpService;
     private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
 
@@ -23,7 +24,6 @@ public class DiscordEventHandler : IDisposable
         DiscordSocketClient client,
         IServiceProvider services,
         ISyncService sync,
-        HotOpService hotOpService,
         IConfiguration configuration,
         ILogger<DiscordEventHandler> logger)
     {
@@ -31,7 +31,6 @@ public class DiscordEventHandler : IDisposable
         _services = services;
         _sync = sync;
         _commands = new InteractionService(client);
-        _hotOpService = hotOpService;
         _configuration = configuration;
         _logger = logger;
     }
@@ -90,7 +89,32 @@ public class DiscordEventHandler : IDisposable
         SocketVoiceState previousVoiceState,
         SocketVoiceState currentVoiceState)
     {
-        return _hotOpService.UserVoiceStateUpdated(socketUser, previousVoiceState, currentVoiceState);
+        if ((previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel == null)
+            || socketUser.IsBot)
+        {
+            return Task.CompletedTask;
+        }
+
+        using var scope = _services.CreateScope();
+        var hotOpService = scope.ServiceProvider.GetRequiredService<HotOpService>();
+        if (previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel != null)
+        {
+            return hotOpService.UpdateHotOps(socketUser.Id, UserVoiceStateAction.Connected,
+                currentVoiceState.VoiceChannel.ConnectedUsers
+                    .Where(cu => !cu.IsBot)
+                    .Select(cu => cu.Id)
+                    .ToImmutableArray());
+        }
+        if (currentVoiceState.VoiceChannel == null && previousVoiceState.VoiceChannel != null)
+        {
+            return hotOpService.UpdateHotOps(socketUser.Id, UserVoiceStateAction.Disconnected,
+                previousVoiceState.VoiceChannel.ConnectedUsers
+                    .Where(cu => !cu.IsBot)
+                    .Select(cu => cu.Id)
+                    .ToImmutableArray());
+        }
+
+        return Task.CompletedTask;
     }
 
     private Task MessageReceived(SocketMessage socketMessage)

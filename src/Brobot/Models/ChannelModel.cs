@@ -11,7 +11,7 @@ public class ChannelModel
     public string Timezone { get; set; } = "america/chicago";
     
     public ulong GuildId { get; set; }
-    public required GuildModel Guild { get; set; }
+    public virtual required GuildModel Guild { get; set; }
 
     public virtual ICollection<ChannelUserModel> ChannelUsers { get; set; }
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
@@ -19,8 +19,7 @@ public class ChannelModel
     public virtual ICollection<DailyMessageCountModel> DailyMessageCounts { get; set; }
 
     // This is a collection of users where the given channel is their primary channel
-    // ReSharper disable once CollectionNeverUpdated.Global
-    public ICollection<UserModel> Users { get; set; }
+    public virtual ICollection<UserModel> Users { get; set; }
     public ChannelModel()
     {
         ChannelUsers = new HashSet<ChannelUserModel>();
