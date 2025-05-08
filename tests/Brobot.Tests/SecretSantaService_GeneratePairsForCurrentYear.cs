@@ -95,11 +95,11 @@ public class SecretSantaService_GeneratePairsForCurrentYear
         var recipientIds = new HashSet<ulong>();
         foreach (var pair in pairs)
         {
-            Assert.IsFalse(giverIds.Contains(pair.Giver.Id));
-            Assert.IsFalse(recipientIds.Contains(pair.Recipient.Id));
+            Assert.That(giverIds.Contains(pair.Giver.Id), Is.False);
+            Assert.That(recipientIds.Contains(pair.Recipient.Id), Is.False);
             var lastYearPair = secretSantaGroupModel.SecretSantaPairs.FirstOrDefault(ssp =>
                 ssp.Year == lastYear && ssp.GiverUserId == pair.Giver.Id && ssp.RecipientUserId == pair.Recipient.Id);
-            Assert.IsNull(lastYearPair);
+            Assert.That(lastYearPair, Is.Null);
             giverIds.Add(pair.Giver.Id);
             recipientIds.Add(pair.Recipient.Id);
         }
