@@ -87,4 +87,10 @@ public class RandomFactServiceTests
         
         Assert.ThrowsAsync<JsonReaderException>(async () => await _randomFactService.GetFact());
     }
+    
+    [TearDown]
+    public void TearDown()
+    {
+        _mockHttpClient.Dispose();
+    }
 }

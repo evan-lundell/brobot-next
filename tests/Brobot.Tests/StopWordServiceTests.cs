@@ -19,7 +19,7 @@ public class StopWordServiceTests
     {
         ServiceCollection serviceCollection = new();
         serviceCollection.AddDbContext<BrobotDbContext>(options =>
-            options.UseLazyLoadingProxies().UseInMemoryDatabase("Brobot"));
+            options.UseInMemoryDatabase("Brobot"));
         serviceCollection.AddTransient<IUnitOfWork, UnitOfWork>();
         _serviceProvider = serviceCollection.BuildServiceProvider();
         _context = _serviceProvider.GetRequiredService<BrobotDbContext>();

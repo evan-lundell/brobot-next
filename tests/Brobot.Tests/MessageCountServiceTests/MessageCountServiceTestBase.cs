@@ -22,7 +22,7 @@ public abstract class MessageCountServiceTestBase
     public void SetUp()
     {
         ServiceCollection serviceCollection = new();
-        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseLazyLoadingProxies().UseInMemoryDatabase("Brobot"));
+        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase("Brobot"));
         _serviceProvider = serviceCollection.BuildServiceProvider();
         Context = _serviceProvider.GetRequiredService<BrobotDbContext>();
         var testGuild = new GuildModel

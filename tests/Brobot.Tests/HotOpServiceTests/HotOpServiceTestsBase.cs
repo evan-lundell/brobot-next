@@ -21,7 +21,7 @@ public abstract class HotOpServiceTestsBase
     {
         ServiceCollection serviceCollection = new();
         serviceCollection.AddDbContext<BrobotDbContext>(options =>
-            options.UseLazyLoadingProxies().UseInMemoryDatabase("Brobot"));
+            options.UseInMemoryDatabase("Brobot"));
         _serviceProvider = serviceCollection.BuildServiceProvider();
 
         _context = _serviceProvider.GetRequiredService<BrobotDbContext>();
@@ -38,6 +38,7 @@ public abstract class HotOpServiceTestsBase
         _context.Database.EnsureDeleted();
         _context.Dispose();
         _serviceProvider.Dispose();
+        UnitOfWork.Dispose();
     }
 
     protected virtual void SetupDatabase()
