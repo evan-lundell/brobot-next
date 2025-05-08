@@ -370,4 +370,11 @@ public class MessageCountServiceTests
             Assert.That(counts[1].MessageCount, Is.EqualTo(25));
         });
     }
+    
+    [TearDown]
+    public void TearDown()
+    {
+        _context.Database.EnsureDeleted();
+        _context.Dispose();
+    }
 }
