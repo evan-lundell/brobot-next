@@ -29,7 +29,7 @@ public class WordCloudService
             var endDate = startDate.AddMonths(1);
             _logger.LogInformation("Generating word cloud for channel {ChannelId} from {StartDate} to {EndDate}", channelId, startDate, endDate);
             var wordCounts = (await _uow.WordCounts.GetWordCountsByChannelId(channelId, startDate, endDate)).ToList();
-            if (!wordCounts.Any())
+            if (wordCounts.Count == 0)
             {
                 _logger.LogInformation("No word counts found for channel {ChannelId}", channelId);
                 return [];
