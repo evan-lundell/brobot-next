@@ -39,11 +39,17 @@ public class WordCloudServiceTests
         _context.Guilds.Add(guild);
         ChannelModel channel = new() { Id = channelId, Guild = guild, GuildId = guild.Id, Name = "test-channel" };
         _context.Channels.Add(channel);
+
+        var date = DateOnly.FromDateTime(DateTime.Now);
+        if (date.Day == 1)
+        {
+            date = date.AddDays(-1);
+        }
         
         // Add test data to the database
         _context.WordCounts.AddRange(
-            new WordCountModel { ChannelId = channelId, Channel = channel, Word = "test", Count = 5 },
-            new WordCountModel { ChannelId = channelId, Channel = channel, Word = "word", Count = 10 }
+            new WordCountModel { ChannelId = channelId, Channel = channel, Word = "test", Count = 5, CountDate = date },
+            new WordCountModel { ChannelId = channelId, Channel = channel, Word = "word", Count = 10, CountDate = date }
         );
         await _context.SaveChangesAsync();
 
@@ -60,8 +66,8 @@ public class WordCloudServiceTests
     [TearDown]
     public void TearDown()
     {
-        _uow.Dispose();
         _context.Database.EnsureDeleted();
         _context.Dispose();
+        _uow.Dispose();
     }
 }
