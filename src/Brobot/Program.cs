@@ -109,7 +109,11 @@ public static class Program
             MessageCacheSize = 100
         }));
         builder.Services.AddDbContext<BrobotDbContext>(
-            options => options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+            dbContextOptionsBuilder => dbContextOptionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("Default"),
+                npgsqlDbContextOptionBuilder =>
+                {
+                    npgsqlDbContextOptionBuilder.MigrationsHistoryTable("__EFMigrationsHistory", "brobot");
+                })
         );
         builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
         builder.Services.AddSingleton<Random>();
@@ -158,9 +162,12 @@ public static class Program
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSigningKey"] ?? ""))
             };
         });
-        builder.Services.AddDbContext<UsersDbContext>(options =>
+        builder.Services.AddDbContext<UsersDbContext>(dbContextOptionsBuilder =>
         {
-            options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
+            dbContextOptionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("Default"), npgsqlDbContextOptionsBuilder =>
+            {
+                npgsqlDbContextOptionsBuilder.MigrationsHistoryTable("__EFMigrationsHistory", "auth");
+            });
         });
         builder.Services.AddIdentityCore<IdentityUser>(options =>
         {
