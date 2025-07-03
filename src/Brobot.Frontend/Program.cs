@@ -6,6 +6,7 @@ using Brobot.Frontend.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Radzen;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -26,6 +27,7 @@ builder.Services.AddHttpClient<ApiService>(client => client.BaseAddress = appUri
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddLogging();
 builder.Services.AddBlazoredToast();
+builder.Services.AddRadzenComponents();
 
 var app = builder.Build();
 await app.Services.GetRequiredService<JwtService>().RefreshJwtToken();
