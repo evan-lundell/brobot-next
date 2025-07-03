@@ -86,7 +86,7 @@ public class ScheduledMessageService
         var scheduledMessage = await _uow.ScheduledMessages.GetById(id);
         if (scheduledMessage == null)
         {
-            throw new ModelNotFoundException<HotOpModel, int>(id);
+            throw new ModelNotFoundException<ScheduledMessageModel, int>(id);
         }
 
         if (scheduledMessage.SentDate.HasValue)
