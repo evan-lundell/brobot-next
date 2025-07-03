@@ -138,7 +138,7 @@ public class UpdateScheduledMesssageTests : ScheduledMessageServiceTestBase
     [Test]
     public void ScheduledMessageDoesNotExist_ThrowsException()
     { 
-        Assert.ThrowsAsync<ModelNotFoundException<HotOpModel, int>>(() => ScheduledMessageService.UpdateScheduledMessage(99));
+        Assert.ThrowsAsync<ModelNotFoundException<ScheduledMessageModel, int>>(() => ScheduledMessageService.UpdateScheduledMessage(99));
     }
 
     [Test]
