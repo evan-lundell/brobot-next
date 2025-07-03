@@ -1,7 +1,5 @@
-using AutoMapper;
 using Brobot.Contexts;
 using Brobot.Models;
-using Brobot.Profiles;
 using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
@@ -63,9 +61,8 @@ public class MessageCountServiceTests
 
         _context.SaveChanges();
 
-        var mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile<BrobotProfile>()));
         var unitOfWork = new UnitOfWork(_context);
-        _messageCountService = new MessageCountService(unitOfWork, mapper);
+        _messageCountService = new MessageCountService(unitOfWork);
     }
 
     private ChannelModel CreateChannel(ulong id, string name, GuildModel guild)

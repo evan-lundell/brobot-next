@@ -1,4 +1,4 @@
-using AutoMapper;
+using Brobot.Mappers;
 using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Shared.Requests;
@@ -12,29 +12,16 @@ namespace Brobot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class UsersController : ControllerBase
+public class UsersController(
+    IUnitOfWork uow,
+    UserManager<IdentityUser> userManager) : ControllerBase
 {
-    private readonly IUnitOfWork _uow;
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly IMapper _mapper;
-
-    public UsersController(
-        IUnitOfWork uow,
-        UserManager<IdentityUser> userManager,
-        IMapper mapper
-    )
-    {
-        _uow = uow;
-        _userManager = userManager;
-        _mapper = mapper;
-    }
-
     [HttpGet]
     [Authorize]
     public ActionResult<UserResponse> GetUser()
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
-        return Ok(_mapper.Map<UserResponse>(discordUser));
+        return Ok(discordUser.ToUserResponse());
     }
 
     [HttpGet("settings")]
@@ -55,7 +42,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<ActionResult<UserSettingsResponse>> UpdateUserSettings(UserSettingsRequest userSettingsRequest)
     {
-        var identityUser = await _userManager.GetUserAsync(HttpContext.User);
+        var identityUser = await userManager.GetUserAsync(HttpContext.User);
         if (identityUser == null)
         {
             return Unauthorized();
@@ -65,7 +52,7 @@ public class UsersController : ControllerBase
         discordUser.Birthdate = userSettingsRequest.BirthDate;
         discordUser.Timezone = userSettingsRequest.Timezone;
         discordUser.PrimaryChannelId = userSettingsRequest.PrimaryChannelId;
-        await _uow.CompleteAsync();
+        await uow.CompleteAsync();
 
         return Ok(new UserSettingsResponse
         {
@@ -79,8 +66,7 @@ public class UsersController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserModel>>> GetAllUsers()
     {
-        var users = await _uow.Users.GetAll();
-        return Ok(_mapper.Map<UserModel[]>(users));
+        var users = await uow.Users.GetAll();
+        return Ok(users.Select(u => u.ToUserResponse()));
     }
-
 }

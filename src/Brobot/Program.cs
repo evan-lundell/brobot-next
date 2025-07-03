@@ -183,14 +183,12 @@ public static class Program
         .AddEntityFrameworkStores<UsersDbContext>()
         .AddDefaultTokenProviders();
         builder.Services.AddSingleton<JwtService>();
-        builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         builder.Services.AddHttpClient<DiscordOauthService>();
         builder.Services.AddScoped<ScheduledMessageService>();
         builder.Services.AddHttpClient<SongDataService>();
         builder.Services.AddScoped<MessageCountService>();
         builder.Services.AddScoped<SecretSantaService>();
         builder.Services.AddSingleton<StopWordService>();
-        builder.Services.AddTransient<WordCloudService>();
         builder.Services.AddSingleton<WordCountService>();
     }
 }

@@ -1,9 +1,11 @@
+using Brobot.Exceptions;
+using Brobot.Models;
 using TimeZoneConverter;
 
 namespace Brobot.Tests.ScheduledMessageServiceTests;
 
 [TestFixture]
-public class UpdateScheduledMesssageTests : ScheduledMessageServiceTestBase
+public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
 {
     [Test]
     [TestCase(1)]
@@ -17,14 +19,14 @@ public class UpdateScheduledMesssageTests : ScheduledMessageServiceTestBase
         }
         
         var updatedMessageText = "Updated Message";
-        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(1, updatedMessageText, null, null);
+        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(1, updatedMessageText);
 
         var messageModel = await Context.ScheduledMessages.FindAsync(1);
         
         Assert.Multiple(() =>
         {
             Assert.That(updatedMessage, Is.Not.Null);
-            Assert.That(updatedMessage!.MessageText, Is.EqualTo(updatedMessageText));
+            Assert.That(updatedMessage.MessageText, Is.EqualTo(updatedMessageText));
             Assert.That(messageModel, Is.Not.Null);
             Assert.That(messageModel!.MessageText, Is.EqualTo(updatedMessageText));
         });
@@ -42,14 +44,14 @@ public class UpdateScheduledMesssageTests : ScheduledMessageServiceTestBase
         }
         
         var updatedChannelId = 2UL;
-        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(1, null, updatedChannelId, null);
+        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(1, null, updatedChannelId);
 
         var messageModel = await Context.ScheduledMessages.FindAsync(1);
         
         Assert.Multiple(() =>
         {
             Assert.That(updatedMessage, Is.Not.Null);
-            Assert.That(updatedMessage!.ChannelId, Is.EqualTo(updatedChannelId));
+            Assert.That(updatedMessage.ChannelId, Is.EqualTo(updatedChannelId));
             Assert.That(messageModel, Is.Not.Null);
             Assert.That(messageModel!.ChannelId, Is.EqualTo(updatedChannelId));
         });
@@ -86,7 +88,7 @@ public class UpdateScheduledMesssageTests : ScheduledMessageServiceTestBase
         Assert.Multiple(() =>
         {
             Assert.That(updatedMessage, Is.Not.Null);
-            Assert.That(updatedMessage!.SendDate, Is.EqualTo(sendDateTimeOffset));
+            Assert.That(updatedMessage.SendDate, Is.EqualTo(sendDateTimeOffset));
             Assert.That(messageModel, Is.Not.Null);
             Assert.That(messageModel!.SendDate, Is.EqualTo(sendDateTimeOffset));
         });
@@ -129,21 +131,20 @@ public class UpdateScheduledMesssageTests : ScheduledMessageServiceTestBase
             throw new Exception("Scheduled message not found");
         }
         
-        var ex = Assert.ThrowsAsync<Exception>(() => ScheduledMessageService.UpdateScheduledMessage(1, null, 100, null));
+        var ex = Assert.ThrowsAsync<Exception>(() => ScheduledMessageService.UpdateScheduledMessage(1, null, 100));
         Assert.That(ex.Message, Is.EqualTo("Channel not found"));
     }
     
     [Test]
-    public async Task ScheduledMessageDoesNotExist_ReturnsNull()
-    {
-        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(100, "Test", 1, null);
-        Assert.That(updatedMessage, Is.Null);
+    public void ScheduledMessageDoesNotExist_ThrowsException()
+    { 
+        Assert.ThrowsAsync<ModelNotFoundException<ScheduledMessageModel, int>>(() => ScheduledMessageService.UpdateScheduledMessage(99));
     }
 
     [Test]
     public void UpdateSentMessage_ThrowsError()
     {
-        var ex = Assert.ThrowsAsync<Exception>(() => ScheduledMessageService.UpdateScheduledMessage(4, "Test", 1, null));
+        var ex = Assert.ThrowsAsync<Exception>(() => ScheduledMessageService.UpdateScheduledMessage(4, "Test", 1));
         Assert.That(ex.Message, Is.EqualTo("Cannot update a sent message"));
     }
 }

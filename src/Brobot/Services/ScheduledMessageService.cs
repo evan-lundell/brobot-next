@@ -1,3 +1,4 @@
+using Brobot.Exceptions;
 using Brobot.Models;
 using Brobot.Repositories;
 using TimeZoneConverter;
@@ -80,12 +81,12 @@ public class ScheduledMessageService
         return reminder;
     }
     
-    public async Task<ScheduledMessageModel?> UpdateScheduledMessage(int id, string? text = null, ulong? channelId = null, DateTime? sendDate = null)
+    public async Task<ScheduledMessageModel> UpdateScheduledMessage(int id, string? text = null, ulong? channelId = null, DateTime? sendDate = null)
     {
         var scheduledMessage = await _uow.ScheduledMessages.GetById(id);
         if (scheduledMessage == null)
         {
-            return null;
+            throw new ModelNotFoundException<ScheduledMessageModel, int>(id);
         }
 
         if (scheduledMessage.SentDate.HasValue)

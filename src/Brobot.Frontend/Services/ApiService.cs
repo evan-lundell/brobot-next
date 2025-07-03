@@ -9,7 +9,6 @@ public class ApiService
     private readonly HttpClient _client;
 
     public IHotOpService HotOpService { get; }
-    public IPlaylistService PlaylistService { get; }
     public IScheduledMessageService ScheduledMessageService { get; }
     public ISecretSantaService SecretSantaService { get; }
     public IStopWordService StopWordService { get; }
@@ -18,7 +17,6 @@ public class ApiService
     {
         _client = client;
         HotOpService = new HotOpService(client);
-        PlaylistService = new PlaylistService(client);
         ScheduledMessageService = new ScheduledMessageService(client);
         SecretSantaService = new SecretSantaService(client);
         StopWordService = new StopWordService(client);

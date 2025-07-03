@@ -29,8 +29,6 @@ public class UserModel
     public string? IdentityUserId { get; set; }
 
     public virtual ICollection<DailyMessageCountModel> DailyCounts { get; set; }
-    public virtual ICollection<PlaylistModel> Playlists { get; set; }
-
     public ICollection<SecretSantaGroupUserModel> SecretSantaGroupUsers { get; set; }
     public ICollection<SecretSantaPairModel> Givers { get; set; }
     public ICollection<SecretSantaPairModel> Recipients { get; set; }
@@ -43,7 +41,6 @@ public class UserModel
         HotOps = new HashSet<HotOpModel>();
         HotOpSessions = new HashSet<HotOpSessionModel>();
         DailyCounts = new HashSet<DailyMessageCountModel>();
-        Playlists = new HashSet<PlaylistModel>();
         SecretSantaGroupUsers = new HashSet<SecretSantaGroupUserModel>();
         Givers = new HashSet<SecretSantaPairModel>();
         Recipients = new HashSet<SecretSantaPairModel>();

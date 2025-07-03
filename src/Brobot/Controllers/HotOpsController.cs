@@ -1,4 +1,3 @@
-using AutoMapper;
 using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Services;
@@ -8,28 +7,17 @@ using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Brobot.Mappers;
 
 namespace Brobot.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class HotOpsController : ControllerBase
+public class HotOpsController(
+    IUnitOfWork uow,
+    HotOpService hotOpService) : ControllerBase
 {
-    private readonly IUnitOfWork _uow;
-    private readonly HotOpService _hotOpService;
-    private readonly IMapper _mapper;
-
-    public HotOpsController(
-        IUnitOfWork uow, 
-        HotOpService hotOpService,
-        IMapper mapper)
-    {
-        _uow = uow;
-        _hotOpService = hotOpService;
-        _mapper = mapper;
-    }
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<HotOpResponse>>> GetHotOps([FromQuery] HotOpQueryType type = HotOpQueryType.All)
     {
@@ -39,20 +27,20 @@ public class HotOpsController : ControllerBase
         {
             case HotOpQueryType.Upcoming:
                 var now = DateTimeOffset.UtcNow;
-                 hotOpModels = await _uow.HotOps.Find(ho => ho.UserId == discordUser.Id && ho.StartDate > now);
+                 hotOpModels = await uow.HotOps.Find(ho => ho.UserId == discordUser.Id && ho.StartDate > now);
                 break;
             case HotOpQueryType.Current:
-                hotOpModels = await _uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current);
+                hotOpModels = await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current);
                 break;
             case HotOpQueryType.Completed:
-                hotOpModels = await _uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed);
+                hotOpModels = await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed);
                 break;
             default:
-                hotOpModels = await _uow.HotOps.Find(ho => ho.UserId == discordUser.Id);
+                hotOpModels = await uow.HotOps.Find(ho => ho.UserId == discordUser.Id);
                 break;
         }
 
-        var hotOps = _mapper.Map<IEnumerable<HotOpResponse>>(hotOpModels);
+        var hotOps = hotOpModels.Select(h => h.ToHotOpResponse());
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             foreach (var hotOp in hotOps)
@@ -62,7 +50,7 @@ public class HotOpsController : ControllerBase
             }
         }
         
-        return Ok(hotOps ?? Array.Empty<HotOpResponse>());
+        return Ok(hotOps);
     }
     
     [HttpPost]
@@ -74,7 +62,7 @@ public class HotOpsController : ControllerBase
             return BadRequest("Start date must be before end date");
         }
         
-        var channel = await _uow.Channels.GetById(hotOpRequest.ChannelId);
+        var channel = await uow.Channels.GetById(hotOpRequest.ChannelId);
         if (channel == null)
         {
             return BadRequest("Invalid channel");
@@ -86,6 +74,11 @@ public class HotOpsController : ControllerBase
             adjustedTimes.StartDate = adjustedTimes.StartDate.AdjustToUtc(discordUser.Timezone);
             adjustedTimes.EndDate = adjustedTimes.EndDate.AdjustToUtc(discordUser.Timezone);
         }
+        else
+        {
+            adjustedTimes.StartDate = adjustedTimes.StartDate.ToUniversalTime();
+            adjustedTimes.EndDate = adjustedTimes.EndDate.ToUniversalTime();
+        }
         var hotOpModel = new HotOpModel
         {
             UserId = discordUser.Id,
@@ -96,9 +89,9 @@ public class HotOpsController : ControllerBase
             EndDate = adjustedTimes.EndDate
         };
 
-        await _uow.HotOps.Add(hotOpModel);
-        await _uow.CompleteAsync();
-        var hotOpResponse = _mapper.Map<HotOpResponse>(hotOpModel);
+        await uow.HotOps.Add(hotOpModel);
+        await uow.CompleteAsync();
+        var hotOpResponse = hotOpModel.ToHotOpResponse();
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             hotOpResponse.StartDate = hotOpResponse.StartDate.AdjustToUsersTimezone(discordUser.Timezone);
@@ -112,7 +105,7 @@ public class HotOpsController : ControllerBase
     public async Task<ActionResult<HotOpResponse>> UpdateHotOp(int id, HotOpRequest hotOpRequest)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
-        var hotOpModel = await _uow.HotOps.GetById(id);
+        var hotOpModel = await uow.HotOps.GetById(id);
         if (hotOpModel == null)
         {
             return NotFound("Hot Op not found");
@@ -128,7 +121,7 @@ public class HotOpsController : ControllerBase
             return BadRequest("Start date must be before end date");
         }
         
-        var channel = await _uow.Channels.GetById(hotOpRequest.ChannelId);
+        var channel = await uow.Channels.GetById(hotOpRequest.ChannelId);
         if (channel == null)
         {
             return BadRequest("Invalid channel");
@@ -144,8 +137,8 @@ public class HotOpsController : ControllerBase
         hotOpModel.Channel = channel;
         hotOpModel.StartDate = adjustedTimes.StartDate;
         hotOpModel.EndDate = adjustedTimes.EndDate;
-        await _uow.CompleteAsync();
-        var hotOpResponse = _mapper.Map<HotOpResponse>(hotOpModel);
+        await uow.CompleteAsync();
+        var hotOpResponse = hotOpModel.ToHotOpResponse();
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             hotOpResponse.StartDate = hotOpResponse.StartDate.AdjustToUsersTimezone(discordUser.Timezone);
@@ -159,7 +152,7 @@ public class HotOpsController : ControllerBase
     public async Task<IActionResult> DeleteHotOp(int id)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
-        var hotOpModel = await _uow.HotOps.GetById(id);
+        var hotOpModel = await uow.HotOps.GetById(id);
         if (hotOpModel == null)
         {
             return NotFound("Hot Op not found");
@@ -170,15 +163,15 @@ public class HotOpsController : ControllerBase
             return Unauthorized();
         }
 
-        _uow.HotOps.Remove(hotOpModel);
-        await _uow.CompleteAsync();
+        uow.HotOps.Remove(hotOpModel);
+        await uow.CompleteAsync();
         return Ok();
     }
 
     [HttpGet("{id:int}/scoreboard")]
     public async Task<ActionResult<IEnumerable<ScoreboardItemResponse>>> GetHotOpScoreboard(int id)
     {
-        var hotOp = await _uow.HotOps.GetById(id);
+        var hotOp = await uow.HotOps.GetById(id);
         if (hotOp == null)
         {
             return NotFound();
@@ -189,8 +182,8 @@ public class HotOpsController : ControllerBase
             return BadRequest("Hot Op hasn't started yet");
         }
 
-        var scoreboard = _hotOpService.GetScoreboard(hotOp);
-        var scoreboardResponse = _mapper.Map<ScoreboardResponse>(scoreboard); 
+        var scoreboard = hotOpService.GetScoreboard(hotOp);
+        var scoreboardResponse = scoreboard.ToScoreboardResponse();
         return Ok(scoreboardResponse);
     }
 }

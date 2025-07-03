@@ -11,8 +11,6 @@ public interface IUnitOfWork : IDisposable
     IHotOpRepository HotOps { get; }
     IHotOpSessionRepository HotOpSessions { get; }
     IDailyMessageCountRepository DailyMessageCounts { get; }
-    IPlaylistRepository Playlists { get; }
-    IPlaylistSongRepository PlaylistSongs { get; }
     ISecretSantaGroupRepository SecretSantaGroups { get; }
     IStopWordRepository StopWords { get; }
     IWordCountRepository WordCounts { get; }

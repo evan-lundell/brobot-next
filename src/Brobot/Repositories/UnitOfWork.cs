@@ -17,8 +17,6 @@ public class UnitOfWork : IUnitOfWork
         HotOps = new HotOpRepository(context);
         HotOpSessions = new HotOpSessionRepository(context);
         DailyMessageCounts = new DailyMessageCountRepository(context);
-        Playlists = new PlaylistRepository(context);
-        PlaylistSongs = new PlaylistSongRepository(context);
         SecretSantaGroups = new SecretSantaGroupRepository(context);
         StopWords = new StopWordRepository(context);
         WordCounts = new WordCountRepository(context);
@@ -33,8 +31,6 @@ public class UnitOfWork : IUnitOfWork
 
     public IHotOpSessionRepository HotOpSessions { get; }
     public IDailyMessageCountRepository DailyMessageCounts { get; }
-    public IPlaylistRepository Playlists { get; }
-    public IPlaylistSongRepository PlaylistSongs { get; }
     public ISecretSantaGroupRepository SecretSantaGroups { get; }
     public IStopWordRepository StopWords { get; }
     public IWordCountRepository WordCounts { get; }

@@ -28,4 +28,8 @@
     <ProjectReference Include="..\..\src\Brobot\Brobot.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="MappingTests\" />
+  </ItemGroup>
+
 </Project>
