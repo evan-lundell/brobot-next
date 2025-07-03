@@ -145,7 +145,7 @@ public class MessageCountService(IUnitOfWork uow)
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
-            User = userModel.ToUserResponse()
+            User = c.User.ToUserResponse()
         });
     }
 

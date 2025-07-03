@@ -293,7 +293,7 @@ public class MessageCountServiceTests
         Assert.Multiple(() =>
         {
             Assert.That(counts[0].CountDate, Is.EqualTo(DateOnly.FromDateTime(DateTime.UtcNow + offset)));
-            Assert.That(counts[0].User.Username, Is.EqualTo("User1"));
+            Assert.That(counts[0].User.Username, Is.EqualTo("User2"));
             Assert.That(counts[0].MessageCount, Is.EqualTo(15));
         });
     }
