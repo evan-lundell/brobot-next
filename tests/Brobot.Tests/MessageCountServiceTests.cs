@@ -1,7 +1,5 @@
-using AutoMapper;
 using Brobot.Contexts;
 using Brobot.Models;
-using Brobot.Profiles;
 using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
@@ -63,9 +61,8 @@ public class MessageCountServiceTests
 
         _context.SaveChanges();
 
-        var mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile<BrobotProfile>()));
         var unitOfWork = new UnitOfWork(_context);
-        _messageCountService = new MessageCountService(unitOfWork, mapper);
+        _messageCountService = new MessageCountService(unitOfWork);
     }
 
     private ChannelModel CreateChannel(ulong id, string name, GuildModel guild)
@@ -296,7 +293,7 @@ public class MessageCountServiceTests
         Assert.Multiple(() =>
         {
             Assert.That(counts[0].CountDate, Is.EqualTo(DateOnly.FromDateTime(DateTime.UtcNow + offset)));
-            Assert.That(counts[0].User.Username, Is.EqualTo("User2"));
+            Assert.That(counts[0].User.Username, Is.EqualTo("User1"));
             Assert.That(counts[0].MessageCount, Is.EqualTo(15));
         });
     }

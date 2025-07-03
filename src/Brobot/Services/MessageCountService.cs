@@ -1,4 +1,4 @@
-using AutoMapper;
+using Brobot.Mappers;
 using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Shared.Responses;
@@ -6,27 +6,18 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class MessageCountService
+public class MessageCountService(IUnitOfWork uow)
 {
-    private readonly IUnitOfWork _uow;
-    private readonly IMapper _mapper;
-
-    public MessageCountService(IUnitOfWork uow, IMapper mapper)
-    {
-        _uow = uow;
-        _mapper = mapper;
-    }
-
     public async Task<IEnumerable<DailyMessageCountResponse>> GetUsersDailyMessageCountForChannel(ulong userId, ulong channelId, int numOfDays)
     {
-        var userModel = await _uow.Users.GetByIdNoTracking(userId);
+        var userModel = await uow.Users.GetByIdNoTracking(userId);
         if (userModel == null || string.IsNullOrWhiteSpace(userModel.Timezone))
         {
             return Array.Empty<DailyMessageCountResponse>();
         }
         
         var (currentDate, startDate) = GetDates(numOfDays, userModel.Timezone);
-        var counts = await _uow.DailyMessageCounts.Find(dmc =>
+        var counts = await uow.DailyMessageCounts.Find(dmc =>
             dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate >= startDate && dmc.CountDate <= currentDate);
         return GetDailyMessageCountResponses(counts, userModel, startDate, currentDate);
     }
@@ -39,7 +30,7 @@ public class MessageCountService
         }
 
         var (currentDate, startDate) = GetDates(numOfDays, userModel.Timezone);
-        var counts = await _uow.DailyMessageCounts.Find(dmc =>
+        var counts = await uow.DailyMessageCounts.Find(dmc =>
             dmc.UserId == userModel.Id && dmc.CountDate >= startDate && dmc.CountDate <= currentDate);
         return GetDailyMessageCountResponses(counts, userModel, startDate, currentDate);
     }
@@ -49,7 +40,7 @@ public class MessageCountService
         UserModel? user = null;
         if (countDate == null)
         {
-            user = await _uow.Users.GetById(userId);
+            user = await uow.Users.GetById(userId);
             if (string.IsNullOrWhiteSpace(user?.Timezone))
             {
                 return;
@@ -58,21 +49,21 @@ public class MessageCountService
             var timezone = TZConvert.GetTimeZoneInfo(user.Timezone);
             countDate = DateOnly.FromDateTime(DateTime.UtcNow + timezone.GetUtcOffset(DateTime.UtcNow));
         }
-        var dailyMessageCount = (await _uow.DailyMessageCounts
+        var dailyMessageCount = (await uow.DailyMessageCounts
                 .Find(dmc => dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate))
             .FirstOrDefault();
         
         if (dailyMessageCount == null)
         {
-            user ??= await _uow.Users.GetById(userId);
+            user ??= await uow.Users.GetById(userId);
 
-            var channel = await _uow.Channels.GetById(channelId);
+            var channel = await uow.Channels.GetById(channelId);
             if (user == null || channel == null)
             {
                 return;
             }
 
-            await _uow.DailyMessageCounts.Add(new DailyMessageCountModel
+            await uow.DailyMessageCounts.Add(new DailyMessageCountModel
             {
                 User = user,
                 UserId = userId,
@@ -87,7 +78,7 @@ public class MessageCountService
             dailyMessageCount.MessageCount += 1;
         }
 
-        await _uow.CompleteAsync();
+        await uow.CompleteAsync();
     }
 
     public async Task<IEnumerable<DailyMessageCountResponse>> GetUsersTopDays(UserModel userModel, int numOfDays)
@@ -97,11 +88,10 @@ public class MessageCountService
             return Array.Empty<DailyMessageCountResponse>();
         }
 
-        var counts = await _uow.DailyMessageCounts.GetUsersTopDays(userModel.Id, numOfDays);
-        var userResponse = _mapper.Map<UserResponse>(userModel);
+        var counts = await uow.DailyMessageCounts.GetUsersTopDays(userModel.Id, numOfDays);
         return counts.Select(c => new DailyMessageCountResponse
         {
-            User = userResponse,
+            User = userModel.ToUserResponse(),
             CountDate = c.CountDate,
             MessageCount = c.MessageCount
         });
@@ -114,11 +104,10 @@ public class MessageCountService
             return Array.Empty<DailyMessageCountResponse>();
         }
 
-        var userResponse = _mapper.Map<UserResponse>(userModel);
-        var counts = await _uow.DailyMessageCounts.GetUsersTopDaysInChannel(userModel.Id, channelId, numOfDays);
+        var counts = await uow.DailyMessageCounts.GetUsersTopDaysInChannel(userModel.Id, channelId, numOfDays);
         return counts.Select(c => new DailyMessageCountResponse
         {
-            User = userResponse,
+            User = userModel.ToUserResponse(),
             CountDate = c.CountDate,
             MessageCount = c.MessageCount
         });
@@ -133,12 +122,12 @@ public class MessageCountService
         
         var now = DateTimeOffset.UtcNow;
         var userNow = now.AdjustToUsersTimezone(userModel.Timezone);
-        var counts = await _uow.DailyMessageCounts.GetTopForDate(DateOnly.FromDateTime(userNow.DateTime));
+        var counts = await uow.DailyMessageCounts.GetTopForDate(DateOnly.FromDateTime(userNow.DateTime));
         return counts.Select(c => new DailyMessageCountResponse
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
-            User = _mapper.Map<UserResponse>(c.User)
+            User = userModel.ToUserResponse()
         });
     }
 
@@ -151,12 +140,12 @@ public class MessageCountService
         
         var now = DateTimeOffset.UtcNow;
         var userNow = now.AdjustToUsersTimezone(userModel.Timezone);
-        var counts = await _uow.DailyMessageCounts.GetTopForDateByChannel(DateOnly.FromDateTime(userNow.DateTime), channelId);
+        var counts = await uow.DailyMessageCounts.GetTopForDateByChannel(DateOnly.FromDateTime(userNow.DateTime), channelId);
         return counts.Select(c => new DailyMessageCountResponse
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
-            User = _mapper.Map<UserResponse>(c.User)
+            User = userModel.ToUserResponse()
         });
     }
 
@@ -168,7 +157,7 @@ public class MessageCountService
         }
 
         var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);
-        var counts = await _uow.DailyMessageCounts.GetTotalDailyMessageCounts(startDate, currentDate);
+        var counts = await uow.DailyMessageCounts.GetTotalDailyMessageCounts(startDate, currentDate);
         var fakeUser = new UserModel
         {
             Username = ""
@@ -184,7 +173,7 @@ public class MessageCountService
         }
 
         var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);
-        var counts = await _uow.DailyMessageCounts.GetTotalDailyMessageCountsByChannel(startDate, currentDate, channelId);
+        var counts = await uow.DailyMessageCounts.GetTotalDailyMessageCountsByChannel(startDate, currentDate, channelId);
         var fakeUser = new UserModel
         {
             Username = ""
@@ -194,7 +183,7 @@ public class MessageCountService
     
     public async Task<IEnumerable<DailyMessageCountResponse>> GetTotalTopDays(int numOfDays)
     {
-        var counts = await _uow.DailyMessageCounts.GetTotalTopDays(numOfDays);
+        var counts = await uow.DailyMessageCounts.GetTotalTopDays(numOfDays);
         var fakeUser = new UserResponse
         {
             Username = ""
@@ -209,7 +198,7 @@ public class MessageCountService
     
     public async Task<IEnumerable<DailyMessageCountResponse>> GetTotalTopDaysByChannel(ulong channelId, int numOfDays)
     {
-        var counts = await _uow.DailyMessageCounts.GetTotalTopDaysByChannel(channelId, numOfDays);
+        var counts = await uow.DailyMessageCounts.GetTotalTopDaysByChannel(channelId, numOfDays);
         var fakeUser = new UserResponse
         {
             Username = ""
@@ -233,7 +222,7 @@ public class MessageCountService
 
     private List<DailyMessageCountResponse> GetDailyMessageCountResponses(IEnumerable<DailyMessageCountModel> counts, UserModel userModel, DateOnly startDate, DateOnly currentDate)
     {
-        var userResponse = _mapper.Map<UserResponse>(userModel);
+        var userResponse = userModel.ToUserResponse();
         var countsResponse = counts
             .GroupBy(c => c.CountDate)
             .Select(x => new DailyMessageCountResponse

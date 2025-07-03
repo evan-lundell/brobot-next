@@ -18,7 +18,6 @@ public class ApiService
     {
         _client = client;
         HotOpService = new HotOpService(client);
-        PlaylistService = new PlaylistService(client);
         ScheduledMessageService = new ScheduledMessageService(client);
         SecretSantaService = new SecretSantaService(client);
         StopWordService = new StopWordService(client);

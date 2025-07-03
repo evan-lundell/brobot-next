@@ -1,7 +1,5 @@
-using AutoMapper;
 using Brobot.Exceptions;
 using Brobot.Models;
-using Brobot.Profiles;
 using Brobot.Repositories;
 using Brobot.Services;
 using Discord.WebSocket;
@@ -23,11 +21,10 @@ public class SecretSantaService_GeneratePairsForCurrentYear
             .Returns(Task.FromResult<SecretSantaGroupModel?>(null));
         unitOfWorkMock.Setup(uow => uow.SecretSantaGroups).Returns(secretSantaRepositoryMock.Object);
         var discordClientMock = new Mock<DiscordSocketClient>();
-        var mapperMock = new Mock<IMapper>();
 
         var random = new Random();
         var secretSantaService =
-            new SecretSantaService(unitOfWorkMock.Object, mapperMock.Object, discordClientMock.Object, random); 
+            new SecretSantaService(unitOfWorkMock.Object, discordClientMock.Object, random); 
         
         // Act/Assert
         Assert.ThrowsAsync<ModelNotFoundException<SecretSantaGroupModel, int>>(() => secretSantaService.GeneratePairsForCurrentYear(1));
@@ -50,10 +47,9 @@ public class SecretSantaService_GeneratePairsForCurrentYear
         
         unitOfWorkMock.Setup(uow => uow.SecretSantaGroups).Returns(() => secretSantaRepositoryMock.Object);
         var discordClientMock = new Mock<DiscordSocketClient>();
-        var mapperMock = new Mock<IMapper>();
         var random = new Random();
         var secretSantaService =
-            new SecretSantaService(unitOfWorkMock.Object, mapperMock.Object, discordClientMock.Object, random);
+            new SecretSantaService(unitOfWorkMock.Object, discordClientMock.Object, random);
 
         // Act/Assert
         Assert.ThrowsAsync<Exception>(() => secretSantaService.GeneratePairsForCurrentYear(1));
@@ -80,12 +76,9 @@ public class SecretSantaService_GeneratePairsForCurrentYear
         unitOfWorkMock.Setup(uow => uow.CompleteAsync())
             .ReturnsAsync(() => 0);
         var discordClientMock = new Mock<DiscordSocketClient>();
-        var profile = new BrobotProfile();
-        var configuration = new MapperConfiguration(config => config.AddProfile(profile));
-        var mapper = new Mapper(configuration);
         var random = new Random();
         var secretSantaService =
-            new SecretSantaService(unitOfWorkMock.Object, mapper, discordClientMock.Object, random);
+            new SecretSantaService(unitOfWorkMock.Object, discordClientMock.Object, random);
         
         // Act
         var pairs = await secretSantaService.GeneratePairsForCurrentYear(1);

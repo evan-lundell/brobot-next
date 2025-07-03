@@ -1,5 +1,5 @@
-using AutoMapper;
 using Brobot.Exceptions;
+using Brobot.Mappers;
 using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Shared.Requests;
@@ -9,31 +9,18 @@ using Discord.WebSocket;
 
 namespace Brobot.Services;
 
-public class SecretSantaService
+public class SecretSantaService(IUnitOfWork uow, DiscordSocketClient client, Random random)
 {
-    private readonly IUnitOfWork _uow;
-    private readonly IMapper _mapper;
-    private readonly DiscordSocketClient _client;
-    private readonly Random _random;
-
-    public SecretSantaService(IUnitOfWork uow, IMapper mapper, DiscordSocketClient client, Random random)
-    {
-        _uow = uow;
-        _mapper = mapper;
-        _client = client;
-        _random = random;
-    }
-
     public async Task<IEnumerable<SecretSantaGroupResponse>> GetSecretSantaGroups()
     {
-        var secretSantaGroups = (await _uow.SecretSantaGroups.GetAll()).ToArray();
-        return _mapper.Map<IEnumerable<SecretSantaGroupResponse>>(secretSantaGroups);
+        var secretSantaGroups = (await uow.SecretSantaGroups.GetAll()).ToArray();
+        return secretSantaGroups.Select(group => group.ToSecretSantaGroupResponse());
     }
 
     public async Task<SecretSantaGroupResponse?> GetSecretSantaGroup(int secretSantaGroupId)
     {
-        var secretSantaGroup = await _uow.SecretSantaGroups.GetByIdNoTracking(secretSantaGroupId);
-        return secretSantaGroup == null ? null : _mapper.Map<SecretSantaGroupResponse>(secretSantaGroup);
+        var secretSantaGroup = await uow.SecretSantaGroups.GetByIdNoTracking(secretSantaGroupId);
+        return secretSantaGroup?.ToSecretSantaGroupResponse();
     }
 
     public async Task<SecretSantaGroupResponse> CreateSecretSantaGroup(SecretSantaGroupRequest secretSantaGroup)
@@ -45,7 +32,7 @@ public class SecretSantaService
 
         foreach (var user in secretSantaGroup.Users)
         {
-            var userModel = await _uow.Users.GetById(user.Id);
+            var userModel = await uow.Users.GetById(user.Id);
             if (userModel == null)
             {
                 throw new ModelNotFoundException<SecretSantaGroupModel, ulong>(user.Id);
@@ -58,20 +45,20 @@ public class SecretSantaService
             });
         }
 
-        await _uow.SecretSantaGroups.Add(secretSantaGroupModel);
-        await _uow.CompleteAsync();
-        return _mapper.Map<SecretSantaGroupResponse>(secretSantaGroupModel);
+        await uow.SecretSantaGroups.Add(secretSantaGroupModel);
+        await uow.CompleteAsync();
+        return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 
     public async Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, UserResponse user)
     {
-        var secretSantaGroupModel = await _uow.SecretSantaGroups.GetById(secretSantaGroupId);
+        var secretSantaGroupModel = await uow.SecretSantaGroups.GetById(secretSantaGroupId);
         if (secretSantaGroupModel == null)
         {
             throw new ModelNotFoundException<SecretSantaGroupModel, int>(secretSantaGroupId);
         }
 
-        var userModel = await _uow.Users.GetById(user.Id);
+        var userModel = await uow.Users.GetById(user.Id);
         if (userModel == null)
         {
             throw new ModelNotFoundException<UserModel, ulong>(user.Id);
@@ -84,13 +71,13 @@ public class SecretSantaService
         };
         secretSantaGroupModel.SecretSantaGroupUsers.Add(secretSantaGroupUserModel);
 
-        await _uow.CompleteAsync();
-        return _mapper.Map<SecretSantaGroupResponse>(secretSantaGroupModel);
+        await uow.CompleteAsync();
+        return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 
     public async Task<SecretSantaGroupResponse> RemoveUserFromGroup(int secretSantaGroupId, ulong userId)
     {
-        var secretSantaGroupModel = await _uow.SecretSantaGroups.GetById(secretSantaGroupId);
+        var secretSantaGroupModel = await uow.SecretSantaGroups.GetById(secretSantaGroupId);
         if (secretSantaGroupModel == null)
         {
             throw new ModelNotFoundException<SecretSantaGroupModel, int>(secretSantaGroupId);
@@ -100,30 +87,30 @@ public class SecretSantaService
             secretSantaGroupModel.SecretSantaGroupUsers.FirstOrDefault(ssgu => ssgu.UserId == userId);
         if (secretSantaGroupUserModel == null)
         {
-            return _mapper.Map<SecretSantaGroupResponse>(secretSantaGroupModel);
+            return secretSantaGroupModel.ToSecretSantaGroupResponse();
         }
 
         secretSantaGroupModel.SecretSantaGroupUsers.Remove(secretSantaGroupUserModel);
-        await _uow.CompleteAsync();
-        return _mapper.Map<SecretSantaGroupResponse>(secretSantaGroupModel);
+        await uow.CompleteAsync();
+        return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 
     public async Task<IEnumerable<SecretSantaPairResponse>> GeneratePairsForCurrentYear(int secretSantaGroupId)
     {
-        var secretSantaGroup = await _uow.SecretSantaGroups.GetById(secretSantaGroupId);
+        var secretSantaGroup = await uow.SecretSantaGroups.GetById(secretSantaGroupId);
         if (secretSantaGroup == null)
         {
             throw new ModelNotFoundException<SecretSantaGroupModel, int>(secretSantaGroupId);
         }
 
         var currentYear = DateTime.Now.Year;
-        var existingPairsInYear = (await _uow.SecretSantaGroups.GetPairs(secretSantaGroupId, currentYear)).ToArray();
+        var existingPairsInYear = (await uow.SecretSantaGroups.GetPairs(secretSantaGroupId, currentYear)).ToArray();
         if (existingPairsInYear.Length != 0)
         {
             throw new Exception("Pairs already exists for current year");
         }
 
-        var previousYearPairs = (await _uow.SecretSantaGroups.GetPairs(secretSantaGroupId, currentYear - 1)).ToArray();
+        var previousYearPairs = (await uow.SecretSantaGroups.GetPairs(secretSantaGroupId, currentYear - 1)).ToArray();
         var availableGivers = secretSantaGroup.SecretSantaGroupUsers.Select(ssgu => ssgu.User).ToList();
         var availableRecipients = secretSantaGroup.SecretSantaGroupUsers.Select(ssgu => ssgu.User).ToList();
         var newPairs = new List<SecretSantaPairModel>();
@@ -136,14 +123,14 @@ public class SecretSantaService
             {
                 var swappable = newPairs.Where(p =>
                     IsAllowedPair(giver, p.RecipientUser, previousYearPairs)).ToArray();
-                var swap = swappable[_random.Next(validRecipients.Length)];
+                var swap = swappable[random.Next(validRecipients.Length)];
                 availableGivers.Add(swap.GiverUser);
                 swap.GiverUser = giver;
                 swap.GiverUserId = giver.Id;
             }
             else
             {
-                var recipient = validRecipients[_random.Next(validRecipients.Length)];
+                var recipient = validRecipients[random.Next(validRecipients.Length)];
                 availableRecipients.Remove(recipient);
                 newPairs.Add(new SecretSantaPairModel
                 {
@@ -164,15 +151,15 @@ public class SecretSantaService
         {
             secretSantaGroup.SecretSantaPairs.Add(pair);
         }
-        await _uow.CompleteAsync();
-        return _mapper.Map<IEnumerable<SecretSantaPairResponse>>(newPairs);
+        await uow.CompleteAsync();
+        return newPairs.Select(pair => pair.ToSecretSantaPairResponse());
     }
 
     public async Task SendPairs(IEnumerable<SecretSantaPairResponse> pairs)
     {
         foreach (var pair in pairs)
         {
-            var socketUser = await _client.GetUserAsync(pair.Giver.Id);
+            var socketUser = await client.GetUserAsync(pair.Giver.Id);
             await socketUser.SendMessageAsync($"You have {pair.Recipient.Username}! :santa:");
         }
     }

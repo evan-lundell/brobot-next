@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using System.Web;
-using AutoMapper;
 using Brobot.Repositories;
 using Brobot.Services;
 using Brobot.Shared.Requests;
@@ -10,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Brobot.Mappers;
 
 namespace Brobot.Controllers;
 
@@ -22,7 +22,6 @@ public class AuthController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly IUnitOfWork _uow;
     private readonly DiscordOauthService _discordOauthService;
-    private readonly IMapper _mapper;
     private const string RefreshTokenCookieKey = "refreshCookie";
 
     public AuthController(
@@ -30,15 +29,13 @@ public class AuthController : ControllerBase
         JwtService jwtService,
         IConfiguration configuration,
         IUnitOfWork uow,
-        DiscordOauthService discordOauthService,
-        IMapper mapper)
+        DiscordOauthService discordOauthService)
     {
         _userManager = userManager;
         _jwtService = jwtService;
         _configuration = configuration;
         _uow = uow;
         _discordOauthService = discordOauthService;
-        _mapper = mapper;
     }
 
     [HttpPost("register")]
@@ -244,7 +241,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<IEnumerable<IdentityUserResponse>>> GetIdentityUsers()
     {
         var identityUsers = await _userManager.Users.ToListAsync();
-        var identityUserResponses = _mapper.Map<IEnumerable<IdentityUserResponse>>(identityUsers);
+        var identityUserResponses = identityUsers.Select(iu => iu.ToIdentityUserResponse()).ToList();
         var discordUsers = await _uow.Users
             .GetUsersFromIdentityUserIds(identityUsers.Select(iu => iu.Id));
         foreach (var identityUserResponse in identityUserResponses)

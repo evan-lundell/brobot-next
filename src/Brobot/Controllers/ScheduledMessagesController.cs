@@ -1,4 +1,4 @@
-using AutoMapper;
+using Brobot.Exceptions;
 using Brobot.Models;
 using Brobot.Services;
 using Brobot.Shared.Requests;
@@ -7,23 +7,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using TimeZoneConverter;
+using Brobot.Mappers;
 
 namespace Brobot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
 [Authorize]
-public class ScheduledMessagesController : ControllerBase
+public class ScheduledMessagesController(ScheduledMessageService scheduledMessageService) : ControllerBase
 {
-    private readonly IMapper _mapper;
-    private readonly ScheduledMessageService _scheduledMessageService;
-
-    public ScheduledMessagesController(IMapper mapper, ScheduledMessageService scheduledMessageService)
-    {
-        _mapper = mapper;
-        _scheduledMessageService = scheduledMessageService;
-    }
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ScheduledMessageResponse>>> Get(
         [FromQuery] int? limit = null,
@@ -36,8 +28,8 @@ public class ScheduledMessagesController : ControllerBase
         {
             return BadRequest("Limit cannot be greater than 50");
         }
-        
-        return Ok(_mapper.Map<IEnumerable<ScheduledMessageResponse>>(await _scheduledMessageService.GetScheduledMessagesByUser(discordUser, limit, skip, scheduledBefore, scheduledAfter)));
+        var scheduledMessages = await scheduledMessageService.GetScheduledMessagesByUser(discordUser, limit, skip, scheduledBefore, scheduledAfter);
+        return Ok(scheduledMessages.Select(sm => sm.ToScheduledMessageResponse()));
     }
 
     [HttpPost]
@@ -51,7 +43,7 @@ public class ScheduledMessagesController : ControllerBase
                 return BadRequest("Channel Id not given");
             }
 
-            var newScheduledMessage = await _scheduledMessageService.CreateScheduledMessage(scheduledMessage.MessageText, discordUser, scheduledMessage.SendDate, scheduledMessage.ChannelId.Value);
+            var newScheduledMessage = await scheduledMessageService.CreateScheduledMessage(scheduledMessage.MessageText, discordUser, scheduledMessage.SendDate, scheduledMessage.ChannelId.Value);
             // ReSharper disable once InvertIf
             if (newScheduledMessage.SendDate.HasValue &&
                 !string.IsNullOrWhiteSpace(newScheduledMessage.CreatedBy.Timezone))
@@ -61,11 +53,11 @@ public class ScheduledMessagesController : ControllerBase
                 newScheduledMessage.SendDate = newScheduledMessage.SendDate.Value.ToOffset(offset);
             }
 
-            return Ok(_mapper.Map<ScheduledMessageResponse>(newScheduledMessage));
+            return Ok(newScheduledMessage.ToScheduledMessageResponse());
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest(new ErrorResponse { Title = e.Message, Type = "Bad Request" });
         }
     }
 
@@ -75,14 +67,19 @@ public class ScheduledMessagesController : ControllerBase
         try
         {
             var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
-            if (!await _scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id))
+            if (!await scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id))
             {
                 return Unauthorized();
             }
 
-            return Ok(_mapper.Map<ScheduledMessageResponse>(await _scheduledMessageService.UpdateScheduledMessage(id,
+            var updated = await scheduledMessageService.UpdateScheduledMessage(id,
                 scheduledMessageRequest.MessageText, scheduledMessageRequest.ChannelId,
-                scheduledMessageRequest.SendDate)));
+                scheduledMessageRequest.SendDate);
+            return Ok(updated.ToScheduledMessageResponse());
+        }
+        catch (ModelNotFoundException mnfEx)
+        {
+            return NotFound(mnfEx.Message);
         }
         catch (Exception e)
         {
@@ -94,12 +91,12 @@ public class ScheduledMessagesController : ControllerBase
     public async Task<IActionResult> DeleteScheduledMessage(int id)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
-        if (!await _scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id))
+        if (!await scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id))
         {
             return Unauthorized();
         }
 
-        if (!await _scheduledMessageService.DeleteScheduledMessage(id))
+        if (!await scheduledMessageService.DeleteScheduledMessage(id))
         {
             return NotFound();
         }
