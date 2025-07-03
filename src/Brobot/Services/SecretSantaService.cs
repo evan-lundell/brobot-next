@@ -123,7 +123,7 @@ public class SecretSantaService(IUnitOfWork uow, DiscordSocketClient client, Ran
             {
                 var swappable = newPairs.Where(p =>
                     IsAllowedPair(giver, p.RecipientUser, previousYearPairs)).ToArray();
-                var swap = swappable[random.Next(validRecipients.Length)];
+                var swap = swappable[random.Next(swappable.Length)];
                 availableGivers.Add(swap.GiverUser);
                 swap.GiverUser = giver;
                 swap.GiverUserId = giver.Id;

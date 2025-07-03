@@ -9,7 +9,6 @@ public class ApiService
     private readonly HttpClient _client;
 
     public IHotOpService HotOpService { get; }
-    public IPlaylistService PlaylistService { get; }
     public IScheduledMessageService ScheduledMessageService { get; }
     public ISecretSantaService SecretSantaService { get; }
     public IStopWordService StopWordService { get; }

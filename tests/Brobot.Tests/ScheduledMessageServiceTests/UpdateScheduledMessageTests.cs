@@ -5,7 +5,7 @@ using TimeZoneConverter;
 namespace Brobot.Tests.ScheduledMessageServiceTests;
 
 [TestFixture]
-public class UpdateScheduledMesssageTests : ScheduledMessageServiceTestBase
+public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
 {
     [Test]
     [TestCase(1)]
