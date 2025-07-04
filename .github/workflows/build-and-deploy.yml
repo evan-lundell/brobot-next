@@ -73,7 +73,9 @@ jobs:
         id: vars
         run: |
           TAG=${GITHUB_REF#refs/tags/}
-          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+          VERSION=${TAG#v}
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Deploy to server
         run: |
@@ -81,7 +83,12 @@ jobs:
             set -e
             docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
             cd /home/brobot/brobot
-            echo "IMAGE_TAG=${{ env.IMAGE_TAG }}" > .env
+            if grep -q "^IMAGE_TAG=" .env; then
+              sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=${{ env.VERSION }}|" .env
+            else
+              echo "IMAGE_TAG=${{ env.VERSION }}" >> .env
+            fi
             docker compose pull
             docker compose up -d
           EOF
+          
