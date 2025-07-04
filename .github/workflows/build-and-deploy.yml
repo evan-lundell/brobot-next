@@ -42,7 +42,7 @@ jobs:
         id: vars
         run: |
           TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${RAW_TAG#v}
+          VERSION=${TAG#v}
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       
