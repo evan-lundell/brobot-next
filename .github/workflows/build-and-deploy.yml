@@ -80,7 +80,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no brobot@brobot.zapto.org << EOF
             set -e
             docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
-            cd /home/deploy/myapp
+            cd /home/brobot/brobot
             echo "IMAGE_TAG=${{ env.IMAGE_TAG }}" > .env
             docker compose pull
             docker compose up -d
