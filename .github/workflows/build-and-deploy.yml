@@ -77,7 +77,7 @@ jobs:
 
       - name: Deploy to server
         run: |
-          ssh -o StrictHostKeyChecking=no deploy@your.home.ip << EOF
+          ssh -o StrictHostKeyChecking=no brobot@brobot.zapto.org << EOF
             set -e
             docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
             cd /home/deploy/myapp
