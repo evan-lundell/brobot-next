@@ -40,8 +40,13 @@ jobs:
 
       - name: Extract tag name
         id: vars
-        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      
+      
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -50,7 +55,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           build-args: |
-            VERSION=${{ env.TAG }}
+            VERSION=${{ env.VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
