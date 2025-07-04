@@ -1,11 +1,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG VERSION=unknown
+ENV APP_VERSION=$VERSION
 WORKDIR /build
 COPY ./src/Brobot/Brobot.csproj ./src/Brobot/Brobot.csproj
 COPY ./src/Brobot.Frontend/Brobot.Frontend.csproj ./src/Brobot.Frontend/Brobot.Frontend.csproj
 COPY ./src/Brobot.Shared/Brobot.Shared.csproj ./src/Brobot.Shared/Brobot.Shared.csproj
 RUN dotnet restore ./src/Brobot/Brobot.csproj
 COPY ./src ./src
-RUN dotnet publish ./src/Brobot/Brobot.csproj -c Release -o /app
+RUN dotnet publish ./src/Brobot/Brobot.csproj -c Release -o /app /p:Version=$VERSION
+RUN echo "$VERSION" > /app/version.txt
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS app
 WORKDIR /app
