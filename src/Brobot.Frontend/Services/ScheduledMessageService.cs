@@ -4,13 +4,10 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace Brobot.Frontend.Services;
 
-public class ScheduledMessageService : ApiServiceBase<ScheduledMessageRequest, ScheduledMessageResponse, int>, IScheduledMessageService
+public class ScheduledMessageService(HttpClient httpClient)
+    : ApiServiceBase<ScheduledMessageRequest, ScheduledMessageResponse, int>("ScheduledMessages", "Reminder", httpClient),
+        IScheduledMessageService
 {
-    public ScheduledMessageService(HttpClient client)
-        : base("ScheduledMessages", "Reminder", client)
-    {
-    }
-
     public async Task<IEnumerable<ScheduledMessageResponse>> GetUnsentScheduledMessages(int page = 1)
     {
         Dictionary<string, string?> queryParams = new()

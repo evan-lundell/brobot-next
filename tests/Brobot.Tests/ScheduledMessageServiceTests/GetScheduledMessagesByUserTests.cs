@@ -30,7 +30,7 @@ public class GetScheduledMessagesByUserTests : ScheduledMessageServiceTestBase
             throw new Exception("User not found");
         }
         
-        var messages = (await ScheduledMessageService.GetScheduledMessagesByUser(user, 100, 0, DateTime.UtcNow, null)).ToList();
+        var messages = (await ScheduledMessageService.GetScheduledMessagesByUser(user, 100, 0, DateTime.UtcNow)).ToList();
         
         Assert.That(messages, Has.Count.EqualTo(1));
         Assert.That(messages[0].MessageText, Is.EqualTo("Past Test Message 2"));
@@ -61,7 +61,7 @@ public class GetScheduledMessagesByUserTests : ScheduledMessageServiceTestBase
             throw new Exception("User not found");
         }
         
-        var messages = (await ScheduledMessageService.GetScheduledMessagesByUser(user, 1, 0, null, null)).ToList();
+        var messages = (await ScheduledMessageService.GetScheduledMessagesByUser(user, 1)).ToList();
         
         Assert.That(messages, Has.Count.EqualTo(1));
         Assert.That(messages[0].MessageText, Is.EqualTo("Upcoming Test Message 1"));
@@ -76,7 +76,7 @@ public class GetScheduledMessagesByUserTests : ScheduledMessageServiceTestBase
             throw new Exception("User not found");
         }
         
-        var messages = (await ScheduledMessageService.GetScheduledMessagesByUser(user, 1, 1, null, null)).ToList();
+        var messages = (await ScheduledMessageService.GetScheduledMessagesByUser(user, 1, 1)).ToList();
 
         Assert.That(messages[0].MessageText, Is.EqualTo("Upcoming Test Message 3"));
     }

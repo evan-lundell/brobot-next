@@ -1,5 +1,6 @@
 namespace Brobot.Workers;
 
+// ReSharper disable once UnusedTypeParameter
 public interface ICronWorkerConfig<T> where T : CronWorkerBase
 {
     string? CronExpression { get; set; }

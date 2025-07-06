@@ -1,7 +1,6 @@
 using System.Net;
 using Brobot.Responses;
 using Brobot.Services;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 using Newtonsoft.Json;
@@ -23,8 +22,7 @@ public class RandomFactServiceTests
         {
             BaseAddress = new Uri("http://localhost/")
         };
-        ILogger<RandomFactService> logger = new Mock<ILogger<RandomFactService>>().Object;
-        _randomFactService = new RandomFactService(_mockHttpClient, logger);
+        _randomFactService = new RandomFactService(_mockHttpClient);
     }
     
     [Test]

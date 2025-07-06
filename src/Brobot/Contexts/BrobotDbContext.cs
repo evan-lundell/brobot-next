@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Contexts;
 
-public class BrobotDbContext : DbContext
+public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbContext(options)
 {
     public DbSet<GuildModel> Guilds => Set<GuildModel>();
     public DbSet<ChannelModel> Channels => Set<ChannelModel>();
@@ -15,11 +15,6 @@ public class BrobotDbContext : DbContext
     public DbSet<SecretSantaPairModel> SecretSantaPairs => Set<SecretSantaPairModel>();
     public DbSet<StopWordModel> StopWords => Set<StopWordModel>();
     public DbSet<WordCountModel> WordCounts => Set<WordCountModel>();
-
-    public BrobotDbContext(DbContextOptions<BrobotDbContext> options)
-        : base(options)
-    {
-    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -71,7 +66,7 @@ public class BrobotDbContext : DbContext
             .HasForeignKey(c => c.GuildId);
         builder.Entity<ChannelModel>()
             .Property(c => c.Timezone)
-            .IsRequired(true)
+            .IsRequired()
             .HasMaxLength(255)
             .HasDefaultValue("america/chicago");
 
@@ -116,6 +111,7 @@ public class BrobotDbContext : DbContext
         builder.Entity<UserModel>()
             .Property(u => u.IdentityUserId)
             .HasColumnName("identity_user_id")
+            .HasMaxLength(100)
             .IsRequired(false);
         builder.Entity<UserModel>()
             .HasIndex(u => u.IdentityUserId)
@@ -283,7 +279,7 @@ public class BrobotDbContext : DbContext
             .HasOne(dc => dc.Channel)
             .WithMany(c => c.DailyMessageCounts)
             .HasForeignKey(dc => dc.ChannelId);
-
+        
         builder.Entity<SecretSantaGroupModel>()
             .ToTable(name: "secret_santa_group", schema: "brobot")
             .HasKey(ssg => ssg.Id);
@@ -359,6 +355,7 @@ public class BrobotDbContext : DbContext
         builder.Entity<StopWordModel>()
             .Property(sw => sw.Word)
             .HasColumnName("word")
+            .HasMaxLength(255)
             .IsRequired();
         builder.Entity<StopWordModel>()
             .HasIndex(sw => sw.Word)

@@ -6,13 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
-public class HotOpRepository : RepositoryBase<HotOpModel, int>, IHotOpRepository
+public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpModel, int>(context), IHotOpRepository
 {
-    public HotOpRepository(BrobotDbContext context)
-        : base(context)
-    {
-    }
-
     public async Task<IEnumerable<HotOpModel>> GetActiveHotOpsWithSessions(ulong channelId)
     {
         var utcNow = DateTime.UtcNow;

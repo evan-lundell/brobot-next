@@ -2,7 +2,6 @@ using Moq;
 using Moq.Protected;
 using System.Net;
 using Brobot.Services;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Brobot.Tests;

@@ -1,7 +1,5 @@
-using AutoMapper;
 using Brobot.Contexts;
 using Brobot.Models;
-using Brobot.Profiles;
 using Brobot.Repositories;
 using Brobot.Services;
 using Discord.WebSocket;
@@ -59,13 +57,12 @@ public abstract class SecretSantaServiceTestsBase
 
         Context.SaveChanges();
         
-        var mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile(new BrobotProfile())));
         var unitOfWork = new UnitOfWork(Context);
         
         var discordClientMock = new Mock<DiscordSocketClient>();
         
         Random random = new(5000);
-        SecretSantaService = new SecretSantaService(unitOfWork, mapper, discordClientMock.Object, random);
+        SecretSantaService = new SecretSantaService(unitOfWork, discordClientMock.Object, random);
     }
     
     [TearDown]

@@ -4,13 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
-public class ScheduledMessageRepository : RepositoryBase<ScheduledMessageModel, int>, IScheduledMessageRepository
+public class ScheduledMessageRepository(BrobotDbContext context)
+    : RepositoryBase<ScheduledMessageModel, int>(context), IScheduledMessageRepository
 {
-    public ScheduledMessageRepository(BrobotDbContext context)
-        : base(context)
-    {
-    }
-
     public async Task<IEnumerable<ScheduledMessageModel>> GetActiveMessages(DateTime? time = null)
     {
         time ??= DateTime.UtcNow;

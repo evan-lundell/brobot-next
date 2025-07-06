@@ -7,23 +7,15 @@ using Discord.WebSocket;
 
 namespace Brobot.Workers;
 
-public class HotOpWorker : CronWorkerBase
+public class HotOpWorker(
+    ICronWorkerConfig<HotOpWorker> config,
+    IServiceProvider services,
+    DiscordSocketClient client)
+    : CronWorkerBase(config.CronExpression)
 {
-    private readonly IServiceProvider _services;
-    private readonly DiscordSocketClient _client;
-
-    public HotOpWorker(
-        ICronWorkerConfig<HotOpWorker> config,
-        IServiceProvider services,
-        DiscordSocketClient client) : base(config.CronExpression)
-    {
-        _services = services;
-        _client = client;
-    }
-
     protected override async Task DoWork(CancellationToken cancellationToken)
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var hotOpService = scope.ServiceProvider.GetRequiredService<HotOpService>();
         var now = DateTime.UtcNow;
@@ -44,7 +36,7 @@ public class HotOpWorker : CronWorkerBase
 
     private async Task HandleNewHotOp(HotOpModel hotOp)
     {
-        var channel = await _client.GetChannelAsync(hotOp.ChannelId);
+        var channel = await client.GetChannelAsync(hotOp.ChannelId);
         if (channel is SocketTextChannel textChannel)
         {
             await textChannel.SendMessageAsync($"Operation Hot {hotOp.User.Username} has begun!");
@@ -60,7 +52,7 @@ public class HotOpWorker : CronWorkerBase
         }
         await uow.CompleteAsync();
 
-        var channel = await _client.GetChannelAsync(hotOp.ChannelId);
+        var channel = await client.GetChannelAsync(hotOp.ChannelId);
         if (channel is SocketTextChannel textChannel)
         {
             var scoreboardEmbed = hotOpService.CreateScoreboardEmbed(hotOp);

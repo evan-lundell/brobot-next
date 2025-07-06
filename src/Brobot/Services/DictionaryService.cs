@@ -4,18 +4,11 @@ using Newtonsoft.Json;
 
 namespace Brobot.Services;
 
-public class DictionaryService : IDictionaryService
+public class DictionaryService(HttpClient http) : IDictionaryService
 {
-    private readonly HttpClient _http;
-
-    public DictionaryService(HttpClient http)
-    {
-        _http = http;
-    }
-
     public async Task<string> GetDefinition(string word)
     {
-        var response = await _http.GetAsync($"api/v2/entries/en/{word}");
+        var response = await http.GetAsync($"api/v2/entries/en/{word}");
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return "That's not a word dummy";

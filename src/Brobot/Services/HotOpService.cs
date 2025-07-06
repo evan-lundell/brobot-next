@@ -8,21 +8,15 @@ using Discord;
 
 namespace Brobot.Services;
 
-public class HotOpService
+public class HotOpService(IUnitOfWork uow)
 {
-    private readonly IUnitOfWork _uow;
     private const int MinuteMultiplier = 10;
-
-    public HotOpService(IUnitOfWork uow)
-    {
-        _uow = uow;
-    }
 
     public async Task UpdateHotOps(ulong userId, UserVoiceStateAction action, IReadOnlyCollection<ulong> connectedUsers)
     {
         var now = DateTimeOffset.UtcNow;
-        var activeHotOps = await _uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now);
-        var users = (await _uow.Users.Find(u => u.Archived == false)).ToDictionary(u => u.Id);
+        var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now);
+        var users = (await uow.Users.Find(u => u.Archived == false)).ToDictionary(u => u.Id);
 
         foreach (var hotOp in activeHotOps)
         {
@@ -40,11 +34,11 @@ public class HotOpService
                             UserId = u,
                             StartDateTime = now
                         });
-                    await _uow.HotOpSessions.AddRange(sessions);
+                    await uow.HotOpSessions.AddRange(sessions);
                 }
                 else
                 {
-                    var existingSessions = await _uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
+                    var existingSessions = await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
                     foreach (var existingSession in existingSessions)
                     {
                         if (connectedUsers.Any(cu => cu == existingSession.UserId))
@@ -64,7 +58,7 @@ public class HotOpService
                         continue;
                     }
                     
-                    await _uow.HotOpSessions.Add(new HotOpSessionModel
+                    await uow.HotOpSessions.Add(new HotOpSessionModel
                     {
                         HotOp = hotOp,
                         HotOpId = hotOp.Id,
@@ -81,7 +75,7 @@ public class HotOpService
                         continue;
                     }
 
-                    var session = (await _uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.UserId == userId && hos.EndDateTime == null)).FirstOrDefault();
+                    var session = (await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.UserId == userId && hos.EndDateTime == null)).FirstOrDefault();
                     if (session != null)
                     {
                         session.EndDateTime = now;
@@ -89,7 +83,7 @@ public class HotOpService
                 }
             }
         }
-        await _uow.CompleteAsync();
+        await uow.CompleteAsync();
     }
 
     public ScoreboardDto GetScoreboard(HotOpModel hotOp)

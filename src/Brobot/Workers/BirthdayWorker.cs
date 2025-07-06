@@ -5,24 +5,15 @@ using Discord.WebSocket;
 
 namespace Brobot.Workers;
 
-public class BirthdayWorker : CronWorkerBase
+public class BirthdayWorker(
+    ICronWorkerConfig<BirthdayWorker> config,
+    IServiceProvider services,
+    DiscordSocketClient client)
+    : CronWorkerBase(config.CronExpression)
 {
-    private readonly IServiceProvider _services;
-    private readonly DiscordSocketClient _client;
-
-    public BirthdayWorker(
-        ICronWorkerConfig<BirthdayWorker> config,
-        IServiceProvider services,
-        DiscordSocketClient client) :
-        base(config.CronExpression)
-    {
-        _services = services;
-        _client = client;
-    }
-
     protected override async Task DoWork(CancellationToken cancellationToken)
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var now = DateOnly.FromDateTime(DateTime.UtcNow);
         var users = await uow.Users.Find(u =>
@@ -34,13 +25,13 @@ public class BirthdayWorker : CronWorkerBase
         var tasks = new List<Task>();
         foreach (var user in users)
         {
-            var channel = (await _client.GetChannelAsync(user.PrimaryChannelId!.Value)) as SocketTextChannel;
+            var channel = (await client.GetChannelAsync(user.PrimaryChannelId!.Value)) as SocketTextChannel;
             if (channel == null)
             {
                 continue;
             }
 
-            var socketUser = await _client.GetUserAsync(user.Id);
+            var socketUser = await client.GetUserAsync(user.Id);
             tasks.Add(channel.SendMessageAsync($"Happy birthday {socketUser?.Mention ?? user.Username}! :birthday:"));
         }
         

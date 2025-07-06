@@ -4,13 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
-public class UserRepository : RepositoryBase<UserModel, ulong>, IUserRepository
+public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel, ulong>(context), IUserRepository
 {
-    public UserRepository(BrobotDbContext context)
-        : base(context)
-    {
-    }
-
     public override async Task Add(UserModel entity)
     {
         var existingUser = await GetById(entity.Id);

@@ -5,13 +5,10 @@ using Brobot.Shared.Responses;
 namespace Brobot.Frontend.Services;
 
 
-public class SecretSantaService : ApiServiceBase<SecretSantaGroupRequest, SecretSantaGroupResponse, int>, ISecretSantaService
+public class SecretSantaService(HttpClient httpClient)
+    : ApiServiceBase<SecretSantaGroupRequest, SecretSantaGroupResponse, int>("api/SecretSantaGroups",
+        "SecretSantaGroup", httpClient), ISecretSantaService
 {
-    public SecretSantaService(HttpClient httpClient) 
-        : base("api/SecretSantaGroups", "SecretSantaGroup", httpClient)
-    {
-    }
-
     public async Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, UserResponse user)
     {
         var response = await HttpClient.PostAsJsonAsync($"{BaseUrl}/{secretSantaGroupId}/members", user);

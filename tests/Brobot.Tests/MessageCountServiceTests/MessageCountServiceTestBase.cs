@@ -1,11 +1,8 @@
-using AutoMapper;
 using Brobot.Contexts;
 using Brobot.Models;
-using Brobot.Profiles;
 using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using TimeZoneConverter;
 
@@ -38,7 +35,7 @@ public abstract class MessageCountServiceTestBase
         var user1 = CreateUser(1, "User1", timezoneString, testGuild, testGuild.Channels);
         var user2 = CreateUser(2, "User2", timezoneString, testGuild, testGuild.Channels);
         var user3 = CreateUser(3, "User3", timezoneString, testGuild, [testGuild.Channels.First()]);
-        var user4 = CreateUser(4, "User4", null, testGuild, [testGuild.Channels.First()]);
+        _ = CreateUser(4, "User4", null, testGuild, [testGuild.Channels.First()]);
         var user5 = CreateUser(5, "User5", timezoneString, testGuild, [testGuild.Channels.First()]);
 
         var timezone = TZConvert.GetTimeZoneInfo(timezoneString);
@@ -67,9 +64,8 @@ public abstract class MessageCountServiceTestBase
 
         Context.SaveChanges();
 
-        var mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile<BrobotProfile>()));
         var unitOfWork = new UnitOfWork(Context);
-        MessageCountService = new MessageCountService(unitOfWork, mapper);
+        MessageCountService = new MessageCountService(unitOfWork);
     }
     
     private ChannelModel CreateChannel(ulong id, string name, GuildModel guild)

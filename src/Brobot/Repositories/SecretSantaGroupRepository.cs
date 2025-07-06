@@ -4,13 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
-public class SecretSantaGroupRepository : RepositoryBase<SecretSantaGroupModel, int>, ISecretSantaGroupRepository
+public class SecretSantaGroupRepository(BrobotDbContext context)
+    : RepositoryBase<SecretSantaGroupModel, int>(context), ISecretSantaGroupRepository
 {
-    public SecretSantaGroupRepository(BrobotDbContext context) 
-        : base(context)
-    {
-    }
-
     public override async Task<IEnumerable<SecretSantaGroupModel>> GetAll()
     {
         var secretSantaGroupModels = await Context.SecretSantaGroups

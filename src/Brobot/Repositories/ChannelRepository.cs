@@ -5,13 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
-public class ChannelRepository : RepositoryBase<ChannelModel, ulong>, IChannelRepository
+public class ChannelRepository(BrobotDbContext context)
+    : RepositoryBase<ChannelModel, ulong>(context), IChannelRepository
 {
-    public ChannelRepository(BrobotDbContext context)
-        : base(context)
-    {
-    }
-
     public override async Task Add(ChannelModel entity)
     {
         var existingChannel = await GetById(entity.Id);

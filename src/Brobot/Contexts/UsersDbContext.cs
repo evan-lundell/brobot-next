@@ -4,13 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Contexts;
 
-public class UsersDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>
+public class UsersDbContext(DbContextOptions options) : IdentityDbContext<IdentityUser, IdentityRole, string>(options)
 {
-    public UsersDbContext(DbContextOptions options)
-        : base(options)
-    {
-    }
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         builder.HasDefaultSchema("auth");

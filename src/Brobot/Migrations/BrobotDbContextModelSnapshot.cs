@@ -17,7 +17,7 @@ namespace Brobot.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.6")
+                .HasAnnotation("ProductVersion", "9.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -218,75 +218,6 @@ namespace Brobot.Migrations
                     b.ToTable("hot_op_session", "brobot");
                 });
 
-            modelBuilder.Entity("Brobot.Models.PlaylistModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("name");
-
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("discord_user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("playlist", "brobot");
-                });
-
-            modelBuilder.Entity("Brobot.Models.PlaylistSongModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Artist")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("artist");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("name");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("integer")
-                        .HasColumnName("order");
-
-                    b.Property<int>("PlaylistId")
-                        .HasColumnType("integer")
-                        .HasColumnName("playlist_id");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)")
-                        .HasColumnName("url");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlaylistId", "Order")
-                        .IsUnique();
-
-                    b.ToTable("playlist_song", "brobot");
-                });
-
             modelBuilder.Entity("Brobot.Models.ScheduledMessageModel", b =>
                 {
                     b.Property<int>("Id")
@@ -411,7 +342,8 @@ namespace Brobot.Migrations
 
                     b.Property<string>("Word")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("word");
 
                     b.HasKey("Id");
@@ -440,7 +372,8 @@ namespace Brobot.Migrations
                         .HasColumnName("birthdate");
 
                     b.Property<string>("IdentityUserId")
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("identity_user_id");
 
                     b.Property<DateTimeOffset?>("LastOnline")
@@ -664,28 +597,6 @@ namespace Brobot.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Brobot.Models.PlaylistModel", b =>
-                {
-                    b.HasOne("Brobot.Models.UserModel", "User")
-                        .WithMany("Playlists")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Brobot.Models.PlaylistSongModel", b =>
-                {
-                    b.HasOne("Brobot.Models.PlaylistModel", "Playlist")
-                        .WithMany("Songs")
-                        .HasForeignKey("PlaylistId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Playlist");
-                });
-
             modelBuilder.Entity("Brobot.Models.ScheduledMessageModel", b =>
                 {
                     b.HasOne("Brobot.Models.ChannelModel", "Channel")
@@ -802,11 +713,6 @@ namespace Brobot.Migrations
                     b.Navigation("HotOpSessions");
                 });
 
-            modelBuilder.Entity("Brobot.Models.PlaylistModel", b =>
-                {
-                    b.Navigation("Songs");
-                });
-
             modelBuilder.Entity("Brobot.Models.SecretSantaGroupModel", b =>
                 {
                     b.Navigation("SecretSantaGroupUsers");
@@ -827,8 +733,6 @@ namespace Brobot.Migrations
                     b.Navigation("HotOpSessions");
 
                     b.Navigation("HotOps");
-
-                    b.Navigation("Playlists");
 
                     b.Navigation("Recipients");
 

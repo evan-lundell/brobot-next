@@ -5,20 +5,13 @@ namespace Brobot.Controllers;
 
 [ApiController]
 [ApiExplorerSettings(IgnoreApi = true)]
-public class ErrorController : ControllerBase
+public class ErrorController(ILogger<ErrorController> logger) : ControllerBase
 {
-    private readonly ILogger<ErrorController> _logger;
-
-    public ErrorController(ILogger<ErrorController> logger)
-    {
-        _logger = logger;
-    }
-
     [Route("/error")]
     public IActionResult HandleError()
     {
         var exceptionHandlerFeature = HttpContext.Features.Get<IExceptionHandlerFeature>()!;
-        _logger.LogError(exceptionHandlerFeature.Error, "API Exception");
+        logger.LogError(exceptionHandlerFeature.Error, "API Exception");
         return Problem(title: exceptionHandlerFeature.Error.Message);
     }
 
@@ -31,7 +24,7 @@ public class ErrorController : ControllerBase
             return NotFound();
         }
         var exceptionHandlerFeature = HttpContext.Features.Get<IExceptionHandlerFeature>()!;
-        _logger.LogError(exceptionHandlerFeature.Error, "API Exception");
+        logger.LogError(exceptionHandlerFeature.Error, "API Exception");
         return Problem(detail: exceptionHandlerFeature.Error.StackTrace, title: exceptionHandlerFeature.Error.Message);
     }
 }
