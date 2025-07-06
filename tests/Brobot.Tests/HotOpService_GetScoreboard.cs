@@ -5,6 +5,7 @@ using Moq;
 namespace Brobot.Tests;
 
 [TestFixture]
+// ReSharper disable once InconsistentNaming
 public class HotOpService_GetScoreboard
 {
     [Test]

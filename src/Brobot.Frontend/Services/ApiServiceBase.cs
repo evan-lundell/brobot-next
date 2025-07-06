@@ -3,18 +3,14 @@ using Brobot.Shared.Responses;
 
 namespace Brobot.Frontend.Services;
 
-public abstract class ApiServiceBase<TRequest, TResponse, TKey> : IApiService<TRequest, TResponse, TKey>
+public abstract class ApiServiceBase<TRequest, TResponse, TKey>(
+    string baseUrl,
+    string entityName,
+    HttpClient httpClient) : IApiService<TRequest, TResponse, TKey>
 {
-    protected string BaseUrl { get; }
-    protected HttpClient HttpClient { get; }
-    protected string EntityName { get; }
-    
-    protected ApiServiceBase(string baseUrl, string entityName, HttpClient httpClient)
-    {
-        BaseUrl = baseUrl;
-        EntityName = entityName;
-        HttpClient = httpClient;
-    }
+    protected string BaseUrl { get; } = baseUrl;
+    protected HttpClient HttpClient { get; } = httpClient;
+    protected string EntityName { get; } = entityName;
 
     protected async Task<IEnumerable<TResponse>> GetAll(string url)
     {

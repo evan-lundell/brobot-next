@@ -4,13 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
-public class DailyMessageCountRepository : RepositoryBase<DailyMessageCountModel, (ulong, ulong, DateOnly)>, IDailyMessageCountRepository
+public class DailyMessageCountRepository(BrobotDbContext context)
+    : RepositoryBase<DailyMessageCountModel, (ulong, ulong, DateOnly)>(context), IDailyMessageCountRepository
 {
-    public DailyMessageCountRepository(BrobotDbContext context)
-        : base(context)
-    {
-    }
-
     public async Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDays(ulong userId, int numOfDays)
     {
         return await Context.DailyMessageCounts

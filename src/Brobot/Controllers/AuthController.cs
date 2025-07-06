@@ -15,28 +15,15 @@ namespace Brobot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class AuthController : ControllerBase
+public class AuthController(
+    UserManager<IdentityUser> userManager,
+    JwtService jwtService,
+    IConfiguration configuration,
+    IUnitOfWork uow,
+    DiscordOauthService discordOauthService)
+    : ControllerBase
 {
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly JwtService _jwtService;
-    private readonly IConfiguration _configuration;
-    private readonly IUnitOfWork _uow;
-    private readonly DiscordOauthService _discordOauthService;
     private const string RefreshTokenCookieKey = "refreshCookie";
-
-    public AuthController(
-        UserManager<IdentityUser> userManager,
-        JwtService jwtService,
-        IConfiguration configuration,
-        IUnitOfWork uow,
-        DiscordOauthService discordOauthService)
-    {
-        _userManager = userManager;
-        _jwtService = jwtService;
-        _configuration = configuration;
-        _uow = uow;
-        _discordOauthService = discordOauthService;
-    }
 
     [HttpPost("register")]
     public async Task<ActionResult<RegisterResponse>> Register(RegisterRequest request)
@@ -50,7 +37,7 @@ public class AuthController : ControllerBase
             Email = request.EmailAddress,
             UserName = request.EmailAddress
         };
-        var result = await _userManager.CreateAsync(user, request.Password);
+        var result = await userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
             return BadRequest(new RegisterResponse
@@ -60,7 +47,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        await _userManager.AddToRoleAsync(user, "User");
+        await userManager.AddToRoleAsync(user, "User");
         return Ok(new RegisterResponse
         {
             Succeeded = result.Succeeded,
@@ -71,7 +58,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
             return BadRequest(new LoginResponse
@@ -81,7 +68,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        var result = await _userManager.CheckPasswordAsync(user, request.Password);
+        var result = await userManager.CheckPasswordAsync(user, request.Password);
         if (!result)
         {
             return BadRequest(new LoginResponse
@@ -91,14 +78,14 @@ public class AuthController : ControllerBase
             });
         }
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await userManager.GetRolesAsync(user);
 
-        var discordUser = await _uow.Users.GetFromIdentityUserId(user.Id);
-        var jwt = _jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
+        var discordUser = await uow.Users.GetFromIdentityUserId(user.Id);
+        var jwt = jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
         // ReSharper disable once InvertIf
         if (!string.IsNullOrWhiteSpace(user.SecurityStamp))
         {
-            if (!int.TryParse(_configuration["JwtExpiry"], out var expiry))
+            if (!int.TryParse(configuration["JwtExpiry"], out var expiry))
             {
                 expiry = 30;
             }
@@ -137,7 +124,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        var user = _userManager.Users.FirstOrDefault(user => user.SecurityStamp == cookie);
+        var user = userManager.Users.FirstOrDefault(user => user.SecurityStamp == cookie);
         if (user == null)
         {
             return Ok(new LoginResponse
@@ -146,9 +133,9 @@ public class AuthController : ControllerBase
             });
         }
 
-        var roles = await _userManager.GetRolesAsync(user);
-        var discordUser = await _uow.Users.GetFromIdentityUserId(user.Id);
-        var jwtToken = _jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
+        var roles = await userManager.GetRolesAsync(user);
+        var discordUser = await uow.Users.GetFromIdentityUserId(user.Id);
+        var jwtToken = jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
         return Ok(new LoginResponse
         {
             Succeeded = true,
@@ -164,12 +151,12 @@ public class AuthController : ControllerBase
         var queryString = new Dictionary<string, string?>
         {
             { "response_type", "code" },
-            { "client_id", _configuration["DiscordClientId"] ?? "" },
+            { "client_id", configuration["DiscordClientId"] ?? "" },
             { "scope", "identify" },
             { "callback_url", HttpUtility.UrlEncode($"{HttpContext.Request.Host.ToUriComponent()}/discord-cb") }
         };
 
-        var uri = new UriBuilder(QueryHelpers.AddQueryString(_configuration["DiscordAuthorizationEndpoint"] ?? "", queryString));
+        var uri = new UriBuilder(QueryHelpers.AddQueryString(configuration["DiscordAuthorizationEndpoint"] ?? "", queryString));
         return Ok(new { url = uri.ToString() });
     }
 
@@ -183,16 +170,16 @@ public class AuthController : ControllerBase
             return BadRequest("Unknown user");
         }
 
-        var token = await _discordOauthService.GetToken(syncDiscordUserRequest.AuthorizationCode);
-        var id = await _discordOauthService.GetDiscordUserId(token);
-        var user = await _uow.Users.GetById(id);
+        var token = await discordOauthService.GetToken(syncDiscordUserRequest.AuthorizationCode);
+        var id = await discordOauthService.GetDiscordUserId(token);
+        var user = await uow.Users.GetById(id);
         if (user == null)
         {
             return BadRequest("Unknown user");
         }
 
         user.IdentityUserId = nameIdentifierClaim.Value;
-        await _uow.CompleteAsync();
+        await uow.CompleteAsync();
         return Ok();
     }
 
@@ -205,13 +192,13 @@ public class AuthController : ControllerBase
             return BadRequest("Invalid password");
         }
         
-        var identityUser = await _userManager.GetUserAsync(HttpContext.User);
+        var identityUser = await userManager.GetUserAsync(HttpContext.User);
         if (identityUser == null)
         {
             return Unauthorized();
         }
 
-        var result = await _userManager.ChangePasswordAsync(identityUser, changePasswordRequest.CurrentPassword,
+        var result = await userManager.ChangePasswordAsync(identityUser, changePasswordRequest.CurrentPassword,
             changePasswordRequest.NewPassword);
         if (!result.Succeeded)
         {
@@ -220,7 +207,7 @@ public class AuthController : ControllerBase
         
         if (!string.IsNullOrWhiteSpace(identityUser.SecurityStamp))
         {
-            if (!int.TryParse(_configuration["JwtExpiry"], out var expiry))
+            if (!int.TryParse(configuration["JwtExpiry"], out var expiry))
             {
                 expiry = 30;
             }
@@ -240,9 +227,9 @@ public class AuthController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<IdentityUserResponse>>> GetIdentityUsers()
     {
-        var identityUsers = await _userManager.Users.ToListAsync();
+        var identityUsers = await userManager.Users.ToListAsync();
         var identityUserResponses = identityUsers.Select(iu => iu.ToIdentityUserResponse()).ToList();
-        var discordUsers = await _uow.Users
+        var discordUsers = await uow.Users
             .GetUsersFromIdentityUserIds(identityUsers.Select(iu => iu.Id));
         foreach (var identityUserResponse in identityUserResponses)
         {
