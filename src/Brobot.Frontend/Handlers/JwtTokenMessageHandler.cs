@@ -11,7 +11,7 @@ public class JwtTokenMessageHandler(Uri allowedBaseAddress, JwtAuthenticationSta
 {
     protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        return SendAsync(request, cancellationToken).Result;
+        return Task.Run(() => SendAsync(request, cancellationToken), cancellationToken).GetAwaiter().GetResult();
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
