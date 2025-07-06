@@ -1,7 +1,7 @@
 namespace Brobot.Tests.SecretSantaServiceTests;
 
 [TestFixture]
-public class GetSecretServiceGroupsTests : SecretSantaServiceTestsBase
+public class GetSecretSantaServiceGroupsTests : SecretSantaServiceTestsBase
 {
     [Test]
     public async Task ReturnsAllSecretSantaGroups()
