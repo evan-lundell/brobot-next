@@ -7,17 +7,11 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Brobot.Services;
 
-public class JwtService
+public class JwtService(IConfiguration configuration)
 {
-    private readonly IConfiguration _configuration;
-
-    public JwtService(IConfiguration configuration)
+    public string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null)
     {
-        _configuration = configuration;
-    }
-    public string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null, ulong? userId = null)
-    {
-        var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSigningKey"] ?? ""));
+        var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtSigningKey"] ?? ""));
         var credentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
         var username = discordUser?.Username ?? user.UserName ?? "";
@@ -31,9 +25,9 @@ public class JwtService
             new (JwtRegisteredClaimNames.Sub, user.Id)
         };
 
-        if (userId.HasValue)
+        if (discordUser?.Id != null)
         {
-            claims.Add(new Claim(Shared.Claims.ClaimTypes.DiscordId, userId.Value.ToString()));
+            claims.Add(new Claim(Shared.Claims.ClaimTypes.DiscordId, discordUser.Id.ToString()));
         }
 
         if (!string.IsNullOrWhiteSpace(role))
@@ -41,13 +35,13 @@ public class JwtService
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
-        if (!int.TryParse(_configuration["JwtExpiry"], out var expiry))
+        if (!int.TryParse(configuration["JwtExpiry"], out var expiry))
         {
             expiry = 30;
         }
         var token = new JwtSecurityToken(
-            issuer: _configuration["ValidIssuer"] ?? "",
-            audience: _configuration["ValidAudience"] ?? "",
+            issuer: configuration["ValidIssuer"] ?? "",
+            audience: configuration["ValidAudience"] ?? "",
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(expiry),
             signingCredentials: credentials

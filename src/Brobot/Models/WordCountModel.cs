@@ -18,7 +18,7 @@ public class WordCountModel
     
     [Column("channel_id")]
     public ulong ChannelId { get; set; }
-    public required ChannelModel Channel { get; set; }
+    public virtual required ChannelModel Channel { get; set; }
     
     [Column("count_date")]
     public DateOnly CountDate { get; set; }

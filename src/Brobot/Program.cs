@@ -131,7 +131,7 @@ public static class Program
         });
         builder.Services.AddSingleton<DiscordEventHandler>();
         builder.Services.AddSingleton<ISyncService, SyncService>();
-        builder.Services.AddSingleton<HotOpService>();
+        builder.Services.AddScoped<HotOpService>();
 
         if (!args.Contains("--no-jobs"))
         {
@@ -185,7 +185,6 @@ public static class Program
         builder.Services.AddSingleton<JwtService>();
         builder.Services.AddHttpClient<DiscordOauthService>();
         builder.Services.AddScoped<ScheduledMessageService>();
-        builder.Services.AddHttpClient<SongDataService>();
         builder.Services.AddScoped<MessageCountService>();
         builder.Services.AddScoped<SecretSantaService>();
         builder.Services.AddSingleton<StopWordService>();

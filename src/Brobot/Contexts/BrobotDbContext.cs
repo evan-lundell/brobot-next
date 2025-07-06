@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Contexts;
 
-public class BrobotDbContext : DbContext
+public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbContext(options)
 {
     public DbSet<GuildModel> Guilds => Set<GuildModel>();
     public DbSet<ChannelModel> Channels => Set<ChannelModel>();
@@ -15,11 +15,6 @@ public class BrobotDbContext : DbContext
     public DbSet<SecretSantaPairModel> SecretSantaPairs => Set<SecretSantaPairModel>();
     public DbSet<StopWordModel> StopWords => Set<StopWordModel>();
     public DbSet<WordCountModel> WordCounts => Set<WordCountModel>();
-
-    public BrobotDbContext(DbContextOptions<BrobotDbContext> options)
-        : base(options)
-    {
-    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

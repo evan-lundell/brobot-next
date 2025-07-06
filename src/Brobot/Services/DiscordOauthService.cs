@@ -2,28 +2,19 @@ using System.Text.Json;
 
 namespace Brobot.Services;
 
-public class DiscordOauthService
+public class DiscordOauthService(HttpClient client, IConfiguration configuration)
 {
-    private readonly HttpClient _client;
-    private readonly IConfiguration _configuration;
-
-    public DiscordOauthService(HttpClient client, IConfiguration configuration)
-    {
-        _client = client;
-        _configuration = configuration;
-    }
-
     public async Task<string> GetToken(string authorizationCode)
     {
         var body = new Dictionary<string, string>
         {
-            { "client_id", _configuration["DiscordClientId"] ?? "" },
-            { "client_secret", _configuration["DiscordClientSecret"] ?? "" },
+            { "client_id", configuration["DiscordClientId"] ?? "" },
+            { "client_secret", configuration["DiscordClientSecret"] ?? "" },
             { "grant_type", "authorization_code" },
             { "code", authorizationCode }
         };
 
-        var response = await _client.PostAsync(_configuration["DiscordTokenEndpoint"] ?? "", new FormUrlEncodedContent(body));
+        var response = await client.PostAsync(configuration["DiscordTokenEndpoint"] ?? "", new FormUrlEncodedContent(body));
         var userData = await response.Content.ReadFromJsonAsync<JsonElement>();
         var accessToken = userData.GetProperty("access_token").GetString();
         if (string.IsNullOrWhiteSpace(accessToken))
@@ -37,7 +28,7 @@ public class DiscordOauthService
     {
         using var authenticatedClient = new HttpClient();
         authenticatedClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
-        var response = await authenticatedClient.GetFromJsonAsync<JsonElement>(_configuration["DiscordUserInformationEndpoint"] ?? "");
+        var response = await authenticatedClient.GetFromJsonAsync<JsonElement>(configuration["DiscordUserInformationEndpoint"] ?? "");
         var id = response.GetProperty("id").GetString();
         if (string.IsNullOrWhiteSpace(id))
         {

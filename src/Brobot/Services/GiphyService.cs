@@ -4,28 +4,30 @@ using Newtonsoft.Json;
 
 namespace Brobot.Services;
 
-public class GiphyService : IGiphyService
+public class GiphyService(HttpClient http, IConfiguration configuration, ILogger<GiphyService> logger)
+    : IGiphyService
 {
-    private readonly HttpClient _http;
-    private readonly IConfiguration _configuration;
-
-    public GiphyService(HttpClient http, IConfiguration configuration)
-    {
-        _http = http;
-        _configuration = configuration;
-    }
     public async Task<string> GetGif(string? tag)
     {
-        var queryStringBuilder = HttpUtility.ParseQueryString("");
-        queryStringBuilder.Add("api_key", _configuration["GiphyApiKey"]);
-        if (!string.IsNullOrWhiteSpace(tag))
+        try
         {
-            queryStringBuilder.Add("tag", tag);
-        }
-        queryStringBuilder.Add("rating", "pg-13");
+            var queryStringBuilder = HttpUtility.ParseQueryString("");
+            queryStringBuilder.Add("api_key", configuration["GiphyApiKey"]);
+            if (!string.IsNullOrWhiteSpace(tag))
+            {
+                queryStringBuilder.Add("tag", tag);
+            }
 
-        var response = await _http.GetStringAsync($"random?{queryStringBuilder}");
-        var giphy = JsonConvert.DeserializeObject<GiphyResponse>(response);
-        return giphy?.Data?.Url ?? "";
+            queryStringBuilder.Add("rating", "pg-13");
+
+            var response = await http.GetStringAsync($"random?{queryStringBuilder}");
+            var giphy = JsonConvert.DeserializeObject<GiphyResponse>(response);
+            return giphy?.Data?.Url ?? "";
+        }
+        catch (HttpRequestException hre)
+        {
+            logger.LogError(hre, "Error getting Giphy gif");
+            return "";
+        }
     }
 }

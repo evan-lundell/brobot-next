@@ -10,26 +10,19 @@ namespace Brobot.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
-public class SecretSantaGroupsController : ControllerBase
+public class SecretSantaGroupsController(SecretSantaService secretSantaService) : ControllerBase
 {
-    private readonly SecretSantaService _secretSantaService;
-
-    public SecretSantaGroupsController(SecretSantaService secretSantaService)
-    {
-        _secretSantaService = secretSantaService;
-    }
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<SecretSantaGroupResponse>>> GetSecretSantaGroups()
     {
-        var secretSantaGroupResponses = await _secretSantaService.GetSecretSantaGroups();
+        var secretSantaGroupResponses = await secretSantaService.GetSecretSantaGroups();
         return Ok(secretSantaGroupResponses);
     }
 
     [HttpGet("{secretSantaGroupId}")]
     public async Task<ActionResult<SecretSantaGroupResponse>> GetSecretSantaGroup(int secretSantaGroupId)
     {
-        var secretSantaGroup = await _secretSantaService.GetSecretSantaGroup(secretSantaGroupId);
+        var secretSantaGroup = await secretSantaService.GetSecretSantaGroup(secretSantaGroupId);
         if (secretSantaGroup == null)
         {
             return NotFound("Secret santa group not found");
@@ -48,7 +41,7 @@ public class SecretSantaGroupsController : ControllerBase
                 return BadRequest("No users specified.");
             }
 
-            var secretSantaResponse = await _secretSantaService.CreateSecretSantaGroup(secretSanta);
+            var secretSantaResponse = await secretSantaService.CreateSecretSantaGroup(secretSanta);
             return Ok(secretSantaResponse);
         }
         catch (ModelNotFoundException e)
@@ -62,7 +55,7 @@ public class SecretSantaGroupsController : ControllerBase
     {
         try
         {
-            var secretSantaGroupResponse = await _secretSantaService.AddUserToGroup(secretSantaGroupId, user);
+            var secretSantaGroupResponse = await secretSantaService.AddUserToGroup(secretSantaGroupId, user);
             return Ok(secretSantaGroupResponse);
         }
         catch (ModelNotFoundException e)
@@ -76,7 +69,7 @@ public class SecretSantaGroupsController : ControllerBase
     {
         try
         {
-            var secretSantaGroupResponse = await _secretSantaService.RemoveUserFromGroup(secretSantaGroupId, userId);
+            var secretSantaGroupResponse = await secretSantaService.RemoveUserFromGroup(secretSantaGroupId, userId);
             return Ok(secretSantaGroupResponse);
         }
         catch (ModelNotFoundException e)
@@ -90,8 +83,8 @@ public class SecretSantaGroupsController : ControllerBase
     {
         try
         {
-            var pairs = await _secretSantaService.GeneratePairsForCurrentYear(secretSantaGroupId);
-            await _secretSantaService.SendPairs(pairs);
+            var pairs = await secretSantaService.GeneratePairsForCurrentYear(secretSantaGroupId);
+            await secretSantaService.SendPairs(pairs);
             return Ok(pairs);
         }
         catch (ModelNotFoundException mnfEx)

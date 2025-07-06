@@ -5,13 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
-public class WordCountRepository : RepositoryBase<WordCountModel, int>, IWordCountRepository
+public class WordCountRepository(BrobotDbContext context)
+    : RepositoryBase<WordCountModel, int>(context), IWordCountRepository
 {
-    public WordCountRepository(BrobotDbContext context) 
-        : base(context)
-    {
-    }
-
     public async Task<IEnumerable<WordCountDto>> GetWordCountsByChannelId(ulong channelId, DateOnly startDate, DateOnly endDate, int limit = 100)
     {
         var query = Context.WordCounts

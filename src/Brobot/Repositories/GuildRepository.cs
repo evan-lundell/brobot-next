@@ -4,14 +4,10 @@ using Brobot.Models;
 
 namespace Brobot.Repositories;
 
-public class GuildRepository : RepositoryBase<GuildModel, ulong>, IGuildRepository
+public class GuildRepository(BrobotDbContext context, IChannelRepository channels)
+    : RepositoryBase<GuildModel, ulong>(context), IGuildRepository
 {
-    public IChannelRepository Channels { get; }
-    public GuildRepository(BrobotDbContext context, IChannelRepository channels)
-        : base(context)
-    {
-        Channels = channels;
-    }
+    public IChannelRepository Channels { get; } = channels;
 
     public override async Task Add(GuildModel entity)
     {

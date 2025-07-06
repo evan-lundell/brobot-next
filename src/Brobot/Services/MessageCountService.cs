@@ -153,7 +153,7 @@ public class MessageCountService(IUnitOfWork uow)
     {
         if (string.IsNullOrWhiteSpace(usersTimezone))
         {
-            usersTimezone = "UTC";
+            return Array.Empty<DailyMessageCountResponse>();
         }
 
         var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);
@@ -169,7 +169,7 @@ public class MessageCountService(IUnitOfWork uow)
     {
         if (string.IsNullOrWhiteSpace(usersTimezone))
         {
-            usersTimezone = "UTC";
+            return Array.Empty<DailyMessageCountResponse>();
         }
 
         var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);

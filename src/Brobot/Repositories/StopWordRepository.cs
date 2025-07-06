@@ -4,14 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
-public class StopWordRepository : RepositoryBase<StopWordModel, int>, IStopWordRepository
+public class StopWordRepository(BrobotDbContext context)
+    : RepositoryBase<StopWordModel, int>(context), IStopWordRepository
 {
-
-    public StopWordRepository(BrobotDbContext context) 
-        : base(context)
-    {
-    }
-
     public async Task<bool> StopWordExists(string word)
     {
         var existingWord =

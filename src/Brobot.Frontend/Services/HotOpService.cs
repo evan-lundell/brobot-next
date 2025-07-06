@@ -4,13 +4,9 @@ using Brobot.Shared.Responses;
 
 namespace Brobot.Frontend.Services;
 
-public class HotOpService : ApiServiceBase<HotOpRequest, HotOpResponse, int>, IHotOpService
+public class HotOpService(HttpClient httpClient)
+    : ApiServiceBase<HotOpRequest, HotOpResponse, int>("api/HotOps", "Hot Op", httpClient), IHotOpService
 {
-    public HotOpService(HttpClient httpClient)
-        : base("api/HotOps", "Hot Op", httpClient)
-    {
-    }
-
     public Task<IEnumerable<HotOpResponse>> GetUpcomingHotOps()
         => GetAll($"{BaseUrl}?type=Upcoming");
 

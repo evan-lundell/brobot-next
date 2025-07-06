@@ -8,30 +8,21 @@ using Microsoft.AspNetCore.Components;
 
 namespace Brobot.Frontend.Services;
 
-public class JwtService
+public class JwtService(IServiceProvider services, NavigationManager navigationManager)
 {
-    private readonly IServiceProvider _services;
-    private readonly NavigationManager _navigationManager;
-
-    public JwtService(IServiceProvider services, NavigationManager navigationManager)
-    {
-        _services = services;
-        _navigationManager = navigationManager;
-    }
-
     public async Task RefreshJwtToken()
     {
-        var api = _services.GetRequiredService<ApiService>();
+        var api = services.GetRequiredService<ApiService>();
         var loginResponse = await api.RefreshToken();
         if (loginResponse is { Succeeded: true } && !string.IsNullOrWhiteSpace(loginResponse.Token))
         {
-            using var scope = _services.CreateScope();
+            using var scope = services.CreateScope();
             var loginStateService = scope.ServiceProvider.GetRequiredService<JwtAuthenticationStateProvider>();
             loginStateService.Login(loginResponse.Token);
         }
         else
         {
-            _navigationManager.NavigateTo("/");
+            navigationManager.NavigateTo("/");
         }
     }
 

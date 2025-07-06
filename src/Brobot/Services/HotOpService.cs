@@ -1,115 +1,88 @@
 using Brobot.Dtos;
 using Brobot.Models;
 using Brobot.Repositories;
+using Brobot.Shared;
 using Discord;
-using Discord.WebSocket;
 
 // ReSharper disable MemberCanBeMadeStatic.Global
 
 namespace Brobot.Services;
 
-public class HotOpService
+public class HotOpService(IUnitOfWork uow)
 {
     private const int MinuteMultiplier = 10;
 
-    private readonly IServiceProvider _services;
-    public HotOpService(IServiceProvider services)
+    public async Task UpdateHotOps(ulong userId, UserVoiceStateAction action, IReadOnlyCollection<ulong> connectedUsers)
     {
-        _services = services;
-    }
-
-    public async Task UserVoiceStateUpdated(
-        SocketUser socketUser,
-        SocketVoiceState previousVoiceState,
-        SocketVoiceState currentVoiceState
-    )
-    {
-        if ((previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel == null)
-            || socketUser.IsBot)
-        {
-            return;
-        }
-
-        using var scope = _services.CreateScope();
-        var utcNow = DateTime.UtcNow;
-        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var now = DateTime.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now);
         var users = (await uow.Users.Find(u => u.Archived == false)).ToDictionary(u => u.Id);
 
         foreach (var hotOp in activeHotOps)
         {
-            // if the user that connected is the hot op owner
-            if (hotOp.UserId == socketUser.Id)
+            if (hotOp.UserId == userId)
             {
-                // if the hot op owner joined a voice channel, create session for everyone else in the channel
-                if (currentVoiceState.VoiceChannel != null)
+                if (action == UserVoiceStateAction.Connected)
                 {
-                    var sessions = currentVoiceState.VoiceChannel.ConnectedUsers
-                        .Where(u => u.IsBot == false && u.Id != socketUser.Id)
+                    var sessions = connectedUsers
+                        .Where(u => u != userId)
                         .Select(u => new HotOpSessionModel
                         {
                             HotOp = hotOp,
                             HotOpId = hotOp.Id,
-                            User = users[u.Id],
-                            UserId = u.Id,
-                            StartDateTime = utcNow
+                            User = users[u],
+                            UserId = u,
+                            StartDateTime = now
                         });
                     await uow.HotOpSessions.AddRange(sessions);
                 }
-                // if the hot op owner left a voice channel, add end date to each session
-                if (previousVoiceState.VoiceChannel != null)
+                else
                 {
                     var existingSessions = await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
                     foreach (var existingSession in existingSessions)
                     {
-                        if (previousVoiceState.VoiceChannel.ConnectedUsers.Any(cu => cu.Id == existingSession.UserId))
+                        if (connectedUsers.Any(cu => cu == existingSession.UserId))
                         {
-                            existingSession.EndDateTime = utcNow;
+                            existingSession.EndDateTime = now;
                         }
                     }
                 }
             }
-            // user that connect is not the hot op owner
             else
             {
-                // if the user joined the channel
-                if (currentVoiceState.VoiceChannel != null)
+                if (action == UserVoiceStateAction.Connected)
                 {
                     // if the owner isn't in the channel, do nothing
-                    if (currentVoiceState.VoiceChannel.ConnectedUsers.All(cu => cu.Id != hotOp.UserId))
+                    if (connectedUsers.All(cu => cu != hotOp.UserId))
                     {
                         continue;
                     }
-
+                    
                     await uow.HotOpSessions.Add(new HotOpSessionModel
                     {
                         HotOp = hotOp,
                         HotOpId = hotOp.Id,
-                        User = users[socketUser.Id],
-                        UserId = socketUser.Id,
-                        StartDateTime = utcNow
+                        User = users[userId],
+                        UserId = userId,
+                        StartDateTime = now
                     });
                 }
-                
-                // if the user left the channel
-                if (previousVoiceState.VoiceChannel != null)
+                else
                 {
                     // if the owner isn't in the channel, do nothing
-                    if (previousVoiceState.VoiceChannel.ConnectedUsers.All(cu => cu.Id != hotOp.UserId))
+                    if (connectedUsers.All(cu => cu != hotOp.UserId))
                     {
                         continue;
                     }
 
-                    var session = (await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.UserId == socketUser.Id && hos.EndDateTime == null)).FirstOrDefault();
+                    var session = (await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.UserId == userId && hos.EndDateTime == null)).FirstOrDefault();
                     if (session != null)
                     {
-                        session.EndDateTime = utcNow;
+                        session.EndDateTime = now;
                     }
                 }
             }
         }
-
         await uow.CompleteAsync();
     }
 

@@ -5,14 +5,10 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Brobot.Repositories;
 
-public abstract class RepositoryBase<TEntity, TKey> : IRepository<TEntity, TKey> where TEntity : class
+public abstract class RepositoryBase<TEntity, TKey>(BrobotDbContext context) : IRepository<TEntity, TKey>
+    where TEntity : class
 {
-    protected readonly BrobotDbContext Context;
-
-    protected RepositoryBase(BrobotDbContext context)
-    {
-        Context = context;
-    }
+    protected readonly BrobotDbContext Context = context;
 
     public virtual async Task Add(TEntity entity)
     {

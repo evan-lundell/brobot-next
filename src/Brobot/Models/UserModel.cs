@@ -15,7 +15,7 @@ public class UserModel
     public DateTimeOffset? LastOnline { get; set; }
     public bool Archived { get; set; }
 
-    public ChannelModel? PrimaryChannel { get; set; }
+    public virtual ChannelModel? PrimaryChannel { get; set; }
     public ulong? PrimaryChannelId { get; set; }
 
     public virtual ICollection<GuildUserModel> GuildUsers { get; set; }
@@ -23,15 +23,16 @@ public class UserModel
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
     public virtual ICollection<HotOpModel> HotOps { get; set; }
     // ReSharper disable once CollectionNeverUpdated.Global
-    public ICollection<HotOpSessionModel> HotOpSessions { get; set; }
+    public virtual ICollection<HotOpSessionModel> HotOpSessions { get; set; }
 
-    public IdentityUser? IdentityUser { get; set; }
+    public virtual IdentityUser? IdentityUser { get; set; }
     public string? IdentityUserId { get; set; }
 
     public virtual ICollection<DailyMessageCountModel> DailyCounts { get; set; }
-    public ICollection<SecretSantaGroupUserModel> SecretSantaGroupUsers { get; set; }
-    public ICollection<SecretSantaPairModel> Givers { get; set; }
-    public ICollection<SecretSantaPairModel> Recipients { get; set; }
+
+    public virtual ICollection<SecretSantaGroupUserModel> SecretSantaGroupUsers { get; set; }
+    public virtual ICollection<SecretSantaPairModel> Givers { get; set; }
+    public virtual ICollection<SecretSantaPairModel> Recipients { get; set; }
 
     public UserModel()
     {

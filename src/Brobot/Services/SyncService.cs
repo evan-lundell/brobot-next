@@ -5,20 +5,11 @@ using Discord.WebSocket;
 
 namespace Brobot.Services;
 
-public class SyncService : ISyncService
+public class SyncService(IServiceProvider services, DiscordSocketClient client) : ISyncService
 {
-    private readonly IServiceProvider _services;
-    private readonly DiscordSocketClient _client;
-
-    public SyncService(IServiceProvider services, DiscordSocketClient client)
-    {
-        _services = services;
-        _client = client;
-    }
-
     public async Task ChannelCreated(SocketTextChannel channel)
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guild = await uow.Guilds.GetById(channel.Guild.Id);
         if (guild == null)
@@ -52,7 +43,7 @@ public class SyncService : ISyncService
 
     public async Task ChannelDestroyed(SocketTextChannel channel)
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var channelToBeDeleted = await uow.Channels.GetById(channel.Id);
         if (channelToBeDeleted == null)
@@ -71,7 +62,7 @@ public class SyncService : ISyncService
             return;
         }
 
-        var guild = _client.GetGuild(current.Guild.Id);
+        var guild = client.GetGuild(current.Guild.Id);
         var userName = "";
         var auditLog = (await guild.GetAuditLogsAsync(limit: 1, actionType: ActionType.ChannelUpdated).FlattenAsync()).First();
 
@@ -89,7 +80,7 @@ public class SyncService : ISyncService
             await current.SendMessageAsync($"Channel name changed from '{previous.Name}' to '{current.Name}'");
         }
 
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var channelModel = await uow.Channels.GetById(current.Id);
         if (channelModel == null)
@@ -102,7 +93,7 @@ public class SyncService : ISyncService
 
     public async Task GuildAvailable(SocketGuild guild)
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guildModel = await uow.Guilds.GetById(guild.Id);
         if (guildModel != null)
@@ -171,7 +162,7 @@ public class SyncService : ISyncService
 
     public async Task GuildUnavailable(SocketGuild guild)
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guildToBeDeleted = await uow.Guilds.GetById(guild.Id);
         if (guildToBeDeleted == null)
@@ -189,7 +180,7 @@ public class SyncService : ISyncService
             return;
         }
 
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guildModel = await uow.Guilds.GetById(currentGuild.Id);
         if (guildModel == null)
@@ -202,9 +193,9 @@ public class SyncService : ISyncService
 
     public async Task SyncOnStartup()
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var client = _services.GetRequiredService<DiscordSocketClient>();
+        var scopedClient = services.GetRequiredService<DiscordSocketClient>();
         var guildModels = (await uow.Guilds.Find(g => g.Archived == false)).ToDictionary(g => g.Id);
         var channelModels = (await uow.Channels.Find(c => c.Archived == false)).ToDictionary(c => c.Id);
         var userModels = (await uow.Users.GetAllWithGuildsAndChannels()).Where(u => u.Archived == false).ToDictionary(u => u.Id);
@@ -214,7 +205,7 @@ public class SyncService : ISyncService
         var userIds = new HashSet<ulong>();
 
         // Create new entities or update existing entities
-        foreach (var guild in client.Guilds)
+        foreach (var guild in scopedClient.Guilds)
         {
             guildIds.Add(guild.Id);
             if (!guildModels.ContainsKey(guild.Id))
@@ -329,7 +320,7 @@ public class SyncService : ISyncService
             return;
         }
 
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var user = await uow.Users.GetById(socketUser.Id);
         if (user == null)

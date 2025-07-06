@@ -64,7 +64,7 @@ public class AuthController(
             return BadRequest(new LoginResponse
             {
                 Succeeded = false,
-                Errors = new[] { "Invalid credentials" }
+                Errors = ["Invalid credentials"]
             });
         }
 
@@ -74,14 +74,14 @@ public class AuthController(
             return BadRequest(new LoginResponse
             {
                 Succeeded = false,
-                Errors = new[] { "Invalid credentials" }
+                Errors = ["Invalid credentials"]
             });
         }
 
         var roles = await userManager.GetRolesAsync(user);
 
         var discordUser = await uow.Users.GetFromIdentityUserId(user.Id);
-        var jwt = jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
+        var jwt = jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault());
         // ReSharper disable once InvertIf
         if (!string.IsNullOrWhiteSpace(user.SecurityStamp))
         {
@@ -135,7 +135,7 @@ public class AuthController(
 
         var roles = await userManager.GetRolesAsync(user);
         var discordUser = await uow.Users.GetFromIdentityUserId(user.Id);
-        var jwtToken = jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault(), discordUser?.Id);
+        var jwtToken = jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault());
         return Ok(new LoginResponse
         {
             Succeeded = true,

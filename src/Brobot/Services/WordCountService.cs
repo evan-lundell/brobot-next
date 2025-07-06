@@ -5,24 +5,16 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class WordCountService
+public class WordCountService(ILogger<WordCountService> logger, DiscordSocketClient client)
 {
-    private readonly ILogger<WordCountService> _logger;
-    private readonly DiscordSocketClient _client;
     private readonly string[] _separators =
         [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "\"", "@", "*", "<", ">", "[", "]", "(", ")", "-", ";", "*", "{", "}", "+", "=", "#", "~"];
-    
-    public WordCountService(ILogger<WordCountService> logger, DiscordSocketClient client)
-    {
-        _logger = logger;
-        _client = client;
-    }
 
     public async Task<IEnumerable<WordCountModel>> GetWordCount(ChannelModel channel, int daysBack = 1)
     {
         try
         {
-            var socketChannel = await _client.GetChannelAsync(channel.Id);
+            var socketChannel = await client.GetChannelAsync(channel.Id);
             if (socketChannel is not SocketTextChannel socketTextChannel)
             {
                 return [];
@@ -83,7 +75,7 @@ public class WordCountService
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Word Count failed");
+            logger.LogError(e, "Word Count failed");
             return [];
         }
     }
