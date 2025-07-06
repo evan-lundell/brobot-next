@@ -17,12 +17,12 @@ public class DictionaryService(HttpClient http) : IDictionaryService
         var data = JsonConvert.DeserializeObject<DictionaryResponse[]>(responseJson);
         if (data == null || data.Length == 0)
         {
-            return "An error occured";
+            return "An error occurred";
         }
         var meaningData = data[0];
         if (meaningData.Meanings == null || meaningData.Meanings.Length == 0)
         {
-            return "An error occured";
+            return "An error occurred";
         }
 
         var meanings = new List<string>();

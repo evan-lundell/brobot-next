@@ -18,7 +18,8 @@ public abstract class ScheduledMessageServiceTestBase
     public void Setup()
     {
         ServiceCollection serviceCollection = new();
-        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase("Brobot"));
+        var uniqueDbName = $"Brobot_{Guid.NewGuid()}";
+        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase(uniqueDbName));
         serviceCollection.AddTransient<IUnitOfWork, UnitOfWork>();
         _serviceProvider = serviceCollection.BuildServiceProvider();
         Context = _serviceProvider.GetRequiredService<BrobotDbContext>();

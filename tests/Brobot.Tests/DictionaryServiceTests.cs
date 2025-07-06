@@ -111,7 +111,7 @@ public class DictionaryServiceTests
         var result = await _dictionaryService.GetDefinition(word);
 
         // Assert
-        Assert.That(result, Is.EqualTo("An error occured"));
+        Assert.That(result, Is.EqualTo("An error occurred"));
     }
     
     [Test]
@@ -138,7 +138,7 @@ public class DictionaryServiceTests
         var result = await _dictionaryService.GetDefinition(word);
 
         // Assert
-        Assert.That(result, Is.EqualTo("An error occured"));
+        Assert.That(result, Is.EqualTo("An error occurred"));
     }
     
     [Test]
@@ -214,6 +214,6 @@ public class DictionaryServiceTests
         var result = await _dictionaryService.GetDefinition(word);
 
         // Assert
-        Assert.That(result, Is.EqualTo("An error occured"));
+        Assert.That(result, Is.EqualTo("An error occurred"));
     }
 }

@@ -7,8 +7,6 @@ namespace Brobot.Services;
 public class GiphyService(HttpClient http, IConfiguration configuration, ILogger<GiphyService> logger)
     : IGiphyService
 {
-    private readonly ILogger _logger = logger;
-
     public async Task<string> GetGif(string? tag)
     {
         try
@@ -28,7 +26,7 @@ public class GiphyService(HttpClient http, IConfiguration configuration, ILogger
         }
         catch (HttpRequestException hre)
         {
-            _logger.LogError(hre, "Error getting Giphy gif");
+            logger.LogError(hre, "Error getting Giphy gif");
             return "";
         }
     }
