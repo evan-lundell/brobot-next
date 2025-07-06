@@ -9,11 +9,6 @@ namespace Brobot.Frontend.Handlers;
 public class JwtTokenMessageHandler(Uri allowedBaseAddress, JwtAuthenticationStateProvider loginStateService)
     : DelegatingHandler
 {
-    protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        return Task.Run(() => SendAsync(request, cancellationToken), cancellationToken).GetAwaiter().GetResult();
-    }
-
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var uri = request.RequestUri;
