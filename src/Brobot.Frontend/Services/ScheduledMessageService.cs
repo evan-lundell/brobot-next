@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace Brobot.Frontend.Services;
 
-public class ScheduledMessageService(HttpClient client)
-    : ApiServiceBase<ScheduledMessageRequest, ScheduledMessageResponse, int>("ScheduledMessages", "Reminder", client),
+public class ScheduledMessageService(HttpClient httpClient)
+    : ApiServiceBase<ScheduledMessageRequest, ScheduledMessageResponse, int>("ScheduledMessages", "Reminder", httpClient),
         IScheduledMessageService
 {
     public async Task<IEnumerable<ScheduledMessageResponse>> GetUnsentScheduledMessages(int page = 1)

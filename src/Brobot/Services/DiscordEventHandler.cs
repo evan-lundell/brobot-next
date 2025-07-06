@@ -19,7 +19,6 @@ public class DiscordEventHandler(
     : IDisposable
 {
     private readonly InteractionService _commands = new(client);
-    private readonly ILogger _logger = logger;
 
     public void Start()
     {
@@ -150,7 +149,7 @@ public class DiscordEventHandler(
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Message deleted failed");
+                logger.LogError(ex, "Message deleted failed");
             }
         });
     }
@@ -247,14 +246,14 @@ public class DiscordEventHandler(
         var guild = await uow.Guilds.GetById(thread.Guild.Id);
         if (guild == null)
         {
-            _logger.LogWarning("Thread creation failed. Guild {GuildId} does not exist", thread.Guild.Id);
+            logger.LogWarning("Thread creation failed. Guild {GuildId} does not exist", thread.Guild.Id);
             return;
         }
         
         var existingThread = await uow.Channels.GetById(thread.Id);
         if (existingThread is { Archived: false })
         {
-            _logger.LogWarning("Thread creation failed. Thread with ID {ThreadId} already exists", thread.Id);
+            logger.LogWarning("Thread creation failed. Thread with ID {ThreadId} already exists", thread.Id);
             return;
         }
         

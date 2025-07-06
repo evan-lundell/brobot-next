@@ -5,19 +5,12 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class ScheduledMessageService
+public class ScheduledMessageService(IUnitOfWork uow)
 {
-    private readonly IUnitOfWork _uow;
-
-    public ScheduledMessageService(IUnitOfWork uow)
-    {
-        _uow = uow;
-    }
-    
     public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(UserModel user, int? limit = null, int skip = 0,
         DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
-        var scheduledMessages = (await _uow.ScheduledMessages.GetScheduledMessagesByUser(user.Id, limit, skip, scheduledBefore, scheduledAfter)).ToList();
+        var scheduledMessages = (await uow.ScheduledMessages.GetScheduledMessagesByUser(user.Id, limit, skip, scheduledBefore, scheduledAfter)).ToList();
         foreach (var message in scheduledMessages)
         {
             if (string.IsNullOrWhiteSpace(message.CreatedBy.Timezone))
@@ -58,7 +51,7 @@ public class ScheduledMessageService
             throw new Exception("Send date cannot be in the past");
         }
         
-        var channelModel = await _uow.Channels.GetById(channelId);
+        var channelModel = await uow.Channels.GetById(channelId);
 
         if (channelModel == null)
         {
@@ -75,15 +68,15 @@ public class ScheduledMessageService
             CreatedById = createdBy.Id
         };
 
-        await _uow.ScheduledMessages.Add(reminder);
-        await _uow.CompleteAsync();
+        await uow.ScheduledMessages.Add(reminder);
+        await uow.CompleteAsync();
 
         return reminder;
     }
     
     public async Task<ScheduledMessageModel> UpdateScheduledMessage(int id, string? text = null, ulong? channelId = null, DateTime? sendDate = null)
     {
-        var scheduledMessage = await _uow.ScheduledMessages.GetById(id);
+        var scheduledMessage = await uow.ScheduledMessages.GetById(id);
         if (scheduledMessage == null)
         {
             throw new ModelNotFoundException<ScheduledMessageModel, int>(id);
@@ -101,7 +94,7 @@ public class ScheduledMessageService
 
         if (channelId.HasValue)
         {
-            var channel = await _uow.Channels.GetById(channelId.Value);
+            var channel = await uow.Channels.GetById(channelId.Value);
             if (channel == null)
             {
                 throw new Exception("Channel not found");
@@ -126,7 +119,7 @@ public class ScheduledMessageService
             scheduledMessage.SendDate = newSendDate;
         }
         
-        await _uow.CompleteAsync();
+        await uow.CompleteAsync();
         
         scheduledMessage.SendDate = scheduledMessage.SendDate?.ToOffset(offset);
         return scheduledMessage;
@@ -134,20 +127,20 @@ public class ScheduledMessageService
     
     public async Task<bool> DeleteScheduledMessage(int id)
     {
-        var scheduledMessage = await _uow.ScheduledMessages.GetById(id);
+        var scheduledMessage = await uow.ScheduledMessages.GetById(id);
         if (scheduledMessage == null)
         {
             return false;
         }
 
-        _uow.ScheduledMessages.Remove(scheduledMessage);
-        await _uow.CompleteAsync();
+        uow.ScheduledMessages.Remove(scheduledMessage);
+        await uow.CompleteAsync();
         return true;
     }
     
     public async Task<bool> CanUserUpdateScheduledMessage(UserModel user, int scheduledMessageId)
     {
-        var scheduledMessage = await _uow.ScheduledMessages.GetById(scheduledMessageId);
+        var scheduledMessage = await uow.ScheduledMessages.GetById(scheduledMessageId);
         return scheduledMessage != null && scheduledMessage.CreatedById == user.Id;
     }
 }
