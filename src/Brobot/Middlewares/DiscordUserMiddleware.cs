@@ -3,15 +3,8 @@ using Brobot.Repositories;
 
 namespace Brobot.Middlewares;
 
-public class DiscordUserMiddleware
+public class DiscordUserMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
-
-    public DiscordUserMiddleware(RequestDelegate next)
-    {
-        _next = next;
-    }
-
     public async Task Invoke(HttpContext httpContext, IUnitOfWork uow)
     {
         var discordUserIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier);
@@ -25,6 +18,6 @@ public class DiscordUserMiddleware
             }
         }
 
-        await _next(httpContext);
+        await next(httpContext);
     }
 }

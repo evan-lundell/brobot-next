@@ -5,26 +5,20 @@ using Discord.WebSocket;
 
 namespace Brobot.Workers;
 
-public class ReminderWorker : CronWorkerBase
+public class ReminderWorker(
+    ICronWorkerConfig<ReminderWorker> config,
+    IServiceProvider services,
+    DiscordSocketClient client)
+    : CronWorkerBase(config.CronExpression)
 {
-    private readonly IServiceProvider _services;
-    private readonly DiscordSocketClient _client;
-
-    public ReminderWorker(ICronWorkerConfig<ReminderWorker> config, IServiceProvider services, DiscordSocketClient client)
-        : base(config.CronExpression)
-    {
-        _services = services;
-        _client = client;
-    }
-
     protected override async Task DoWork(CancellationToken cancellationToken)
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var messages = await uow.ScheduledMessages.GetActiveMessages();
         foreach (var message in messages)
         {
-            var channel = await _client.GetChannelAsync(message.ChannelId);
+            var channel = await client.GetChannelAsync(message.ChannelId);
             if (!(channel is SocketTextChannel textChannel))
             {
                 continue;

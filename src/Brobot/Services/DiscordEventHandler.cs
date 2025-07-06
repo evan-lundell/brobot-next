@@ -9,80 +9,65 @@ using Discord.WebSocket;
 
 namespace Brobot.Services;
 
-public class DiscordEventHandler : IDisposable
+public class DiscordEventHandler(
+    DiscordSocketClient client,
+    IServiceProvider services,
+    ISyncService sync,
+    HotOpService hotOpService,
+    IConfiguration configuration,
+    ILogger<DiscordEventHandler> logger)
+    : IDisposable
 {
-    private readonly DiscordSocketClient _client;
-    private readonly IServiceProvider _services;
-    private readonly ISyncService _sync;
-    private readonly InteractionService _commands;
-    private readonly HotOpService _hotOpService;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger _logger;
-
-    public DiscordEventHandler(
-        DiscordSocketClient client,
-        IServiceProvider services,
-        ISyncService sync,
-        HotOpService hotOpService,
-        IConfiguration configuration,
-        ILogger<DiscordEventHandler> logger)
-    {
-        _client = client;
-        _services = services;
-        _sync = sync;
-        _commands = new InteractionService(client);
-        _hotOpService = hotOpService;
-        _configuration = configuration;
-        _logger = logger;
-    }
+    private readonly InteractionService _commands = new(client);
+    private readonly ILogger _logger = logger;
 
     public void Start()
     {
-        _client.Log += Log;
-        _client.Ready += Ready;
-        _client.InteractionCreated += InteractionCreated;
-        _client.GuildAvailable += GuildAvailable;
-        _client.GuildUnavailable += GuildUnavailable;
-        _client.GuildUpdated += GuildUpdated;
-        _client.ChannelCreated += ChannelCreated;
-        _client.ChannelDestroyed += ChannelDestroyed;
-        _client.ChannelUpdated += ChannelUpdated;
-        _client.MessageReceived += MessageReceived;
-        _client.MessageDeleted += MessageDeleted;
-        _client.UserVoiceStateUpdated += UserVoiceStateUpdated;
-        _client.PresenceUpdated += PresenceUpdated;
-        _client.ThreadCreated += ThreadCreated;
-        _client.ThreadDeleted += ThreadDeleted;
-        _client.ThreadUpdated += ThreadUpdated;
-        _client.ThreadMemberJoined += ThreadMemberJoined;
-        _client.ThreadMemberLeft += ThreadMemberLeft;
+        client.Log += Log;
+        client.Ready += Ready;
+        client.InteractionCreated += InteractionCreated;
+        client.GuildAvailable += GuildAvailable;
+        client.GuildUnavailable += GuildUnavailable;
+        client.GuildUpdated += GuildUpdated;
+        client.ChannelCreated += ChannelCreated;
+        client.ChannelDestroyed += ChannelDestroyed;
+        client.ChannelUpdated += ChannelUpdated;
+        client.MessageReceived += MessageReceived;
+        client.MessageDeleted += MessageDeleted;
+        client.UserVoiceStateUpdated += UserVoiceStateUpdated;
+        client.PresenceUpdated += PresenceUpdated;
+        client.ThreadCreated += ThreadCreated;
+        client.ThreadDeleted += ThreadDeleted;
+        client.ThreadUpdated += ThreadUpdated;
+        client.ThreadMemberJoined += ThreadMemberJoined;
+        client.ThreadMemberLeft += ThreadMemberLeft;
     }
 
 #pragma warning disable CA1816
     public void Dispose()
 #pragma warning restore CA1816
     {
-        _client.Log -= Log;
-        _client.Ready -= Ready;
-        _client.InteractionCreated -= InteractionCreated;
-        _client.GuildAvailable -= GuildAvailable;
-        _client.GuildUnavailable -= GuildUnavailable;
-        _client.ChannelCreated -= ChannelCreated;
-        _client.ChannelDestroyed -= ChannelDestroyed;
-        _client.ChannelUpdated -= ChannelUpdated;
-        _client.MessageReceived -= MessageReceived;
-        _client.MessageDeleted -= MessageDeleted;
-        _client.PresenceUpdated -= PresenceUpdated;
-        _client.ThreadCreated -= ThreadCreated;
-        _client.ThreadDeleted -= ThreadDeleted;
-        _client.ThreadUpdated -= ThreadUpdated;
-        _client.ThreadMemberJoined -= ThreadMemberJoined;
-        _client.ThreadMemberLeft -= ThreadMemberLeft;
+        client.Log -= Log;
+        client.Ready -= Ready;
+        client.InteractionCreated -= InteractionCreated;
+        client.GuildAvailable -= GuildAvailable;
+        client.GuildUnavailable -= GuildUnavailable;
+        client.ChannelCreated -= ChannelCreated;
+        client.ChannelDestroyed -= ChannelDestroyed;
+        client.ChannelUpdated -= ChannelUpdated;
+        client.MessageReceived -= MessageReceived;
+        client.MessageDeleted -= MessageDeleted;
+        client.PresenceUpdated -= PresenceUpdated;
+        client.ThreadCreated -= ThreadCreated;
+        client.ThreadDeleted -= ThreadDeleted;
+        client.ThreadUpdated -= ThreadUpdated;
+        client.ThreadMemberJoined -= ThreadMemberJoined;
+        client.ThreadMemberLeft -= ThreadMemberLeft;
     }
 
     private Task PresenceUpdated(SocketUser socketUser, SocketPresence formerPresence, SocketPresence currentPresence)
     {
-        return _sync.PresenceUpdated(socketUser, formerPresence, currentPresence);
+        return sync.PresenceUpdated(socketUser, formerPresence, currentPresence);
     }
 
     private Task UserVoiceStateUpdated(
@@ -90,7 +75,7 @@ public class DiscordEventHandler : IDisposable
         SocketVoiceState previousVoiceState,
         SocketVoiceState currentVoiceState)
     {
-        return _hotOpService.UserVoiceStateUpdated(socketUser, previousVoiceState, currentVoiceState);
+        return hotOpService.UserVoiceStateUpdated(socketUser, previousVoiceState, currentVoiceState);
     }
 
     private Task MessageReceived(SocketMessage socketMessage)
@@ -102,7 +87,7 @@ public class DiscordEventHandler : IDisposable
                 return;
             }
             
-            using var scope = _services.CreateScope();
+            using var scope = services.CreateScope();
             var messageCountService = scope.ServiceProvider.GetRequiredService<MessageCountService>();
             await messageCountService.AddToDailyCount(socketMessage.Author.Id, socketMessage.Channel.Id);
             
@@ -116,7 +101,7 @@ public class DiscordEventHandler : IDisposable
                     break;
             }
 
-            var fixTwitterLinks = bool.Parse(_configuration["FixTwitterLinks"] ?? "false");
+            var fixTwitterLinks = bool.Parse(configuration["FixTwitterLinks"] ?? "false");
             if (fixTwitterLinks)
             {
                 if (socketMessage.Content.Contains("https://twitter.com"))
@@ -172,7 +157,7 @@ public class DiscordEventHandler : IDisposable
 
     private Task GuildUpdated(SocketGuild previous, SocketGuild current)
     {
-        return _sync.GuildUpdated(previous, current);
+        return sync.GuildUpdated(previous, current);
     }
 
     private Task ChannelUpdated(SocketChannel previous, SocketChannel current)
@@ -185,7 +170,7 @@ public class DiscordEventHandler : IDisposable
             return Task.CompletedTask;
         }
 
-        return _sync.ChannelUpdated(previousTextChannel, currentTextChannel);
+        return sync.ChannelUpdated(previousTextChannel, currentTextChannel);
     }
 
     private Task ChannelDestroyed(SocketChannel channel)
@@ -194,7 +179,7 @@ public class DiscordEventHandler : IDisposable
         {
             return Task.CompletedTask;
         }
-        return _sync.ChannelDestroyed(textChannel);
+        return sync.ChannelDestroyed(textChannel);
     }
 
     private Task ChannelCreated(SocketChannel channel)
@@ -203,34 +188,34 @@ public class DiscordEventHandler : IDisposable
         {
             return Task.CompletedTask;
         }
-        return _sync.ChannelCreated(textChannel);
+        return sync.ChannelCreated(textChannel);
     }
 
     private Task GuildUnavailable(SocketGuild guild)
     {
-        return _sync.GuildUnavailable(guild);
+        return sync.GuildUnavailable(guild);
     }
 
     private Task GuildAvailable(SocketGuild guild)
     {
-        return _sync.GuildAvailable(guild);
+        return sync.GuildAvailable(guild);
     }
 
     private async Task InteractionCreated(SocketInteraction interaction)
     {
-        var ctx = new SocketInteractionContext(_client, interaction);
-        await _commands.ExecuteCommandAsync(ctx, _services);
+        var ctx = new SocketInteractionContext(client, interaction);
+        await _commands.ExecuteCommandAsync(ctx, services);
     }
 
     private async Task Ready()
     {
 
-        using (var scope = _services.CreateScope())
+        using (var scope = services.CreateScope())
         {
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
         }
 
-        if (_configuration["DOTNET_ENVIRONMENT"] == "Development")
+        if (configuration["DOTNET_ENVIRONMENT"] == "Development")
         {
             _ = _commands.RegisterCommandsToGuildAsync(421404457599762433);
         }
@@ -239,9 +224,9 @@ public class DiscordEventHandler : IDisposable
             _ = _commands.RegisterCommandsGloballyAsync();
         }
 
-        if (!bool.TryParse(_configuration["NoSync"], out bool noSync) || !noSync)
+        if (!bool.TryParse(configuration["NoSync"], out bool noSync) || !noSync)
         {
-            _ = _sync.SyncOnStartup();
+            _ = sync.SyncOnStartup();
         }
     }
 
@@ -257,7 +242,7 @@ public class DiscordEventHandler : IDisposable
 
     private async Task ThreadCreated(SocketThreadChannel thread)
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guild = await uow.Guilds.GetById(thread.Guild.Id);
         if (guild == null)
@@ -306,7 +291,7 @@ public class DiscordEventHandler : IDisposable
 
     private async Task ThreadDeleted(Cacheable<SocketThreadChannel, ulong> thread)
     {
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var existingThread = await uow.Channels.GetById(thread.Id);
         if (existingThread == null)
@@ -325,7 +310,7 @@ public class DiscordEventHandler : IDisposable
             return;
         }
         
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var existingChannelModel = await uow.Channels.GetById(oldThreadChannel.Id);
         if (existingChannelModel == null || (existingChannelModel.Name == newThreadChannel.Name && existingChannelModel.Archived == newThreadChannel.IsArchived))
@@ -345,7 +330,7 @@ public class DiscordEventHandler : IDisposable
             return;
         }
         
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(threadUser.Thread.Id);
         var existingDiscordUser = await uow.Users.GetById(threadUser.Id);
@@ -375,7 +360,7 @@ public class DiscordEventHandler : IDisposable
             return;
         }
         
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(threadUser.Thread.Id);
         var existingDiscordUser = await uow.Users.GetById(threadUser.Id);
