@@ -74,33 +74,36 @@ public class DiscordEventHandler(
         SocketVoiceState previousVoiceState,
         SocketVoiceState currentVoiceState)
     {
-        if ((previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel == null)
-            || socketUser.IsBot)
+        _ = Task.Run(async () =>
         {
-            return Task.CompletedTask;
-        }
+            if ((previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel == null)
+                || socketUser.IsBot)
+            {
+                return;
+            }
 
-        using var scope = services.CreateScope();
-        var hotOpService = scope.ServiceProvider.GetRequiredService<HotOpService>();
-        if (previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel != null)
-        {
-            return hotOpService.UpdateHotOps(socketUser.Id, UserVoiceStateAction.Connected,
+            using var scope = services.CreateScope();
+            var hotOpService = scope.ServiceProvider.GetRequiredService<HotOpService>();
+            if (previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel != null)
+            {
+                await hotOpService.UpdateHotOps(socketUser.Id, UserVoiceStateAction.Connected,
                 [
                     ..currentVoiceState.VoiceChannel.ConnectedUsers
                         .Where(cu => !cu.IsBot)
                         .Select(cu => cu.Id)
                 ]);
-        }
-        if (currentVoiceState.VoiceChannel == null && previousVoiceState.VoiceChannel != null)
-        {
-            return hotOpService.UpdateHotOps(socketUser.Id, UserVoiceStateAction.Disconnected,
+            }
+
+            if (currentVoiceState.VoiceChannel == null && previousVoiceState.VoiceChannel != null)
+            {
+                await hotOpService.UpdateHotOps(socketUser.Id, UserVoiceStateAction.Disconnected,
                 [
                     ..previousVoiceState.VoiceChannel.ConnectedUsers
                         .Where(cu => !cu.IsBot)
                         .Select(cu => cu.Id)
                 ]);
-        }
-
+            }
+        });
         return Task.CompletedTask;
     }
 
