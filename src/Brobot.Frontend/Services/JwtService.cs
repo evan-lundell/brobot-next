@@ -57,7 +57,7 @@ public class JwtService(IServiceProvider services, NavigationManager navigationM
         }
 
         var claimIdentity = new ClaimsIdentity(claims, "jwt");
-        var principal = new ClaimsPrincipal(new[] { claimIdentity });
+        var principal = new ClaimsPrincipal([claimIdentity]);
 
         return principal;
     }

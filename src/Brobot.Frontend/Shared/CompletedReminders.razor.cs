@@ -16,8 +16,8 @@ public partial class CompletedReminders : ComponentBase, ITabbable
     
     private List<ScheduledMessageResponse>? _reminders;
     private bool GridReady => _reminders != null;
-    private RadzenDataGrid<ScheduledMessageResponse>? _grid;
-    
+    public RadzenDataGrid<ScheduledMessageResponse>? Grid { get; private set; }
+
     protected override async Task OnInitializedAsync()
     {
         try

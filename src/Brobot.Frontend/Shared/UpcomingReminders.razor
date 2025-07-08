@@ -52,7 +52,7 @@ else
                     <label class="form-label">Channel</label>
                     <InputSelect class="form-select" @bind-Value="_editScheduleMessage.ChannelId">
                         <option value="">Select a channel...</option>
-                        @foreach (var channel in _channels ?? Array.Empty<ChannelResponse>())
+                        @foreach (var channel in _channels ?? [])
                         {
                             <option value="@channel.Id">@channel.Name</option>
                         }
