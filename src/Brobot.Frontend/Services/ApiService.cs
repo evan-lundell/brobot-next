@@ -55,7 +55,7 @@ public class ApiService(HttpClient client)
     }
 
     public async Task<ChannelResponse[]> GetChannels()
-        => await client.GetFromJsonAsync<ChannelResponse[]>("Channels") ?? Array.Empty<ChannelResponse>();
+        => await client.GetFromJsonAsync<ChannelResponse[]>("Channels") ?? [];
 
     public async Task<UserSettingsResponse> GetUserSettings()
         => await client.GetFromJsonAsync<UserSettingsResponse>("users/settings") ?? new UserSettingsResponse();
@@ -72,12 +72,12 @@ public class ApiService(HttpClient client)
         if (channelId == null)
         {
             return await client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/daily") ??
-                   Array.Empty<DailyMessageCountResponse>();
+                   [];
         }
 
         return await client.GetFromJsonAsync<DailyMessageCountResponse[]>(
                    $"MessageCounts/daily?channelId={channelId.Value}") ??
-               Array.Empty<DailyMessageCountResponse>();
+               [];
     }
 
     public async Task<DailyMessageCountResponse[]> GetTotalDailyMessageCount(ulong? channelId = null)
@@ -85,12 +85,12 @@ public class ApiService(HttpClient client)
         if (channelId == null)
         {
             return await client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/total-daily") ??
-                   Array.Empty<DailyMessageCountResponse>();
+                   [];
         }
 
         return await client.GetFromJsonAsync<DailyMessageCountResponse[]>(
                    $"MessageCounts/total-daily?channelId={channelId.Value}") ??
-               Array.Empty<DailyMessageCountResponse>();
+               [];
     }
 
     public async Task<DailyMessageCountResponse[]> GetTopDays(ulong? channelId = null)
@@ -98,12 +98,12 @@ public class ApiService(HttpClient client)
         if (channelId == null)
         {
             return await client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/top-days") ??
-                   Array.Empty<DailyMessageCountResponse>();
+                   [];
         }
 
         return await client.GetFromJsonAsync<DailyMessageCountResponse[]>(
                    $"MessageCounts/top-days?channelId={channelId}") ??
-               Array.Empty<DailyMessageCountResponse>();
+               [];
     }
 
     public async Task<DailyMessageCountResponse[]> GetTodaysTopUsers(ulong? channelId = null)
@@ -111,12 +111,12 @@ public class ApiService(HttpClient client)
         if (channelId == null)
         {
             return await client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/top-today") ??
-                   Array.Empty<DailyMessageCountResponse>();
+                   [];
         }
 
         return await client.GetFromJsonAsync<DailyMessageCountResponse[]>(
                    $"MessageCounts/top-today?channelId={channelId}") ??
-               Array.Empty<DailyMessageCountResponse>();
+               [];
     }
 
     public async Task<DailyMessageCountResponse[]> GetTotalTopDays(ulong? channelId = null)
@@ -124,12 +124,12 @@ public class ApiService(HttpClient client)
         if (channelId == null)
         {
             return await client.GetFromJsonAsync<DailyMessageCountResponse[]>("MessageCounts/total-top-days")
-                   ?? Array.Empty<DailyMessageCountResponse>();
+                   ?? [];
         }
 
         return await client.GetFromJsonAsync<DailyMessageCountResponse[]>(
                    $"MessageCounts/total-top-days?channelId={channelId.Value}") ??
-               Array.Empty<DailyMessageCountResponse>();
+               [];
     }
 
     public Task SendMessage(SendMessageRequest sendMessageRequest)
@@ -139,9 +139,9 @@ public class ApiService(HttpClient client)
         => client.PostAsJsonAsync("auth/change-password", changePasswordRequest);
 
     public async Task<IdentityUserResponse[]> GetIdentityUsers()
-        => await client.GetFromJsonAsync<IdentityUserResponse[]>("Auth/users") ?? Array.Empty<IdentityUserResponse>();
+        => await client.GetFromJsonAsync<IdentityUserResponse[]>("Auth/users") ?? [];
 
     public async Task<UserResponse[]> GetUsers()
-        => await client.GetFromJsonAsync<UserResponse[]>("Users/all") ?? Array.Empty<UserResponse>();
+        => await client.GetFromJsonAsync<UserResponse[]>("Users/all") ?? [];
     
 }

@@ -19,6 +19,6 @@ public class HotOpService(HttpClient httpClient)
     public async Task<ScoreboardResponse> GetHotOpScoreboard(int hotOpId)
     {
         return await HttpClient.GetFromJsonAsync<ScoreboardResponse>($"{BaseUrl}/{hotOpId}/scoreboard")
-            ?? new ScoreboardResponse { OwnerUsername = "", Scores = Array.Empty<ScoreboardItemResponse>() };
+            ?? new ScoreboardResponse { OwnerUsername = "", Scores = [] };
     }
 }

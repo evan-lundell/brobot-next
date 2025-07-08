@@ -58,9 +58,9 @@ else
 }
 
 @code {
-    private bool _loading = false;
+    private bool _loading;
     private string _errorMessage = "";
-    private bool _registrationSuccessful = false;
+    private bool _registrationSuccessful;
     private const string GenericError = "Unable to register at this time. Please try again. If this problem persists, contact your Brobot admin";
     private RegisterRequest _registerRequest = new RegisterRequest
     {

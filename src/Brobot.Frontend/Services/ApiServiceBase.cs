@@ -17,7 +17,7 @@ public abstract class ApiServiceBase<TRequest, TResponse, TKey>(
         var response = await HttpClient.GetAsync(url);
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<IEnumerable<TResponse>>() ?? Array.Empty<TResponse>();
+            return await response.Content.ReadFromJsonAsync<IEnumerable<TResponse>>() ?? [];
         }
 
         var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();

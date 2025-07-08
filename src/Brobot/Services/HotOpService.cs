@@ -8,82 +8,93 @@ using Discord;
 
 namespace Brobot.Services;
 
-public class HotOpService(IUnitOfWork uow)
+public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger)
 {
     private const int MinuteMultiplier = 10;
 
     public async Task UpdateHotOps(ulong userId, UserVoiceStateAction action, IReadOnlyCollection<ulong> connectedUsers)
     {
-        var now = DateTimeOffset.UtcNow;
-        var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now);
-        var users = (await uow.Users.Find(u => u.Archived == false)).ToDictionary(u => u.Id);
-
-        foreach (var hotOp in activeHotOps)
+        try
         {
-            if (hotOp.UserId == userId)
+            var now = DateTimeOffset.UtcNow;
+            var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now);
+            var users = (await uow.Users.Find(u => u.Archived == false)).ToDictionary(u => u.Id);
+
+            foreach (var hotOp in activeHotOps)
             {
-                if (action == UserVoiceStateAction.Connected)
+                if (hotOp.UserId == userId)
                 {
-                    var sessions = connectedUsers
-                        .Where(u => u != userId)
-                        .Select(u => new HotOpSessionModel
+                    if (action == UserVoiceStateAction.Connected)
+                    {
+                        var sessions = connectedUsers
+                            .Where(u => u != userId)
+                            .Select(u => new HotOpSessionModel
+                            {
+                                HotOp = hotOp,
+                                HotOpId = hotOp.Id,
+                                User = users[u],
+                                UserId = u,
+                                StartDateTime = now
+                            });
+                        await uow.HotOpSessions.AddRange(sessions);
+                    }
+                    else
+                    {
+                        var existingSessions =
+                            await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
+                        foreach (var existingSession in existingSessions)
                         {
-                            HotOp = hotOp,
-                            HotOpId = hotOp.Id,
-                            User = users[u],
-                            UserId = u,
-                            StartDateTime = now
-                        });
-                    await uow.HotOpSessions.AddRange(sessions);
+                            if (connectedUsers.Any(cu => cu == existingSession.UserId))
+                            {
+                                existingSession.EndDateTime = now;
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                    var existingSessions = await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
-                    foreach (var existingSession in existingSessions)
+                    if (action == UserVoiceStateAction.Connected)
                     {
-                        if (connectedUsers.Any(cu => cu == existingSession.UserId))
+                        // if the owner isn't in the channel, do nothing
+                        if (connectedUsers.All(cu => cu != hotOp.UserId))
                         {
-                            existingSession.EndDateTime = now;
+                            continue;
+                        }
+
+                        await uow.HotOpSessions.Add(new HotOpSessionModel
+                        {
+                            HotOp = hotOp,
+                            HotOpId = hotOp.Id,
+                            User = users[userId],
+                            UserId = userId,
+                            StartDateTime = now
+                        });
+                    }
+                    else
+                    {
+                        // if the owner isn't in the channel, do nothing
+                        if (connectedUsers.All(cu => cu != hotOp.UserId))
+                        {
+                            continue;
+                        }
+
+                        var session = (await uow.HotOpSessions.Find(hos =>
+                                hos.HotOpId == hotOp.Id && hos.UserId == userId && hos.EndDateTime == null))
+                            .FirstOrDefault();
+                        if (session != null)
+                        {
+                            session.EndDateTime = now;
                         }
                     }
                 }
             }
-            else
-            {
-                if (action == UserVoiceStateAction.Connected)
-                {
-                    // if the owner isn't in the channel, do nothing
-                    if (connectedUsers.All(cu => cu != hotOp.UserId))
-                    {
-                        continue;
-                    }
-                    
-                    await uow.HotOpSessions.Add(new HotOpSessionModel
-                    {
-                        HotOp = hotOp,
-                        HotOpId = hotOp.Id,
-                        User = users[userId],
-                        UserId = userId,
-                        StartDateTime = now
-                    });
-                }
-                else
-                {
-                    // if the owner isn't in the channel, do nothing
-                    if (connectedUsers.All(cu => cu != hotOp.UserId))
-                    {
-                        continue;
-                    }
 
-                    var session = (await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.UserId == userId && hos.EndDateTime == null)).FirstOrDefault();
-                    if (session != null)
-                    {
-                        session.EndDateTime = now;
-                    }
-                }
-            }
+            await uow.CompleteAsync();
         }
-        await uow.CompleteAsync();
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while updating hot-ops, {ExMessage}", ex.Message);
+        }
     }
 
     public ScoreboardDto GetScoreboard(HotOpModel hotOp)

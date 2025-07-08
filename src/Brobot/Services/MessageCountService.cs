@@ -13,7 +13,7 @@ public class MessageCountService(IUnitOfWork uow)
         var userModel = await uow.Users.GetByIdNoTracking(userId);
         if (userModel == null || string.IsNullOrWhiteSpace(userModel.Timezone))
         {
-            return Array.Empty<DailyMessageCountResponse>();
+            return [];
         }
         
         var (currentDate, startDate) = GetDates(numOfDays, userModel.Timezone);
@@ -26,7 +26,7 @@ public class MessageCountService(IUnitOfWork uow)
     {
         if (string.IsNullOrWhiteSpace(userModel.Timezone))
         {
-            return Array.Empty<DailyMessageCountResponse>();
+            return [];
         }
 
         var (currentDate, startDate) = GetDates(numOfDays, userModel.Timezone);
@@ -85,7 +85,7 @@ public class MessageCountService(IUnitOfWork uow)
     {
         if (string.IsNullOrWhiteSpace(userModel.Timezone))
         {
-            return Array.Empty<DailyMessageCountResponse>();
+            return [];
         }
 
         var counts = await uow.DailyMessageCounts.GetUsersTopDays(userModel.Id, numOfDays);
@@ -101,7 +101,7 @@ public class MessageCountService(IUnitOfWork uow)
     {
         if (string.IsNullOrWhiteSpace(userModel.Timezone))
         {
-            return Array.Empty<DailyMessageCountResponse>();
+            return [];
         }
 
         var counts = await uow.DailyMessageCounts.GetUsersTopDaysInChannel(userModel.Id, channelId, numOfDays);
@@ -117,7 +117,7 @@ public class MessageCountService(IUnitOfWork uow)
     {
         if (string.IsNullOrWhiteSpace(userModel.Timezone))
         {
-            return Array.Empty<DailyMessageCountResponse>();
+            return [];
         }
         
         var now = DateTimeOffset.UtcNow;
@@ -127,7 +127,7 @@ public class MessageCountService(IUnitOfWork uow)
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
-            User = userModel.ToUserResponse()
+            User = c.User.ToUserResponse()
         });
     }
 
@@ -135,7 +135,7 @@ public class MessageCountService(IUnitOfWork uow)
     {
         if (string.IsNullOrWhiteSpace(userModel.Timezone))
         {
-            return Array.Empty<DailyMessageCountResponse>();
+            return [];
         }
         
         var now = DateTimeOffset.UtcNow;
@@ -153,7 +153,7 @@ public class MessageCountService(IUnitOfWork uow)
     {
         if (string.IsNullOrWhiteSpace(usersTimezone))
         {
-            return Array.Empty<DailyMessageCountResponse>();
+            return [];
         }
 
         var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);
@@ -169,7 +169,7 @@ public class MessageCountService(IUnitOfWork uow)
     {
         if (string.IsNullOrWhiteSpace(usersTimezone))
         {
-            return Array.Empty<DailyMessageCountResponse>();
+            return [];
         }
 
         var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);

@@ -19,7 +19,7 @@ else
                 <label class="form-label">Channel</label>
                 <select class="form-select" @onchange="OnChannelChange">
                     <option value="">All</option>
-                    @foreach (var channel in Channels ?? Array.Empty<ChannelResponse>())
+                    @foreach (var channel in Channels ?? [])
                     {
                         <option value="@channel.Id">@channel.Name</option>
                     }

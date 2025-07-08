@@ -64,7 +64,7 @@ else
 @code {
     private bool _pageLoading = true;
     private bool _isModified;
-    private ChannelResponse[] _channels = Array.Empty<ChannelResponse>();
+    private ChannelResponse[] _channels = [];
     private UserSettingsResponse _userSettings = new UserSettingsResponse();
     private readonly UserSettingsResponse _originalSettings = new UserSettingsResponse();
     private EditContext? _editContext;
