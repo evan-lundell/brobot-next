@@ -73,6 +73,7 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel,
     {
         return await Context.Users
             .Where(u => identityUserIds.Contains(u.IdentityUserId))
+            .AsNoTracking()
             .ToListAsync();
     }
 }
