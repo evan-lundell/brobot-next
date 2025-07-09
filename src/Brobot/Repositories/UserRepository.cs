@@ -71,10 +71,9 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel,
 
     public async Task<IEnumerable<UserModel>> GetUsersFromIdentityUserIds(IEnumerable<string> identityUserIds)
     {
-        var formattedIds = identityUserIds.Select(id => $"'{id}'");
         return await Context.Users
-            .FromSql(
-                $"SELECT * FROM brobot.discord_user WHERE identity_user_id IN ({string.Join(", ", formattedIds)})")
+            .Where(u => identityUserIds.Contains(u.IdentityUserId))
+            .AsNoTracking()
             .ToListAsync();
     }
 }
