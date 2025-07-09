@@ -19,7 +19,6 @@ public class UnitOfWork : IUnitOfWork
         DailyMessageCounts = new DailyMessageCountRepository(context);
         SecretSantaGroups = new SecretSantaGroupRepository(context);
         StopWords = new StopWordRepository(context);
-        WordCounts = new WordCountRepository(context);
     }
 
     public IUserRepository Users { get; }
@@ -33,7 +32,6 @@ public class UnitOfWork : IUnitOfWork
     public IDailyMessageCountRepository DailyMessageCounts { get; }
     public ISecretSantaGroupRepository SecretSantaGroups { get; }
     public IStopWordRepository StopWords { get; }
-    public IWordCountRepository WordCounts { get; }
 
     public Task<int> CompleteAsync()
     {

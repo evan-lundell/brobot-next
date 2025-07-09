@@ -147,6 +147,10 @@ public static class Program
             {
                 options.CronExpression = "* * * * *";
             });
+            builder.Services.AddCronJob<MonthlyStatsWorker>(options =>
+            {
+                options.CronExpression = "0 12 1 * *";
+            });
         }
         
         builder.Services.AddAuthentication()
@@ -189,5 +193,9 @@ public static class Program
         builder.Services.AddScoped<SecretSantaService>();
         builder.Services.AddSingleton<StopWordService>();
         builder.Services.AddSingleton<WordCountService>();
+        builder.Services.AddHttpClient<IWordCloudService, WordCloudService>(client =>
+        {
+            client.BaseAddress = new Uri(builder.Configuration["QuickChartBaseUrl"] ?? "https://quickchart.io");
+        });
     }
 }
