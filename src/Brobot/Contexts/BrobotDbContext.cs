@@ -14,7 +14,6 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbCont
     public DbSet<SecretSantaGroupModel> SecretSantaGroups => Set<SecretSantaGroupModel>();
     public DbSet<SecretSantaPairModel> SecretSantaPairs => Set<SecretSantaPairModel>();
     public DbSet<StopWordModel> StopWords => Set<StopWordModel>();
-    public DbSet<WordCountModel> WordCounts => Set<WordCountModel>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

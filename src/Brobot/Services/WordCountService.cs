@@ -1,3 +1,4 @@
+using Brobot.Dtos;
 using Brobot.Models;
 using Discord;
 using Discord.WebSocket;
@@ -5,12 +6,12 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class WordCountService(ILogger<WordCountService> logger, DiscordSocketClient client)
+public class WordCountService(ILogger<WordCountService> logger, DiscordSocketClient client, StopWordService stopWordService)
 {
     private readonly string[] _separators =
         [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "\"", "@", "*", "<", ">", "[", "]", "(", ")", "-", ";", "*", "{", "}", "+", "=", "#", "~"];
 
-    public async Task<IEnumerable<WordCountModel>> GetWordCount(ChannelModel channel, int daysBack = 1)
+    public async Task<IEnumerable<WordCountDto>> GetWordCount(ChannelModel channel, DateTime startDate, DateTime endDate)
     {
         try
         {
@@ -21,17 +22,13 @@ public class WordCountService(ILogger<WordCountService> logger, DiscordSocketCli
             }
 
             var timezone = TZConvert.GetTimeZoneInfo(channel.Timezone);
-            var utcNow = DateTime.UtcNow;
-            var localDay = TimeZoneInfo.ConvertTimeFromUtc(utcNow, timezone).AddDays(-daysBack);
-            var day = new DateTimeOffset(localDay.Year, localDay.Month, localDay.Day, 0, 0, 0, timezone.GetUtcOffset(DateTime.UtcNow));
-            var nextDay = day.AddDays(1);
-            var start = new DateTimeOffset(day.Year, day.Month, day.Day, 0, 0, 0, day.Offset);
-            var end = new DateTimeOffset(nextDay.Year, nextDay.Month, nextDay.Day, 0, 0, 0, nextDay.Offset);
-            var doneWithDay = false;
+            var start = new DateTimeOffset(TimeZoneInfo.ConvertTimeFromUtc(startDate, timezone));
+            var end = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(endDate, timezone));
             ulong? fromMessageId = null;
-            Dictionary<string, WordCountModel> wordCounts = new();
+            var done = false;
+            Dictionary<string, WordCountDto> wordCounts = new();
 
-            while (!doneWithDay)
+            while (!done)
             {
                 IAsyncEnumerable<IReadOnlyCollection<IMessage>> messageCollection = fromMessageId.HasValue
                     ? socketTextChannel.GetMessagesAsync(fromMessageId.Value, Direction.Before)
@@ -46,26 +43,28 @@ public class WordCountService(ILogger<WordCountService> logger, DiscordSocketCli
 
                     if (message.Timestamp < start)
                     {
-                        doneWithDay = true;
+                        done = true;
                         break;
                     }
 
                     var wordSplit = message.Content.Split(_separators, StringSplitOptions.RemoveEmptyEntries);
                     foreach (var word in wordSplit)
                     {
-                        wordCounts.TryAdd(word.ToLower(), new WordCountModel
+                        if (await stopWordService.IsStopWord(word))
+                        {
+                            continue;
+                        }
+                        wordCounts.TryAdd(word.ToLower(), new WordCountDto
                         {
                             Word = word.ToLower(),
                             Count = 0,
-                            Channel = channel,
-                            ChannelId = channel.Id,
-                            CountDate = new DateOnly(start.Year, start.Month, start.Day)
+                            ChannelId = channel.Id
                         });
                         wordCounts[word.ToLower()].Count += 1;
                     }
                 }
 
-                if (!doneWithDay)
+                if (!done)
                 {
                     await Task.Delay(2500);
                 }
