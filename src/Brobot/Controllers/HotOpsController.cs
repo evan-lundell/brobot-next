@@ -16,7 +16,7 @@ namespace Brobot.Controllers;
 [Authorize]
 public class HotOpsController(
     IUnitOfWork uow,
-    HotOpService hotOpService) : ControllerBase
+    IHotOpService hotOpService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<HotOpResponse>>> GetHotOps([FromQuery] HotOpQueryType type = HotOpQueryType.All)

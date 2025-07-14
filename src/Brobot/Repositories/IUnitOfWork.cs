@@ -1,3 +1,4 @@
+using Brobot.Contexts;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Brobot.Repositories;
@@ -15,5 +16,6 @@ public interface IUnitOfWork : IDisposable
     IStopWordRepository StopWords { get; }
     Task<IDbContextTransaction> BeginTransaction();
     Task CommitTransaction(IDbContextTransaction transaction);
+    BrobotDbContext DbContext { get; }
     Task<int> CompleteAsync();
 }

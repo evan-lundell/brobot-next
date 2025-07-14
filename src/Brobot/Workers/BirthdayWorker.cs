@@ -1,4 +1,5 @@
 using Brobot.Repositories;
+using Discord;
 using Discord.WebSocket;
 
 // ReSharper disable ClassNeverInstantiated.Global
@@ -8,7 +9,7 @@ namespace Brobot.Workers;
 public class BirthdayWorker(
     ICronWorkerConfig<BirthdayWorker> config,
     IServiceProvider services,
-    DiscordSocketClient client)
+    IDiscordClient client)
     : CronWorkerBase(config.CronExpression)
 {
     protected override async Task DoWork(CancellationToken cancellationToken)
@@ -25,8 +26,7 @@ public class BirthdayWorker(
         var tasks = new List<Task>();
         foreach (var user in users)
         {
-            var channel = (await client.GetChannelAsync(user.PrimaryChannelId!.Value)) as SocketTextChannel;
-            if (channel == null)
+            if (await client.GetChannelAsync(user.PrimaryChannelId!.Value) is not ISocketMessageChannel channel)
             {
                 continue;
             }

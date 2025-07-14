@@ -26,9 +26,9 @@ public class DiscordOauthService(HttpClient client, IConfiguration configuration
 
     public async Task<ulong> GetDiscordUserId(string accessToken)
     {
-        using var authenticatedClient = new HttpClient();
-        authenticatedClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
-        var response = await authenticatedClient.GetFromJsonAsync<JsonElement>(configuration["DiscordUserInformationEndpoint"] ?? "");
+        client.DefaultRequestHeaders.Remove("Authorization");
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+        var response = await client.GetFromJsonAsync<JsonElement>(configuration["DiscordUserInformationEndpoint"] ?? "");
         var id = response.GetProperty("id").GetString();
         if (string.IsNullOrWhiteSpace(id))
         {

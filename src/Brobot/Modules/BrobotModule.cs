@@ -8,17 +8,17 @@ using TimeZoneConverter;
 
 namespace Brobot.Modules;
 
-public class BrobotModule : InteractionModuleBase
+public class BrobotModule(
+    IUnitOfWork uow,
+    Random random,
+    IGiphyService giphyService,
+    IRandomFactService randomFactService,
+    IDictionaryService dictionaryService,
+    IHotOpService hotOpService,
+    IScheduledMessageService scheduledMessageService,
+    ILogger<BrobotModule> logger)
+    : InteractionModuleBase
 {
-    private readonly IUnitOfWork _uow;
-    private readonly Random _random;
-    private readonly IGiphyService _giphyService;
-    private readonly IRandomFactService _randomFactService;
-    private readonly IDictionaryService _dictionaryService;
-    private readonly HotOpService _hotOpService;
-    private readonly ScheduledMessageService _scheduledMessageService;
-    private readonly ILogger _logger;
-
     private readonly string[] _emojiLookup =
     [
         ":one:",
@@ -32,25 +32,6 @@ public class BrobotModule : InteractionModuleBase
         ":nine:"
     ];
 
-    public BrobotModule(
-        IUnitOfWork uow,
-        Random random,
-        IGiphyService giphyService,
-        IRandomFactService randomFactService,
-        IDictionaryService dictionaryService,
-        HotOpService hotOpService,
-        ScheduledMessageService scheduledMessageService,
-        ILogger<BrobotModule> logger)
-    {
-        _uow = uow;
-        _random = random;
-        _giphyService = giphyService;
-        _randomFactService = randomFactService;
-        _dictionaryService = dictionaryService;
-        _hotOpService = hotOpService;
-        _scheduledMessageService = scheduledMessageService;
-        _logger = logger;
-    }
     [SlashCommand("info", "Returns guild, channel, and user ids")]
     public async Task Info()
     {
@@ -78,7 +59,7 @@ public class BrobotModule : InteractionModuleBase
         var results = new int[numberOfDice];
         for (int i = 0; i < numberOfDice; i++)
         {
-            results[i] = _random.Next(1, diceValue + 1);
+            results[i] = random.Next(1, diceValue + 1);
         }
 
         await RespondAsync($"{string.Join(", ", results)}\nTotal: {results.Sum()}");
@@ -118,7 +99,7 @@ public class BrobotModule : InteractionModuleBase
             return;
         }
 
-        await RespondAsync($"Let's play {games[_random.Next(games.Count)]}");
+        await RespondAsync($"Let's play {games[random.Next(games.Count)]}");
     }
 
     [SlashCommand("teams", "Generates two teams based on the list of provided players")]
@@ -161,7 +142,7 @@ public class BrobotModule : InteractionModuleBase
         var numberOfPlayers = players.Count;
         for (var i = 0; i < numberOfPlayers; i++)
         {
-            var randomPlayer = players[_random.Next(players.Count)];
+            var randomPlayer = players[random.Next(players.Count)];
             if (isTeam1)
             {
                 team1.Add(randomPlayer);
@@ -182,12 +163,12 @@ public class BrobotModule : InteractionModuleBase
     {
         try
         {
-            var url = await _giphyService.GetGif(tag);
+            var url = await giphyService.GetGif(tag);
             await RespondAsync(url);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Gif command failed");
+            logger.LogError(ex, "Gif command failed");
             await RespondAsync("An error occurred");
         }
     }
@@ -197,12 +178,12 @@ public class BrobotModule : InteractionModuleBase
     {
         try
         {
-            var fact = await _randomFactService.GetFact();
+            var fact = await randomFactService.GetFact();
             await RespondAsync(fact);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fact command failed");
+            logger.LogError(ex, "Fact command failed");
             await RespondAsync("An error occurred");
         }
     }
@@ -224,12 +205,12 @@ public class BrobotModule : InteractionModuleBase
     {
         try
         {
-            var definition = await _dictionaryService.GetDefinition(word);
+            var definition = await dictionaryService.GetDefinition(word);
             await RespondAsync(definition);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Define command failed");
+            logger.LogError(ex, "Define command failed");
             await RespondAsync("An error occurred");
         }
     }
@@ -306,19 +287,19 @@ public class BrobotModule : InteractionModuleBase
             }
 
             reminderDateFormatted = DateTime.SpecifyKind(reminderDateFormatted, DateTimeKind.Utc);
-            var user = await _uow.Users.GetById(Context.User.Id);
+            var user = await uow.Users.GetById(Context.User.Id);
             if (user == null)
             {
                 await RespondAsync("An error has occured", ephemeral: true);
                 return;
             }
 
-            await _scheduledMessageService.CreateScheduledMessage(message, user, reminderDateFormatted, Context.Channel.Id);
+            await scheduledMessageService.CreateScheduledMessage(message, user, reminderDateFormatted, Context.Channel.Id);
             await RespondAsync("Reminder has been created");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Reminder message failed");
+            logger.LogError(ex, "Reminder message failed");
             await RespondAsync(text: "Failed to create reminder", ephemeral: true);
         }
     }
@@ -334,8 +315,8 @@ public class BrobotModule : InteractionModuleBase
                 return;
             }
 
-            var user = await _uow.Users.GetById(socketUser.Id);
-            var callingUser = await _uow.Users.GetById(Context.User.Id);
+            var user = await uow.Users.GetById(socketUser.Id);
+            var callingUser = await uow.Users.GetById(Context.User.Id);
             if (user?.LastOnline == null)
             {
                 await RespondAsync(text: "Failed to get last online", ephemeral: true);
@@ -354,7 +335,7 @@ public class BrobotModule : InteractionModuleBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "LastOnline command failed");
+            logger.LogError(ex, "LastOnline command failed");
             await RespondAsync(text: "Failed to get last online", ephemeral: true);
         }
     }
@@ -364,19 +345,19 @@ public class BrobotModule : InteractionModuleBase
     {
         try
         {
-            var activeHotOps = (await _uow.HotOps.GetActiveHotOpsWithSessions(Context.Channel.Id)).ToArray();
+            var activeHotOps = (await uow.HotOps.GetActiveHotOpsWithSessions(Context.Channel.Id)).ToArray();
             if (activeHotOps.Length == 0)
             {
                 await RespondAsync("No active hot ops");
                 return;
             }
 
-            await RespondAsync(embeds: activeHotOps.Select(_hotOpService.CreateScoreboardEmbed).ToArray());
+            await RespondAsync(embeds: activeHotOps.Select(hotOpService.CreateScoreboardEmbed).ToArray());
 
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "HotOp command failed");
+            logger.LogError(ex, "HotOp command failed");
             await RespondAsync(text: "Failed to get hot op scores", ephemeral: true);
         }
     }

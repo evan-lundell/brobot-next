@@ -6,7 +6,7 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class WordCountService(ILogger<WordCountService> logger, DiscordSocketClient client, StopWordService stopWordService)
+public class WordCountService(ILogger<WordCountService> logger, IDiscordClient client, IStopWordService stopWordService)
 {
     private readonly string[] _separators =
         [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "\"", "@", "*", "<", ">", "[", "]", "(", ")", "-", ";", "*", "{", "}", "+", "=", "#", "~"];
@@ -16,14 +16,14 @@ public class WordCountService(ILogger<WordCountService> logger, DiscordSocketCli
         try
         {
             var socketChannel = await client.GetChannelAsync(channel.Id);
-            if (socketChannel is not SocketTextChannel socketTextChannel)
+            if (socketChannel is not ISocketMessageChannel socketTextChannel)
             {
                 return [];
             }
 
             var timezone = TZConvert.GetTimeZoneInfo(channel.Timezone);
-            var start = new DateTimeOffset(TimeZoneInfo.ConvertTimeFromUtc(startDate, timezone));
-            var end = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(endDate, timezone));
+            var start = new DateTimeOffset(TimeZoneInfo.ConvertTimeFromUtc(startDate, timezone), timezone.GetUtcOffset(startDate));
+            var end = new DateTimeOffset(TimeZoneInfo.ConvertTimeFromUtc(endDate, timezone), timezone.GetUtcOffset(endDate));
             ulong? fromMessageId = null;
             var done = false;
             Dictionary<string, WordCountDto> wordCounts = new();
@@ -33,14 +33,13 @@ public class WordCountService(ILogger<WordCountService> logger, DiscordSocketCli
                 IAsyncEnumerable<IReadOnlyCollection<IMessage>> messageCollection = fromMessageId.HasValue
                     ? socketTextChannel.GetMessagesAsync(fromMessageId.Value, Direction.Before)
                     : socketTextChannel.GetMessagesAsync();
-                var messages = await messageCollection.FlattenAsync(); 
-                foreach (var message in messages)
+                var messages = (await messageCollection.FlattenAsync()).ToList();
+                if (messages.Count == 0)
                 {
-                    if (message.Timestamp >= end)
-                    {
-                        continue;
-                    }
-
+                    break;
+                }
+                foreach (var message in messages.Where(message => message.Timestamp < end))
+                {
                     if (message.Timestamp < start)
                     {
                         done = true;
@@ -54,14 +53,17 @@ public class WordCountService(ILogger<WordCountService> logger, DiscordSocketCli
                         {
                             continue;
                         }
-                        wordCounts.TryAdd(word.ToLower(), new WordCountDto
+                        var wordLower = word.ToLowerInvariant();
+                        wordCounts.TryAdd(wordLower, new WordCountDto
                         {
                             Word = word.ToLower(),
                             Count = 0,
                             ChannelId = channel.Id
                         });
-                        wordCounts[word.ToLower()].Count += 1;
+                        wordCounts[wordLower].Count += 1;
                     }
+
+                    fromMessageId = message.Id;
                 }
 
                 if (!done)

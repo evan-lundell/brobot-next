@@ -11,7 +11,7 @@ namespace Brobot.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
-public class StopWordsController(IUnitOfWork uow, StopWordService stopWordService) : ControllerBase
+public class StopWordsController(IUnitOfWork uow, IStopWordService stopWordService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<StopWordResponse>>> GetAll()

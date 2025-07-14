@@ -2,7 +2,7 @@ using Brobot.Contexts;
 using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Services;
-using Discord.WebSocket;
+using Discord;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -60,7 +60,7 @@ public abstract class SecretSantaServiceTestsBase
         
         var unitOfWork = new UnitOfWork(Context);
         
-        var discordClientMock = new Mock<DiscordSocketClient>();
+        var discordClientMock = new Mock<IDiscordClient>();
         
         Random random = new(5000);
         SecretSantaService = new SecretSantaService(unitOfWork, discordClientMock.Object, random);

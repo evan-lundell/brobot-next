@@ -11,7 +11,7 @@ public class MonthlyStatsWorker(
     ICronWorkerConfig<MonthlyStatsWorker> config,
     IServiceProvider provider,
     IWordCloudService wordCloudService,
-    DiscordSocketClient discordClient) : CronWorkerBase(config.CronExpression)
+    IDiscordClient discordClient) : CronWorkerBase(config.CronExpression)
 {
     protected override async Task DoWork(CancellationToken cancellationToken)
     {
@@ -59,7 +59,7 @@ public class MonthlyStatsWorker(
             Fields = leaderboard
         };
 
-        if (await discordClient.GetChannelAsync(channelId) is not SocketTextChannel channel)
+        if (await discordClient.GetChannelAsync(channelId) is not ISocketMessageChannel channel)
         {
             return;
         }

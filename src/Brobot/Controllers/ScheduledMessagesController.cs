@@ -14,7 +14,7 @@ namespace Brobot.Controllers;
 [ApiController]
 [Route("[controller]")]
 [Authorize]
-public class ScheduledMessagesController(ScheduledMessageService scheduledMessageService) : ControllerBase
+public class ScheduledMessagesController(IScheduledMessageService scheduledMessageService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ScheduledMessageResponse>>> Get(

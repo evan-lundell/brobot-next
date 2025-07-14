@@ -5,11 +5,10 @@ using Brobot.Repositories;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Discord;
-using Discord.WebSocket;
 
 namespace Brobot.Services;
 
-public class SecretSantaService(IUnitOfWork uow, DiscordSocketClient client, Random random)
+public class SecretSantaService(IUnitOfWork uow, IDiscordClient client, Random random)
 {
     public async Task<IEnumerable<SecretSantaGroupResponse>> GetSecretSantaGroups()
     {

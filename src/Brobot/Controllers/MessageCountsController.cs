@@ -10,7 +10,7 @@ namespace Brobot.Controllers;
 [ApiController]
 [Route("[controller]")]
 [Authorize]
-public class MessageCountsController(MessageCountService messageCountService) : ControllerBase
+public class MessageCountsController(IMessageCountService messageCountService) : ControllerBase
 {
     [HttpGet("daily")]
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetDailyMessageCounts([FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)

@@ -40,7 +40,12 @@ public static class Program
             await brobotDbContext.Database.MigrateAsync();
         }
 
-        var client = app.Services.GetRequiredService<DiscordSocketClient>();
+        var client = app.Services.GetRequiredService<IDiscordClient>();
+        if (client is not DiscordSocketClient socketClient)
+        {
+            Console.WriteLine("Client is not a socket client");
+            return;
+        }
         if (string.IsNullOrWhiteSpace(app.Configuration["BrobotToken"]))
         {
             Console.WriteLine("No token provided");
@@ -51,10 +56,10 @@ public static class Program
 
         if (!args.Contains("--no-bot"))
         {
-            var eventHandler = app.Services.GetRequiredService<DiscordEventHandler>();
+            DiscordEventHandler eventHandler = new(socketClient, app.Services);
             eventHandler.Start();
-            await client.LoginAsync(TokenType.Bot, app.Configuration["BrobotToken"] ?? "");
-            await client.StartAsync();
+            await socketClient.LoginAsync(TokenType.Bot, app.Configuration["BrobotToken"] ?? "");
+            await socketClient.StartAsync();
         }
 
         app.UseHttpsRedirection();
@@ -103,7 +108,7 @@ public static class Program
                 }
             });
         });
-        builder.Services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
+        builder.Services.AddSingleton<IDiscordClient>(new DiscordSocketClient(new DiscordSocketConfig
         {
             GatewayIntents = GatewayIntents.All,
             MessageCacheSize = 100
@@ -129,9 +134,8 @@ public static class Program
         {
             configure.BaseAddress = new Uri(builder.Configuration["DictionaryBaseUrl"] ?? "");
         });
-        builder.Services.AddSingleton<DiscordEventHandler>();
         builder.Services.AddSingleton<ISyncService, SyncService>();
-        builder.Services.AddScoped<HotOpService>();
+        builder.Services.AddScoped<IHotOpService, HotOpService>();
 
         if (!args.Contains("--no-jobs"))
         {
@@ -188,10 +192,10 @@ public static class Program
         .AddDefaultTokenProviders();
         builder.Services.AddSingleton<JwtService>();
         builder.Services.AddHttpClient<DiscordOauthService>();
-        builder.Services.AddScoped<ScheduledMessageService>();
-        builder.Services.AddScoped<MessageCountService>();
+        builder.Services.AddScoped<IScheduledMessageService, ScheduledMessageService>();
+        builder.Services.AddScoped<IMessageCountService, MessageCountService>();
         builder.Services.AddScoped<SecretSantaService>();
-        builder.Services.AddSingleton<StopWordService>();
+        builder.Services.AddSingleton<IStopWordService, StopWordService>();
         builder.Services.AddSingleton<WordCountService>();
         builder.Services.AddHttpClient<IWordCloudService, WordCloudService>(client =>
         {

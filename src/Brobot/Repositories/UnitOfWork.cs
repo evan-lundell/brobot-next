@@ -48,4 +48,6 @@ public class UnitOfWork : IUnitOfWork
     {
         _context.Dispose();
     }
+
+    public BrobotDbContext DbContext  => _context;
 }

@@ -21,6 +21,7 @@ public class ScheduledMessageRepository(BrobotDbContext context)
         int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
         var query = Context.ScheduledMessages
+            .AsSplitQuery()
             .Include(sm => sm.Channel)
             .Include(sm => sm.CreatedBy)
             .Where(sm => sm.CreatedById == userId);
