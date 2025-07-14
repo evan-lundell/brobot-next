@@ -56,7 +56,7 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
                         var wordLower = word.ToLowerInvariant();
                         wordCounts.TryAdd(wordLower, new WordCountDto
                         {
-                            Word = word.ToLower(),
+                            Word = wordLower,
                             Count = 0,
                             ChannelId = channel.Id
                         });

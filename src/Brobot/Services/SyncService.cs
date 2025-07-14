@@ -55,9 +55,6 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
 
         uow.Channels.Remove(channelToBeDeleted);
         await uow.CompleteAsync();
-
-        var updatedChannel = await uow.Channels.GetById(channel.Id);
-        Console.WriteLine(updatedChannel!.Archived);
     }
 
     public async Task ChannelUpdated(IGuild guild, ISocketMessageChannel previous, ISocketMessageChannel current)
