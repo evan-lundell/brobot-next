@@ -9,7 +9,6 @@ public class WordCloudService(HttpClient http, ILogger<WordCloudService> logger)
     {
         try
         {
-
             var text = string.Join(",", wordCounts.Select(wc => $"{wc.Word}:{wc.Count}"));
             var response = await http.PostAsJsonAsync("wordcloud", new
             {

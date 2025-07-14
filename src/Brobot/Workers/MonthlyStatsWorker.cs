@@ -71,7 +71,7 @@ public class MonthlyStatsWorker(
         else
         {
             var wordCloudBytes = await wordCloudService.GetWordCloud(wordCountDtos);
-            var stream = new MemoryStream(wordCloudBytes);
+            using var stream = new MemoryStream(wordCloudBytes);
             await channel.SendFileAsync(stream: stream, filename: "wordcloud.png", embed: embedBuilder.Build());
         }
     }
