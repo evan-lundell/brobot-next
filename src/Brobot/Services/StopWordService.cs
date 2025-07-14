@@ -2,7 +2,7 @@ using Brobot.Repositories;
 
 namespace Brobot.Services;
 
-public class StopWordService(IServiceProvider services)
+public class StopWordService(IServiceProvider services) : IStopWordService
 {
     private HashSet<string>? _stopWords;
     private bool _isOutdated = true;

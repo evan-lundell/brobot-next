@@ -41,6 +41,7 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel,
     public async Task<IEnumerable<UserModel>> GetAllWithGuildsAndChannels()
     {
         return await Context.Users
+            .AsSplitQuery()
             .Include(u => u.GuildUsers)
             .ThenInclude(gu => gu.Guild)
             .Include(u => u.ChannelUsers)
@@ -53,6 +54,7 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel,
     public Task<UserModel?> GetByIdWithIncludes(ulong id)
     {
         return Context.Users
+            .AsSplitQuery()
             .Include(u => u.GuildUsers)
             .ThenInclude(gu => gu.Guild)
             .Include(u => u.ChannelUsers)

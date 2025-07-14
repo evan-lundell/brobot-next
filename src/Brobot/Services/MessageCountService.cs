@@ -6,7 +6,7 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class MessageCountService(IUnitOfWork uow)
+public class MessageCountService(IUnitOfWork uow) : IMessageCountService
 {
     public async Task<IEnumerable<DailyMessageCountResponse>> GetUsersDailyMessageCountForChannel(ulong userId, ulong channelId, int numOfDays)
     {

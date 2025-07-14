@@ -1,3 +1,4 @@
+using Brobot.Contexts;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Brobot.Repositories;
@@ -13,8 +14,8 @@ public interface IUnitOfWork : IDisposable
     IDailyMessageCountRepository DailyMessageCounts { get; }
     ISecretSantaGroupRepository SecretSantaGroups { get; }
     IStopWordRepository StopWords { get; }
-    IWordCountRepository WordCounts { get; }
     Task<IDbContextTransaction> BeginTransaction();
     Task CommitTransaction(IDbContextTransaction transaction);
+    BrobotDbContext DbContext { get; }
     Task<int> CompleteAsync();
 }

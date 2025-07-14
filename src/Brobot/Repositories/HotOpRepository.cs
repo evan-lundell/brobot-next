@@ -13,6 +13,7 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
         var utcNow = DateTime.UtcNow;
         var activeHotOps = await Context.HotOps
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(ho => ho.User)
             .Include(ho => ho.HotOpSessions)
             .ThenInclude(hos => hos.User)
@@ -29,6 +30,7 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
     {
         var utcNow = DateTime.UtcNow;
         IQueryable<HotOpModel> query = Context.HotOps
+            .AsSplitQuery()
             .Include(ho => ho.Channel)
             .Include(ho => ho.User)
             .Where(ho => ho.Channel.ChannelUsers.Any(cu => cu.UserId == userId));
@@ -56,6 +58,7 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
     public override async Task<IEnumerable<HotOpModel>> Find(Expression<Func<HotOpModel, bool>> expression)
     {
         return await Context.HotOps
+            .AsSplitQuery()
             .Include(ho => ho.User)
             .Include(ho => ho.HotOpSessions)
             .ThenInclude(hos => hos.User)
@@ -68,6 +71,7 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
 
     public override Task<HotOpModel?> GetById(int id)
         => Context.HotOps
+            .AsSplitQuery()
             .Include(ho => ho.User)
             .Include(ho => ho.HotOpSessions)
             .ThenInclude(hos => hos.User)

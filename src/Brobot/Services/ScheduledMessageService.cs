@@ -5,7 +5,7 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class ScheduledMessageService(IUnitOfWork uow)
+public class ScheduledMessageService(IUnitOfWork uow) : IScheduledMessageService
 {
     public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(UserModel user, int? limit = null, int skip = 0,
         DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
