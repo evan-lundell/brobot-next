@@ -49,13 +49,17 @@ public static class Program
             })
             .AddBrobotInfrastructure(builder.Configuration)
             .AddUserManagement(builder.Configuration)
-            .AddDiscord(builder.Configuration)
             .AddBrobotServices(builder.Configuration)
             .AddHostedService<MigrationsHostedService>();
 
         if (!args.Contains("--no-jobs"))
         {
             builder.Services.AddJobs(builder.Configuration);
+        }
+
+        if (!args.Contains("--no-bot"))
+        {
+            builder.Services.AddDiscord(builder.Configuration);
         }
     }
 
