@@ -17,7 +17,7 @@ namespace Brobot.Controllers;
 [Route("[controller]")]
 public class AuthController(
     UserManager<IdentityUser> userManager,
-    JwtService jwtService,
+    IJwtService jwtService,
     IConfiguration configuration,
     IUnitOfWork uow,
     DiscordOauthService discordOauthService)

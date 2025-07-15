@@ -7,7 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Brobot.Services;
 
-public class JwtService(IConfiguration configuration)
+public class JwtService(IConfiguration configuration) : IJwtService
 {
     public string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null)
     {
