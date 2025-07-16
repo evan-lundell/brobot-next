@@ -1,8 +1,9 @@
 using System.Net;
+using Brobot.Configuration;
 using Brobot.Responses;
 using Brobot.Services;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using Newtonsoft.Json;
@@ -24,15 +25,16 @@ public class GiphyServiceTests
         {
             BaseAddress = new Uri("http://localhost")
         };
-        Dictionary<string, string?> configSettings = new()
+        ExternalApisOptions options = new()
         {
-            { "GiphyApiKey", "test" }
+            GiphyBaseUrl = "https://localhost",
+            GiphyApiKey = "key",
+            DictionaryBaseUrl = "https://localhost",
+            QuickChartBaseUrl = "https://localhost",
+            RandomFactBaseUrl = "https://localhost"
         };
-        IConfiguration configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configSettings)
-            .Build();
         ILogger<GiphyService> logger = new Mock<ILogger<GiphyService>>().Object;
-        _giphyService = new GiphyService(_mockHttpClient, configuration, logger);
+        _giphyService = new GiphyService(_mockHttpClient, Options.Create(options), logger);
     }
     
     [TearDown]

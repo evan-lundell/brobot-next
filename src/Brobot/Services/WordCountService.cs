@@ -6,7 +6,7 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class WordCountService(ILogger<WordCountService> logger, IDiscordClient client, IStopWordService stopWordService)
+public class WordCountService(ILogger<WordCountService> logger, IDiscordClient client, IStopWordService stopWordService) : IWordCountService
 {
     private readonly string[] _separators =
         [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "\"", "@", "*", "<", ">", "[", "]", "(", ")", "-", ";", "*", "{", "}", "+", "=", "#", "~"];

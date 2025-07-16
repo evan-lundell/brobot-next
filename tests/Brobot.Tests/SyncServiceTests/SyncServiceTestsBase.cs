@@ -1,3 +1,4 @@
+using Brobot.Configuration;
 using Brobot.Contexts;
 using Brobot.Repositories;
 using Brobot.Services;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -33,11 +35,16 @@ public abstract class SyncServiceTestsBase
         configMock.Setup(c => c["FixTwitterLinks"]).Returns("true");
         LoggerMock = new Mock<ILogger<SyncService>>();
         MockDiscordClient = new Mock<IDiscordClient>();
+        GeneralOptions generalOptions = new()
+        {
+            FixTwitterLinks = true,
+            VersionFilePath = "./version.txt"
+        };
         SyncService = new SyncService(
             _serviceProvider,
             MockDiscordClient.Object,
-            configMock.Object,
-            LoggerMock.Object);
+            LoggerMock.Object,
+            Options.Create(generalOptions));
     }
 
     protected abstract void SetupDatabase();

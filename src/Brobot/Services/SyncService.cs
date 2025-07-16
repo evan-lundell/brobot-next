@@ -1,12 +1,14 @@
 using Brobot.Models;
+using Brobot.Configuration;
 using Brobot.Repositories;
 using Brobot.Shared;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Options;
 
 namespace Brobot.Services;
 
-public class SyncService(IServiceProvider services, IDiscordClient discordClient, IConfiguration configuration, ILogger<SyncService> logger) : ISyncService
+public class SyncService(IServiceProvider services, IDiscordClient discordClient, ILogger<SyncService> logger, IOptions<GeneralOptions> generalOptions) : ISyncService
 {
     public async Task ChannelCreated(IGuildChannel channel)
     {
@@ -372,7 +374,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
                 break;
         }
 
-        var fixTwitterLinks = bool.Parse(configuration["FixTwitterLinks"] ?? "false");
+        var fixTwitterLinks = generalOptions.Value.FixTwitterLinks;
         if (fixTwitterLinks)
         {
             if (message.Content.Contains("https://twitter.com"))

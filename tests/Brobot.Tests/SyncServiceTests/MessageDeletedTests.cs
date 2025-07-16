@@ -1,7 +1,8 @@
+using Brobot.Configuration;
 using Brobot.Services;
 using Discord;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -11,12 +12,17 @@ public class MessageDeletedTests : SyncServiceTestsBase
     private Mock<ILogger<SyncService>> _loggerMock;
     public override void Setup()
     {
+        GeneralOptions generalOptions = new()
+        {
+            FixTwitterLinks = true,
+            VersionFilePath = "./version.txt"
+        };
         _loggerMock = new Mock<ILogger<SyncService>>();
         SyncService = new SyncService(
             Mock.Of<IServiceProvider>(),
             Mock.Of<IDiscordClient>(),
-            Mock.Of<IConfiguration>(),
-            _loggerMock.Object);
+            _loggerMock.Object,
+            Options.Create(generalOptions));
     }
 
     public override void TearDown()

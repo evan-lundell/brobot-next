@@ -10,7 +10,7 @@ namespace Brobot.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
-public class SecretSantaGroupsController(SecretSantaService secretSantaService) : ControllerBase
+public class SecretSantaGroupsController(ISecretSantaService secretSantaService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<SecretSantaGroupResponse>>> GetSecretSantaGroups()

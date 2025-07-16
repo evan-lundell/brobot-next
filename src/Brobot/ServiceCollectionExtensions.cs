@@ -1,6 +1,7 @@
 using System.Text;
 using Brobot.Contexts;
 using Brobot.HostedServices;
+using Brobot.Configuration;
 using Brobot.Repositories;
 using Brobot.Services;
 using Brobot.Workers;
@@ -30,6 +31,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddUserManagement(this IServiceCollection services, IConfiguration config)
     {
+        var jwtOptions = config.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
         services.AddDbContext<UsersDbContext>(db =>
         {
             db.UseNpgsql(config.GetConnectionString("Default"), npgsql =>
@@ -60,11 +62,11 @@ public static class ServiceCollectionExtensions
                 {
                     ValidateAudience = true,
                     ValidateIssuer = true,
-                    ValidAudience = config["ValidAudience"] ?? "",
-                    ValidIssuer = config["ValidIssuer"] ?? "",
+                    ValidAudience = jwtOptions.ValidAudience,
+                    ValidIssuer = jwtOptions.ValidIssuer,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(config["JwtSigningKey"] ?? ""))
+                        Encoding.UTF8.GetBytes(jwtOptions.SigningKey))
                 };
             });
 
@@ -86,39 +88,71 @@ public static class ServiceCollectionExtensions
     
     public static IServiceCollection AddJobs(this IServiceCollection services, IConfiguration config)
     {
-        services.AddCronJob<ReminderWorker>(o => o.CronExpression = "* * * * *");
-        services.AddCronJob<BirthdayWorker>(o => o.CronExpression = "0 12 * * *");
-        services.AddCronJob<HotOpWorker>(o => o.CronExpression = "* * * * *");
-        services.AddCronJob<MonthlyStatsWorker>(o => o.CronExpression = "0 12 1 * *");
+        var options = config.GetSection(JobsOptions.SectionName).Get<JobsOptions>() ?? new JobsOptions();
+        services.AddCronJob<ReminderWorker>(o => o.CronExpression = options.ReminderCron);
+        services.AddCronJob<BirthdayWorker>(o => o.CronExpression = options.BirthdayCron);
+        services.AddCronJob<HotOpWorker>(o => o.CronExpression = options.HotOpCron);
+        services.AddCronJob<MonthlyStatsWorker>(o => o.CronExpression = options.MonthlyStatsCron);
         return services;
     }
     
     public static IServiceCollection AddBrobotServices(this IServiceCollection services, IConfiguration config)
     {
+        var options = config.GetSection(ExternalApisOptions.SectionName).Get<ExternalApisOptions>()!;
         services.AddSingleton<ISyncService, SyncService>();
         services.AddScoped<IHotOpService, HotOpService>();
         services.AddScoped<IScheduledMessageService, ScheduledMessageService>();
         services.AddScoped<IMessageCountService, MessageCountService>();
-        services.AddScoped<SecretSantaService>();
+        services.AddScoped<ISecretSantaService, SecretSantaService>();
         services.AddSingleton<IStopWordService, StopWordService>();
-        services.AddSingleton<WordCountService>();
+        services.AddSingleton<IWordCountService, WordCountService>();
         services.AddHttpClient<IGiphyService, GiphyService>(c =>
         {
-            c.BaseAddress = new Uri(config["GiphyBaseUrl"] ?? "");
+            c.BaseAddress = new Uri(options.GiphyBaseUrl);
         });
         services.AddHttpClient<IRandomFactService, RandomFactService>(c =>
         {
-            c.BaseAddress = new Uri(config["RandomFactBaseUrl"] ?? "");
+            c.BaseAddress = new Uri(options.RandomFactBaseUrl);
         });
         services.AddHttpClient<IDictionaryService, DictionaryService>(c =>
         {
-            c.BaseAddress = new Uri(config["DictionaryBaseUrl"] ?? "");
+            c.BaseAddress = new Uri(options.DictionaryBaseUrl);
         });
         services.AddHttpClient<IWordCloudService, WordCloudService>(c =>
         {
-            c.BaseAddress = new Uri(config["QuickChartBaseUrl"] ?? "https://quickchart.io");
+            c.BaseAddress = new Uri(options.QuickChartBaseUrl);
         });
 
+        return services;
+    }
+    
+    public static IServiceCollection AddBrobotOptions(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddOptions<JobsOptions>()
+            .Bind(config.GetSection(JobsOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        services.AddOptions<ExternalApisOptions>()
+            .Bind(config.GetSection("ExternalApis"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        services.AddOptions<JwtOptions>()
+            .Bind(config.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+            
+        services.AddOptions<DiscordOptions>()
+            .Bind(config.GetSection(DiscordOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        services.AddOptions<GeneralOptions>()
+            .Bind(config.GetSection(GeneralOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
         return services;
     }
 }

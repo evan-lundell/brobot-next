@@ -1,11 +1,13 @@
+using Brobot.Configuration;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Options;
 
 namespace Brobot.HostedServices;
 
 public class DiscordBotHostedService(
     IDiscordClient client,
-    IConfiguration config,
+    IOptions<DiscordOptions> options,
     IServiceProvider serviceProvider,
     ILogger<DiscordBotHostedService> logger) : IHostedService
 {
@@ -13,18 +15,6 @@ public class DiscordBotHostedService(
     
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        if (config["NoBot"] == bool.TrueString)
-        {
-            logger.LogDebug("NoBot is enabled");
-            return;
-        }
-        var token = config["BrobotToken"];
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            logger.LogCritical("No token found, exiting");
-            throw new InvalidOperationException("No Discord bot token configured.");
-        }
-
         if (client is not DiscordSocketClient socketClient)
         {
             logger.LogCritical("No Discord socket client configured, exiting");
@@ -36,7 +26,7 @@ public class DiscordBotHostedService(
 
         logger.LogInformation("Starting Discord bot");
         
-        await socketClient.LoginAsync(TokenType.Bot, token);
+        await socketClient.LoginAsync(TokenType.Bot, options.Value.BrobotToken);
 
         // This will throw if connection fails
         await socketClient.StartAsync();

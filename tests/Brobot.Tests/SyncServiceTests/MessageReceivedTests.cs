@@ -1,8 +1,10 @@
+using Brobot.Configuration;
 using Brobot.Services;
 using Discord;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -46,11 +48,16 @@ public class MessageReceivedTests : SyncServiceTestsBase
         _messageCountService.Setup(mcs =>
             mcs.AddToDailyCount(It.IsAny<ulong>(), It.IsAny<ulong>(), It.IsAny<DateOnly?>()));
         
+        GeneralOptions generalOptions = new()
+        {
+            FixTwitterLinks = true,
+            VersionFilePath = "./version.txt"
+        };
         SyncService = new SyncService(
             servicesMock.Object, 
             Mock.Of<IDiscordClient>(), 
-            configurationMock.Object, 
-            Mock.Of<ILogger<SyncService>>());
+            Mock.Of<ILogger<SyncService>>(),
+            Options.Create(generalOptions));
     }
 
     [TearDown]
