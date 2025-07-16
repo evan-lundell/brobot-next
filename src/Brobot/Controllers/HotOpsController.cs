@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Brobot.Mappers;
+using TimeZoneConverter;
 
 namespace Brobot.Controllers;
 
@@ -40,7 +41,7 @@ public class HotOpsController(
                 break;
         }
 
-        var hotOps = hotOpModels.Select(h => h.ToHotOpResponse());
+        var hotOps = hotOpModels.Select(h => h.ToHotOpResponse()).ToArray();
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             foreach (var hotOp in hotOps)
@@ -68,25 +69,27 @@ public class HotOpsController(
             return BadRequest("Invalid channel");
         }
 
-        var adjustedTimes = (hotOpRequest.StartDate, hotOpRequest.EndDate);
+        var startOffset = TimeSpan.Zero;
+        var endOffset = TimeSpan.Zero;
+        var startDateUnspecified = new DateTime(hotOpRequest.StartDate.Ticks, DateTimeKind.Unspecified);
+        var endDateUnspecified = new DateTime(hotOpRequest.EndDate.Ticks, DateTimeKind.Unspecified);
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
-            adjustedTimes.StartDate = adjustedTimes.StartDate.AdjustToUtc(discordUser.Timezone);
-            adjustedTimes.EndDate = adjustedTimes.EndDate.AdjustToUtc(discordUser.Timezone);
+            var timezone = TZConvert.GetTimeZoneInfo(discordUser.Timezone);
+            startOffset = timezone.GetUtcOffset(startDateUnspecified);
+            endOffset = timezone.GetUtcOffset(endDateUnspecified);
         }
-        else
-        {
-            adjustedTimes.StartDate = adjustedTimes.StartDate.ToUniversalTime();
-            adjustedTimes.EndDate = adjustedTimes.EndDate.ToUniversalTime();
-        }
+        var startDateAdjusted = new DateTimeOffset(startDateUnspecified, startOffset).ToUniversalTime();
+        var endDateAdjusted = new DateTimeOffset(endDateUnspecified, endOffset).ToUniversalTime();
+        
         var hotOpModel = new HotOpModel
         {
             UserId = discordUser.Id,
             User = discordUser,
             Channel = channel,
             ChannelId = channel.Id,
-            StartDate = adjustedTimes.StartDate,
-            EndDate = adjustedTimes.EndDate
+            StartDate = startDateAdjusted,
+            EndDate = endDateAdjusted,
         };
 
         await uow.HotOps.Add(hotOpModel);

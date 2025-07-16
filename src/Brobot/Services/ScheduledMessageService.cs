@@ -11,23 +11,20 @@ public class ScheduledMessageService(IUnitOfWork uow) : IScheduledMessageService
         DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
         var scheduledMessages = (await uow.ScheduledMessages.GetScheduledMessagesByUser(user.Id, limit, skip, scheduledBefore, scheduledAfter)).ToList();
-        foreach (var message in scheduledMessages)
+        if (!string.IsNullOrWhiteSpace(user.Timezone))
         {
-            if (string.IsNullOrWhiteSpace(message.CreatedBy.Timezone))
-            {
-                continue;
-            }
 
-            var timezone = TZConvert.GetTimeZoneInfo(message.CreatedBy.Timezone);
-            var offset = timezone.GetUtcOffset(DateTime.UtcNow);
-            if (message.SendDate.HasValue)
+            foreach (var message in scheduledMessages)
             {
-                message.SendDate = message.SendDate.Value.ToOffset(offset);
-            }
+                if (message.SendDate.HasValue)
+                {
+                    message.SendDate = message.SendDate.Value.AdjustToUsersTimezone(user.Timezone);
+                }
 
-            if (message.SentDate.HasValue)
-            {
-                message.SentDate = message.SentDate.Value.ToOffset(offset);
+                if (message.SentDate.HasValue)
+                {
+                    message.SentDate = message.SentDate.Value.AdjustToUsersTimezone(user.Timezone);
+                }
             }
         }
 

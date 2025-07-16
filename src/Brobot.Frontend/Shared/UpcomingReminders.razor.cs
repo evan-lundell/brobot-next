@@ -36,9 +36,6 @@ public partial class UpcomingReminders : ComponentBase, ITabbable
     {
         try
         {
-            _reminders = (await ApiService.ScheduledMessageService.GetUnsentScheduledMessages())
-                .OrderBy(r => r.SendDate)
-                .ToList();
             _channels = await ApiService.GetChannels();
         }
         catch (Exception ex)
