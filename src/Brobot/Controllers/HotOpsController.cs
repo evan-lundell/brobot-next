@@ -69,16 +69,18 @@ public class HotOpsController(
             return BadRequest("Invalid channel");
         }
 
-        var offset = TimeSpan.Zero;
+        var startOffset = TimeSpan.Zero;
+        var endOffset = TimeSpan.Zero;
         var startDateUnspecified = new DateTime(hotOpRequest.StartDate.Ticks, DateTimeKind.Unspecified);
         var endDateUnspecified = new DateTime(hotOpRequest.EndDate.Ticks, DateTimeKind.Unspecified);
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             var timezone = TZConvert.GetTimeZoneInfo(discordUser.Timezone);
-            offset = timezone.GetUtcOffset(DateTime.Now);
+            startOffset = timezone.GetUtcOffset(startDateUnspecified);
+            endOffset = timezone.GetUtcOffset(endDateUnspecified);
         }
-        var startDateAdjusted = new DateTimeOffset(startDateUnspecified, offset).ToUniversalTime();
-        var endDateAdjusted = new DateTimeOffset(endDateUnspecified, offset).ToUniversalTime();
+        var startDateAdjusted = new DateTimeOffset(startDateUnspecified, startOffset).ToUniversalTime();
+        var endDateAdjusted = new DateTimeOffset(endDateUnspecified, endOffset).ToUniversalTime();
         
         var hotOpModel = new HotOpModel
         {
