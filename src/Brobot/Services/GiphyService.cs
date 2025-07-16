@@ -1,10 +1,12 @@
 using System.Web;
+using Brobot.Configuration;
 using Brobot.Responses;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace Brobot.Services;
 
-public class GiphyService(HttpClient http, IConfiguration configuration, ILogger<GiphyService> logger)
+public class GiphyService(HttpClient http, IOptions<ExternalApisOptions> options, ILogger<GiphyService> logger)
     : IGiphyService
 {
     public async Task<string> GetGif(string? tag)
@@ -12,7 +14,7 @@ public class GiphyService(HttpClient http, IConfiguration configuration, ILogger
         try
         {
             var queryStringBuilder = HttpUtility.ParseQueryString("");
-            queryStringBuilder.Add("api_key", configuration["GiphyApiKey"]);
+            queryStringBuilder.Add("api_key", options.Value.GiphyApiKey);
             if (!string.IsNullOrWhiteSpace(tag))
             {
                 queryStringBuilder.Add("tag", tag);

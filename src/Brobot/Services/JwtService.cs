@@ -2,16 +2,18 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Brobot.Models;
+using Brobot.Configuration;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Brobot.Services;
 
-public class JwtService(IConfiguration configuration)
+public class JwtService(IOptions<JwtOptions> options) : IJwtService
 {
     public string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null)
     {
-        var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtSigningKey"] ?? ""));
+        var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Value.SigningKey));
         var credentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
         var username = discordUser?.Username ?? user.UserName ?? "";
@@ -34,16 +36,12 @@ public class JwtService(IConfiguration configuration)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
-
-        if (!int.TryParse(configuration["JwtExpiry"], out var expiry))
-        {
-            expiry = 30;
-        }
+        
         var token = new JwtSecurityToken(
-            issuer: configuration["ValidIssuer"] ?? "",
-            audience: configuration["ValidAudience"] ?? "",
+            issuer: options.Value.ValidIssuer,
+            audience: options.Value.ValidAudience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(expiry),
+            expires: DateTime.UtcNow.AddMinutes(options.Value.Expiry),
             signingCredentials: credentials
         );
 

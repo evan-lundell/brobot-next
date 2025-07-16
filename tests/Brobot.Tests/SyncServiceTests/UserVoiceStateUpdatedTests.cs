@@ -1,9 +1,10 @@
+using Brobot.Configuration;
 using Brobot.Services;
 using Brobot.Shared;
 using Discord;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -41,11 +42,16 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
             .Setup(s => s.GetService(typeof(IHotOpService)))
             .Returns(_hotOpServiceMock.Object);
         
+        GeneralOptions generalOptions = new()
+        {
+            FixTwitterLinks = true,
+            VersionFilePath = "./version.txt"
+        };
         SyncService = new SyncService(
             servicesMock.Object,
             Mock.Of<IDiscordClient>(),
-            Mock.Of<IConfiguration>(), 
-            Mock.Of<ILogger<SyncService>>());
+            Mock.Of<ILogger<SyncService>>(),
+            Options.Create(generalOptions));
     }
 
     [TearDown]

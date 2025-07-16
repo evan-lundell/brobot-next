@@ -28,7 +28,7 @@ public class DiscordEventHandler : IDisposable
         
     }
 
-    public void Start()
+    public void RegisterEvents()
     {
         _client.Log += Log;
         _client.Ready += Ready;

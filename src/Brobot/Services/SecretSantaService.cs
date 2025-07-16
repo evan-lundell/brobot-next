@@ -8,7 +8,7 @@ using Discord;
 
 namespace Brobot.Services;
 
-public class SecretSantaService(IUnitOfWork uow, IDiscordClient client, Random random)
+public class SecretSantaService(IUnitOfWork uow, IDiscordClient client, Random random) : ISecretSantaService
 {
     public async Task<IEnumerable<SecretSantaGroupResponse>> GetSecretSantaGroups()
     {

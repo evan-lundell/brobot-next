@@ -1,16 +1,18 @@
 using System.Reflection;
+using Brobot.Configuration;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Brobot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class VersionController(IConfiguration configuration) : ControllerBase
+public class VersionController(IOptions<GeneralOptions> generalOptions) : ControllerBase
 {
     [HttpGet]
     public IActionResult Get()
     {
-        var filePath = configuration["VersionFilePath"];
+        var filePath = generalOptions.Value.VersionFilePath;
         var deploymentVersion = "";
         if (!string.IsNullOrEmpty(filePath) && System.IO.File.Exists(filePath))
         {

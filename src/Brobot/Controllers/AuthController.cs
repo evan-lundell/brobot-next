@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Brobot.Mappers;
+using Brobot.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Brobot.Controllers;
 
@@ -17,10 +19,11 @@ namespace Brobot.Controllers;
 [Route("[controller]")]
 public class AuthController(
     UserManager<IdentityUser> userManager,
-    JwtService jwtService,
-    IConfiguration configuration,
+    IJwtService jwtService,
     IUnitOfWork uow,
-    DiscordOauthService discordOauthService)
+    DiscordOauthService discordOauthService,
+    IOptions<JwtOptions> jwtOptions,
+    IOptions<DiscordOptions> discordOptions)
     : ControllerBase
 {
     private const string RefreshTokenCookieKey = "refreshCookie";
@@ -85,15 +88,11 @@ public class AuthController(
         // ReSharper disable once InvertIf
         if (!string.IsNullOrWhiteSpace(user.SecurityStamp))
         {
-            if (!int.TryParse(configuration["JwtExpiry"], out var expiry))
-            {
-                expiry = 30;
-            }
             var options = new CookieOptions
             {
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.Now.AddMinutes(expiry)
+                Expires = DateTime.Now.AddMinutes(jwtOptions.Value.Expiry)
             };
             HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, user.SecurityStamp, options);
         }
@@ -151,12 +150,12 @@ public class AuthController(
         var queryString = new Dictionary<string, string?>
         {
             { "response_type", "code" },
-            { "client_id", configuration["DiscordClientId"] ?? "" },
+            { "client_id", discordOptions.Value.ClientId },
             { "scope", "identify" },
             { "callback_url", HttpUtility.UrlEncode($"{HttpContext.Request.Host.ToUriComponent()}/discord-cb") }
         };
 
-        var uri = new UriBuilder(QueryHelpers.AddQueryString(configuration["DiscordAuthorizationEndpoint"] ?? "", queryString));
+        var uri = new UriBuilder(QueryHelpers.AddQueryString(discordOptions.Value.AuthorizationEndpoint, queryString));
         return Ok(new { url = uri.ToString() });
     }
 
@@ -207,15 +206,11 @@ public class AuthController(
         
         if (!string.IsNullOrWhiteSpace(identityUser.SecurityStamp))
         {
-            if (!int.TryParse(configuration["JwtExpiry"], out var expiry))
-            {
-                expiry = 30;
-            }
             var options = new CookieOptions
             {
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.Now.AddMinutes(expiry)
+                Expires = DateTime.Now.AddMinutes(jwtOptions.Value.Expiry)
             };
             HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, identityUser.SecurityStamp, options);
         }

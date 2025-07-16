@@ -1,9 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Brobot.Configuration;
 using Brobot.Models;
 using Brobot.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests;
@@ -12,24 +13,22 @@ namespace Brobot.Tests;
 public class JwtServiceTests
 {
     private JwtService _jwtService;
-    private readonly string _signingKey = "ov3b8UFUIUZsUq6pH9ErVfYQfrGVJ3WakuSdqZhcgOo";
-    private readonly string _issuer = "brobot";
-    private readonly string _audience = "brobot";
+    private const string SigningKey = "ov3b8UFUIUZsUq6pH9ErVfYQfrGVJ3WakuSdqZhcgOo";
+    private const string Issuer = "brobot";
+    private const string Audience = "brobot";
 
     [SetUp]
     public void Setup()
     {
-        Dictionary<string, string?> settings = new()
+        JwtOptions options = new()
         {
-            { "JwtSigningKey", _signingKey },
-            { "ValidIssuer", _issuer },
-            { "ValidAudience", _audience }
+            SigningKey = SigningKey,
+            ValidAudience = Audience,
+            ValidIssuer = Issuer,
+            Expiry = 30
         };
         
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
-        _jwtService = new JwtService(configuration);
+        _jwtService = new JwtService(Options.Create(options));
     }
 
     [Test]
@@ -61,8 +60,8 @@ public class JwtServiceTests
         
         Assert.Multiple(() =>
         {
-            Assert.That(jwtToken.Issuer, Is.EqualTo(_issuer));
-            Assert.That(jwtToken.Audiences.First(), Is.EqualTo(_audience));
+            Assert.That(jwtToken.Issuer, Is.EqualTo(Issuer));
+            Assert.That(jwtToken.Audiences.First(), Is.EqualTo(Audience));
             Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.Name).Value, Is.EqualTo("Discord User1"));
             Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value, Is.EqualTo(identityUserId));
             Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value, Is.EqualTo("test1@test.com"));

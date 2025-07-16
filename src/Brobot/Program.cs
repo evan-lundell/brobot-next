@@ -1,24 +1,71 @@
-using System.Text;
-using Brobot.Contexts;
-using Brobot.Repositories;
-using Brobot.Services;
-using Brobot.Workers;
-using Discord;
-using Discord.WebSocket;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using Brobot.HostedServices;
 using Microsoft.OpenApi.Models;
 
 namespace Brobot;
 
 public static class Program
 {
-    public static async Task Main(string[] args)
+    public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         CreateServices(builder, args);
         var app = builder.Build();
+        ConfigureMiddleware(app);
+        app.Run();
+    }
+
+    private static void CreateServices(WebApplicationBuilder builder, string[] args)
+    {
+        builder.Services.AddBrobotOptions(builder.Configuration);
+        builder.Services.AddControllersWithViews();
+        builder.Services.AddRazorPages();
+        builder.Services
+            .AddLogging()
+            .AddEndpointsApiExplorer()
+            .AddSwaggerGen(c =>
+            {
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please enter a valid token",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    BearerFormat = "JWT",
+                    Scheme = "Bearer"
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            })
+            .AddBrobotInfrastructure(builder.Configuration)
+            .AddUserManagement(builder.Configuration)
+            .AddBrobotServices(builder.Configuration)
+            .AddHostedService<MigrationsHostedService>();
+
+        if (!args.Contains("--no-jobs"))
+        {
+            builder.Services.AddJobs(builder.Configuration);
+        }
+
+        if (!args.Contains("--no-bot"))
+        {
+            builder.Services.AddDiscord(builder.Configuration);
+        }
+    }
+
+    private static void ConfigureMiddleware(WebApplication app)
+    {
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -32,36 +79,6 @@ public static class Program
             app.UseHsts();
         }
 
-        if (app.Environment.IsProduction())
-        {
-            var usersDbContext = app.Services.GetRequiredService<UsersDbContext>();
-            await usersDbContext.Database.MigrateAsync();
-            var brobotDbContext = app.Services.GetRequiredService<BrobotDbContext>();
-            await brobotDbContext.Database.MigrateAsync();
-        }
-
-        var client = app.Services.GetRequiredService<IDiscordClient>();
-        if (client is not DiscordSocketClient socketClient)
-        {
-            Console.WriteLine("Client is not a socket client");
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(app.Configuration["BrobotToken"]))
-        {
-            Console.WriteLine("No token provided");
-            return;
-        }
-
-        app.Configuration["NoSync"] = args.Contains("--no-sync").ToString();
-
-        if (!args.Contains("--no-bot"))
-        {
-            DiscordEventHandler eventHandler = new(socketClient, app.Services);
-            eventHandler.Start();
-            await socketClient.LoginAsync(TokenType.Bot, app.Configuration["BrobotToken"] ?? "");
-            await socketClient.StartAsync();
-        }
-
         app.UseHttpsRedirection();
         app.UseBlazorFrameworkFiles();
         app.UseStaticFiles();
@@ -72,134 +89,5 @@ public static class Program
         app.UseDiscordUser();
         app.MapControllers();
         app.MapFallbackToFile("index.html");
-        // ReSharper disable once MethodHasAsyncOverload
-        app.Run();
-    }
-
-    private static void CreateServices(WebApplicationBuilder builder, string[] args)
-    {
-        builder.Services.AddLogging();
-        builder.Services.AddControllersWithViews();
-        builder.Services.AddRazorPages();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen(options =>
-        {
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                In = ParameterLocation.Header,
-                Description = "Please enter a valid token",
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
-                BearerFormat = "JWT",
-                Scheme = "Bearer"
-            });
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
-            });
-        });
-        builder.Services.AddSingleton<IDiscordClient>(new DiscordSocketClient(new DiscordSocketConfig
-        {
-            GatewayIntents = GatewayIntents.All,
-            MessageCacheSize = 100
-        }));
-        builder.Services.AddDbContext<BrobotDbContext>(
-            dbContextOptionsBuilder => dbContextOptionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("Default"),
-                npgsqlDbContextOptionBuilder =>
-                {
-                    npgsqlDbContextOptionBuilder.MigrationsHistoryTable("__EFMigrationsHistory", "brobot");
-                })
-        );
-        builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
-        builder.Services.AddSingleton<Random>();
-        builder.Services.AddHttpClient<IGiphyService, GiphyService>(configure =>
-        {
-            configure.BaseAddress = new Uri(builder.Configuration["GiphyBaseUrl"] ?? "");
-        });
-        builder.Services.AddHttpClient<IRandomFactService, RandomFactService>(configure =>
-        {
-            configure.BaseAddress = new Uri(builder.Configuration["RandomFactBaseUrl"] ?? "");
-        });
-        builder.Services.AddHttpClient<IDictionaryService, DictionaryService>(configure =>
-        {
-            configure.BaseAddress = new Uri(builder.Configuration["DictionaryBaseUrl"] ?? "");
-        });
-        builder.Services.AddSingleton<ISyncService, SyncService>();
-        builder.Services.AddScoped<IHotOpService, HotOpService>();
-
-        if (!args.Contains("--no-jobs"))
-        {
-            builder.Services.AddCronJob<ReminderWorker>(options =>
-            {
-                options.CronExpression = "* * * * *";
-            });
-            builder.Services.AddCronJob<BirthdayWorker>(options =>
-            {
-                options.CronExpression = "0 12 * * *";
-            });
-            builder.Services.AddCronJob<HotOpWorker>(options =>
-            {
-                options.CronExpression = "* * * * *";
-            });
-            builder.Services.AddCronJob<MonthlyStatsWorker>(options =>
-            {
-                options.CronExpression = "0 12 1 * *";
-            });
-        }
-        
-        builder.Services.AddAuthentication()
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateAudience = true,
-                ValidateIssuer = true,
-                ValidAudience = builder.Configuration["ValidAudience"] ?? "",
-                ValidIssuer = builder.Configuration["ValidIssuer"] ?? "",
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSigningKey"] ?? ""))
-            };
-        });
-        builder.Services.AddDbContext<UsersDbContext>(dbContextOptionsBuilder =>
-        {
-            dbContextOptionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("Default"), npgsqlDbContextOptionsBuilder =>
-            {
-                npgsqlDbContextOptionsBuilder.MigrationsHistoryTable("__EFMigrationsHistory", "auth");
-            });
-        });
-        builder.Services.AddIdentityCore<IdentityUser>(options =>
-        {
-            options.User.RequireUniqueEmail = true;
-            options.Password.RequireDigit = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequiredLength = 8;
-            options.SignIn.RequireConfirmedEmail = false;
-        })
-        .AddRoles<IdentityRole>()
-        .AddEntityFrameworkStores<UsersDbContext>()
-        .AddDefaultTokenProviders();
-        builder.Services.AddSingleton<JwtService>();
-        builder.Services.AddHttpClient<DiscordOauthService>();
-        builder.Services.AddScoped<IScheduledMessageService, ScheduledMessageService>();
-        builder.Services.AddScoped<IMessageCountService, MessageCountService>();
-        builder.Services.AddScoped<SecretSantaService>();
-        builder.Services.AddSingleton<IStopWordService, StopWordService>();
-        builder.Services.AddSingleton<WordCountService>();
-        builder.Services.AddHttpClient<IWordCloudService, WordCloudService>(client =>
-        {
-            client.BaseAddress = new Uri(builder.Configuration["QuickChartBaseUrl"] ?? "https://quickchart.io");
-        });
     }
 }

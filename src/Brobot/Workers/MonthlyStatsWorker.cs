@@ -17,7 +17,7 @@ public class MonthlyStatsWorker(
     {
         using var scope =  provider.CreateScope();
         using var iow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var wordCountService = scope.ServiceProvider.GetRequiredService<WordCountService>();
+        var wordCountService = scope.ServiceProvider.GetRequiredService<IWordCountService>();
         var channels = await iow.Channels.Find(c => c.MonthlyWordCloud);
         var now = DateOnly.FromDateTime(DateTime.UtcNow);
         var startDate = now.AddMonths(-1);
