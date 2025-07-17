@@ -34,7 +34,7 @@ public class VersionService(
         
         if (isVersionNew && !string.IsNullOrEmpty(generalOptions.Value.ReleaseNotesUrl))
         {
-            await SendVersionUpgradeMessge(assemblyVersion);
+            await SendVersionUpgradeMessage(assemblyVersion);
         }
     }
     
@@ -50,7 +50,7 @@ public class VersionService(
         return newVersion;
     }
 
-    private async Task SendVersionUpgradeMessge(string versionName)
+    private async Task SendVersionUpgradeMessage(string versionName)
     {
         var guilds = (await client.GetGuildsAsync())
             .ToDictionary(x => x.Id);

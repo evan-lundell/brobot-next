@@ -25,8 +25,9 @@ public static class ServiceCollectionExtensions
             });
         });
         services.AddTransient<IUnitOfWork, UnitOfWork>();
-        services.AddTransient<Random>();
+        services.AddSingleton<Random>();
         services.AddScoped<IVersionService, VersionService>();
+        services.AddScoped<IAssemblyService, AssemblyService>();
         return services;
     }
 
