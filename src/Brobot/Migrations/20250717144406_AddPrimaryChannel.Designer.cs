@@ -3,6 +3,7 @@ using System;
 using Brobot.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Brobot.Migrations
 {
     [DbContext(typeof(BrobotDbContext))]
-    partial class BrobotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250717144406_AddPrimaryChannel")]
+    partial class AddPrimaryChannel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -411,32 +414,6 @@ namespace Brobot.Migrations
                     b.HasIndex("PrimaryChannelId");
 
                     b.ToTable("discord_user", "brobot");
-                });
-
-            modelBuilder.Entity("Brobot.Models.VersionModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTimeOffset>("VersionDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("version_date")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("VersionNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("version_number");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("version", "brobot");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>

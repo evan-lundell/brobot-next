@@ -1,5 +1,5 @@
-using System.Reflection;
 using Brobot.Configuration;
+using Brobot.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -7,7 +7,7 @@ namespace Brobot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class VersionController(IOptions<GeneralOptions> generalOptions) : ControllerBase
+public class VersionController(IOptions<GeneralOptions> generalOptions, IAssemblyService assemblyService) : ControllerBase
 {
     [HttpGet]
     public IActionResult Get()
@@ -16,14 +16,11 @@ public class VersionController(IOptions<GeneralOptions> generalOptions) : Contro
         var deploymentVersion = "";
         if (!string.IsNullOrEmpty(filePath) && System.IO.File.Exists(filePath))
         {
-            deploymentVersion = System.IO.File.ReadAllText(filePath);
+            deploymentVersion = System.IO.File.ReadAllText(filePath).Trim();
         }
-        var assembly = Assembly.GetExecutingAssembly();
-        
-        var informationalVersion = assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion;
 
-        return Ok(new { DeploymentVersion = deploymentVersion, AssemblyInformationalVersion = informationalVersion });
+        var assemblyVersion = assemblyService.GetVersionFromAssembly();
+
+        return Ok(new { DeploymentVersion = deploymentVersion, AssemblyInformationalVersion = assemblyVersion });
     }
 }

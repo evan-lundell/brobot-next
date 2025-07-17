@@ -25,7 +25,8 @@ public static class ServiceCollectionExtensions
             });
         });
         services.AddTransient<IUnitOfWork, UnitOfWork>();
-        services.AddSingleton<Random>();
+        services.AddTransient<Random>();
+        services.AddScoped<IVersionService, VersionService>();
         return services;
     }
 

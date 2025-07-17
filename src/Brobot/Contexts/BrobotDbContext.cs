@@ -14,6 +14,7 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbCont
     public DbSet<SecretSantaGroupModel> SecretSantaGroups => Set<SecretSantaGroupModel>();
     public DbSet<SecretSantaPairModel> SecretSantaPairs => Set<SecretSantaPairModel>();
     public DbSet<StopWordModel> StopWords => Set<StopWordModel>();
+    public DbSet<VersionModel> Versions => Set<VersionModel>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -33,6 +34,13 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbCont
             .HasColumnName("archived")
             .HasDefaultValue(false)
             .IsRequired();
+        builder.Entity<GuildModel>()
+            .Property(g => g.PrimaryChannelId)
+            .HasColumnName("primary_channel_id");
+        builder.Entity<GuildModel>()
+            .HasOne(g => g.PrimaryChannel)
+            .WithOne()
+            .HasForeignKey<GuildModel>(g => g.PrimaryChannelId);
 
         builder.Entity<ChannelModel>()
             .ToTable(name: "channel", schema: "brobot")
@@ -67,6 +75,7 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbCont
             .Property(c => c.Timezone)
             .IsRequired()
             .HasMaxLength(255)
+            .HasColumnName("timezone")
             .HasDefaultValue("america/chicago");
 
         builder.Entity<UserModel>()
@@ -359,5 +368,22 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbCont
         builder.Entity<StopWordModel>()
             .HasIndex(sw => sw.Word)
             .IsUnique();
+        
+        builder.Entity<VersionModel>()
+            .ToTable(name: "version", schema: "brobot")
+            .HasKey(v => v.Id);
+        builder.Entity<VersionModel>()
+            .Property(v => v.Id)
+            .HasColumnName("id");
+        builder.Entity<VersionModel>()
+            .Property(v => v.VersionNumber)
+            .HasColumnName("version_number")
+            .IsRequired()
+            .HasMaxLength(20);
+        builder.Entity<VersionModel>()
+            .Property(v => v.VersionDate)
+            .HasColumnName("version_date")
+            .IsRequired()
+            .HasDefaultValueSql("NOW()");
     }
 }
