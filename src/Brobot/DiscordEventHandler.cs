@@ -200,9 +200,9 @@ public class DiscordEventHandler : IDisposable
                 tasks.Add(_syncService.SyncOnStartup());
             }
 
-            // using var scope =  _services.CreateScope();
-            // var versionService = scope.ServiceProvider.GetRequiredService<IVersionService>();
-            // tasks.Add(versionService.CheckForVersionUpdate());
+            using var scope =  _services.CreateScope();
+            var versionService = scope.ServiceProvider.GetRequiredService<IVersionService>();
+            tasks.Add(versionService.CheckForVersionUpdate());
             await Task.WhenAll(tasks);
         });
     }
