@@ -25,7 +25,6 @@ public class DiscordEventHandler : IDisposable
         _syncService =  services.GetRequiredService<ISyncService>();
         _config = services.GetRequiredService<IConfiguration>();
         _services = services;
-        
     }
 
     public void RegisterEvents()
@@ -184,19 +183,28 @@ public class DiscordEventHandler : IDisposable
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
         }
 
-        if (_config["DOTNET_ENVIRONMENT"] == "Development")
+        _ = Task.Run(async () =>
         {
-            _ = _commands.RegisterCommandsToGuildAsync(421404457599762433);
-        }
-        else
-        {
-            _ = _commands.RegisterCommandsGloballyAsync();
-        }
+            List<Task> tasks = [];
+            if (_config["DOTNET_ENVIRONMENT"] == "Development")
+            {
+                tasks.Add(_commands.RegisterCommandsToGuildAsync(421404457599762433));
+            }
+            else
+            {
+                tasks.Add(_commands.RegisterCommandsGloballyAsync());
+            }
 
-        if (!bool.TryParse(_config["NoSync"], out bool noSync) || !noSync)
-        {
-            _ = _syncService.SyncOnStartup();
-        }
+            if (!bool.TryParse(_config["NoSync"], out bool noSync) || !noSync)
+            {
+                tasks.Add(_syncService.SyncOnStartup());
+            }
+
+            // using var scope =  _services.CreateScope();
+            // var versionService = scope.ServiceProvider.GetRequiredService<IVersionService>();
+            // tasks.Add(versionService.CheckForVersionUpdate());
+            await Task.WhenAll(tasks);
+        });
     }
 
     private Task Log(LogMessage logMessage)

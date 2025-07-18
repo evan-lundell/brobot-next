@@ -14,6 +14,7 @@ public interface IUnitOfWork : IDisposable
     IDailyMessageCountRepository DailyMessageCounts { get; }
     ISecretSantaGroupRepository SecretSantaGroups { get; }
     IStopWordRepository StopWords { get; }
+    IVersionRepository Versions { get; }
     Task<IDbContextTransaction> BeginTransaction();
     Task CommitTransaction(IDbContextTransaction transaction);
     BrobotDbContext DbContext { get; }
