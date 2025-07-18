@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace Brobot.Services;
 
-public class AssemblyService(IWebHostEnvironment environment) : IAssemblyService
+public class AssemblyService : IAssemblyService
 {
     public string GetVersionFromAssembly()
     {

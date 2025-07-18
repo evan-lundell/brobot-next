@@ -1,7 +1,4 @@
 using Brobot.Services;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
-using Moq;
 
 namespace Brobot.Tests;
 
@@ -11,9 +8,7 @@ public class AssemblyServiceTests
     [Test]
     public void GetVersionFromAssembly_ReturnsVersion()
     {
-        Mock<IWebHostEnvironment> mockEnv = new();
-        mockEnv.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
-        AssemblyService assemblyService = new(mockEnv.Object);
+        AssemblyService assemblyService = new();
 
         var versionNumber = assemblyService.GetVersionFromAssembly();
 

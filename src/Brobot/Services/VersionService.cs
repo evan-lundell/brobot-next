@@ -27,7 +27,7 @@ public class VersionService(
         }
         else if (currentVersion.VersionNumber != assemblyVersion)
         {
-            logger.LogInformation("Updated to '{NewVersionNumber}", assemblyVersion);
+            logger.LogInformation("Updated to '{NewVersionNumber}'", assemblyVersion);
             _ = await CreateNewVersion(assemblyVersion);
             isVersionNew = true;
         }
