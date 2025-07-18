@@ -35,7 +35,6 @@ public class DiscordBotHostedService(
         var tcs = new TaskCompletionSource<bool>();
         Task ReadyHandler()
         {
-            Console.WriteLine("Discord bot is ready");
             tcs.SetResult(true);
             return Task.CompletedTask;
         }
