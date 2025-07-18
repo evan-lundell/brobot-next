@@ -13,6 +13,6 @@ public class AssemblyServiceTests
         var versionNumber = assemblyService.GetVersionFromAssembly();
 
         // use regex to assert version number is semantic versioning
-        Assert.That(versionNumber, Does.Match(@"^v\d+\.\d+\.\d+$"));
+        Assert.That(versionNumber, Does.Match(@"^\d+\.\d+\.\d+$"));
     }
 }
