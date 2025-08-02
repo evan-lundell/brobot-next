@@ -5,11 +5,11 @@ namespace Brobot.Workers;
 
 public class MonthlyStatsWorker(
     ICronWorkerConfig<MonthlyStatsWorker> config,
-    IServiceProvider provider) : CronWorkerBase(config.CronExpression)
+    IServiceScopeFactory serviceScopeFactory) : CronWorkerBase(config.CronExpression)
 {
     protected override async Task DoWork(CancellationToken cancellationToken)
     {
-        using var scope =  provider.CreateScope();
+        using var scope =  serviceScopeFactory.CreateScope();
         using var iow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
         var channels = await iow.Channels.Find(c => c.MonthlyWordCloud);

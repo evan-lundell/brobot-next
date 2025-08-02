@@ -178,7 +178,8 @@ public class DiscordEventHandler : IDisposable
     private async Task Ready()
     {
 
-        using (var scope = _services.CreateScope())
+        var serviceScopeFactory = _services.GetRequiredService<IServiceScopeFactory>();
+        using (var scope = serviceScopeFactory.CreateScope())
         {
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
         }

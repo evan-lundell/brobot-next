@@ -8,11 +8,11 @@ using Microsoft.Extensions.Options;
 
 namespace Brobot.Services;
 
-public class SyncService(IServiceProvider services, IDiscordClient discordClient, ILogger<SyncService> logger, IOptions<GeneralOptions> generalOptions) : ISyncService
+public class SyncService(IServiceScopeFactory serviceScopeFactory, IDiscordClient discordClient, ILogger<SyncService> logger, IOptions<GeneralOptions> generalOptions) : ISyncService
 {
     public async Task ChannelCreated(IGuildChannel channel)
     {
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guild = await uow.Guilds.GetById(channel.GuildId);
         if (guild == null)
@@ -47,7 +47,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
 
     public async Task ChannelDestroyed(IGuildChannel channel)
     {
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var channelToBeDeleted = await uow.Channels.GetById(channel.Id);
         if (channelToBeDeleted == null)
@@ -83,7 +83,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
             await current.SendMessageAsync($"Channel name changed from '{previous.Name}' to '{current.Name}'");
         }
 
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var channelModel = await uow.Channels.GetById(current.Id);
         if (channelModel == null)
@@ -96,7 +96,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
 
     public async Task GuildAvailable(IGuild guild)
     {
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guildModel = await uow.Guilds.GetById(guild.Id);
         if (guildModel != null)
@@ -167,7 +167,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
 
     public async Task GuildUnavailable(IGuild guild)
     {
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guildToBeDeleted = await uow.Guilds.GetById(guild.Id);
         if (guildToBeDeleted == null)
@@ -185,7 +185,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
             return;
         }
 
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guildModel = await uow.Guilds.GetById(currentGuild.Id);
         if (guildModel == null)
@@ -198,7 +198,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
 
     public async Task SyncOnStartup()
     {
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guildModels = (await uow.Guilds.Find(g => g.Archived == false)).ToDictionary(g => g.Id);
         var channelModels = (await uow.Channels.Find(c => c.Archived == false)).ToDictionary(c => c.Id);
@@ -322,7 +322,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
             return;
         }
 
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var user = await uow.Users.GetById(socketUser.Id);
         if (user == null)
@@ -336,8 +336,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
 
     public async Task UserVoiceStateUpdated(IUser user, IVoiceState previousVoiceState, IVoiceState currentVoiceState)
     {
-        var scopeFactory = services.GetRequiredService<IServiceScopeFactory>();
-        using var scope = scopeFactory.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var hotOpService = scope.ServiceProvider.GetRequiredService<IHotOpService>();
         if (previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel != null)
         {
@@ -359,8 +358,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
             return;
         }
             
-        var scopeFactory = services.GetRequiredService<IServiceScopeFactory>();
-        using var scope = scopeFactory.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var messageCountService = scope.ServiceProvider.GetRequiredService<IMessageCountService>();
         await messageCountService.AddToDailyCount(message.Author.Id, message.Channel.Id);
             
@@ -424,7 +422,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
 
     public async Task ThreadCreated(IThreadChannel thread)
     {
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var guild = await uow.Guilds.GetById(thread.Guild.Id);
         if (guild == null)
@@ -473,7 +471,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
 
     public async Task ThreadDeleted(IThreadChannel thread)
     {
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var existingThread = await uow.Channels.GetById(thread.Id);
         if (existingThread == null)
@@ -491,7 +489,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
             return;
         }
         
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(user.Thread.Id);
         var existingDiscordUser = await uow.Users.GetById(user.GuildUser.Id);
@@ -516,7 +514,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
 
     public async Task ThreadUpdated(IThreadChannel oldThread, IThreadChannel newThread)
     {
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var existingChannelModel = await uow.Channels.GetById(oldThread.Id);
         if (existingChannelModel == null || (existingChannelModel.Name == newThread.Name && existingChannelModel.Archived == newThread.IsArchived))
@@ -536,7 +534,7 @@ public class SyncService(IServiceProvider services, IDiscordClient discordClient
             return;
         }
         
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(threadUser.Thread.Id);
         var existingDiscordUser = await uow.Users.GetById(threadUser.GuildUser.Id);

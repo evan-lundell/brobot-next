@@ -5,13 +5,12 @@ using ClaimTypes = Brobot.Shared.Claims.ClaimTypes;
 
 namespace Brobot.Frontend.Providers;
 
-public class JwtAuthenticationStateProvider : AuthenticationStateProvider
+public class JwtAuthenticationStateProvider(JwtService jwtService, IServiceScopeFactory serviceScopeFactory)
+    : AuthenticationStateProvider
 {
     private static readonly AuthenticationState NotAuthenticatedState = new (new ClaimsPrincipal());
 
     private LoginUser? _user;
-    private readonly JwtService _jwtService;
-    private readonly IServiceProvider _services;
 
     public string? DisplayName => _user?.DisplayName;
     public bool IsLoggedIn => _user != null;
@@ -19,15 +18,9 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
     private bool IsDiscordAuthenticated => _user != null && !string.IsNullOrWhiteSpace(_user.Principal.FindFirst(ClaimTypes.DiscordId)?.Value);
 
 
-    public JwtAuthenticationStateProvider(JwtService jwtService, IServiceProvider services)
-    {
-        _jwtService = jwtService;
-        _services = services;
-    }
-
     public void Login(string jwt)
     {
-        var principal = _jwtService.Deserialize(jwt);
+        var principal = jwtService.Deserialize(jwt);
         _user = new LoginUser
         {
             DisplayName = principal.Identity?.Name ?? "",
@@ -39,7 +32,7 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 
     public async Task Logout()
     {
-        using var scope = _services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var api = scope.ServiceProvider.GetRequiredService<ApiService>();
         await api.Logout();
         _user = null;

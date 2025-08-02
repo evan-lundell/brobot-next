@@ -57,7 +57,7 @@ public class StatsService(
             .ToList();
         EmbedBuilder embedBuilder = new()
         {
-            Title = "Monthly Leaderboard",
+            Title = "Leaderboard",
             Fields = leaderboardEmbed
         };
         

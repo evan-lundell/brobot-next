@@ -2,8 +2,7 @@ namespace Brobot.Shared.Requests;
 
 public record GenerateWordCloudRequest
 {
-    public ulong ChannelId { get; set; }
-    public DateOnly StartDate { get; set; }
-    public DateOnly EndDate { get; set; }
-    public bool IncludeMessageCount { get; set; } = true;
+    public ulong ChannelId { get; init; }
+    public DateOnly StartDate { get; init; }
+    public DateOnly EndDate { get; init; }
 }

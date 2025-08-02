@@ -1,6 +1,7 @@
 using Brobot.Configuration;
 using Brobot.Services;
 using Discord;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -19,7 +20,7 @@ public class MessageDeletedTests : SyncServiceTestsBase
         };
         _loggerMock = new Mock<ILogger<SyncService>>();
         SyncService = new SyncService(
-            Mock.Of<IServiceProvider>(),
+            Mock.Of<IServiceScopeFactory>(),
             Mock.Of<IDiscordClient>(),
             _loggerMock.Object,
             Options.Create(generalOptions));
