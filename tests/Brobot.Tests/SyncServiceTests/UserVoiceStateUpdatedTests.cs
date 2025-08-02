@@ -16,16 +16,10 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
     [SetUp]
     public override void Setup()
     {
-        Mock<IServiceProvider> servicesMock = new();
         Mock<IServiceScopeFactory> scopeFactoryMock = new();
         Mock<IServiceScope> scopeMock = new();
         Mock<IServiceProvider> scopedProviderMock = new();
         _hotOpServiceMock = new Mock<IHotOpService>();
-
-        // services.GetRequiredService<IServiceScopeFactory>() returns scopeFactory
-        servicesMock
-            .Setup(s => s.GetService(typeof(IServiceScopeFactory)))
-            .Returns(scopeFactoryMock.Object);
 
         // scopeFactory.CreateScope() returns scope
         scopeFactoryMock
@@ -48,7 +42,7 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
             VersionFilePath = "./version.txt"
         };
         SyncService = new SyncService(
-            servicesMock.Object,
+            scopeFactoryMock.Object,
             Mock.Of<IDiscordClient>(),
             Mock.Of<ILogger<SyncService>>(),
             Options.Create(generalOptions));

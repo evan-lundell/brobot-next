@@ -4,6 +4,7 @@ using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 namespace Brobot.Tests;
 
@@ -23,11 +24,16 @@ public class StopWordServiceTests
         serviceCollection.AddTransient<IUnitOfWork, UnitOfWork>();
         _serviceProvider = serviceCollection.BuildServiceProvider();
         _context = _serviceProvider.GetRequiredService<BrobotDbContext>();
+        Mock<IServiceScope> serviceScopeMock = new();
+        serviceScopeMock.Setup(x => x.ServiceProvider).Returns(_serviceProvider);
+        Mock<IServiceScopeFactory> serviceScopeFactoryMock = new();
+        serviceScopeFactoryMock.Setup(x => x.CreateScope())
+            .Returns(serviceScopeMock.Object);
 
         _context.StopWords.AddRange(new StopWordModel { Word = "test" }, new StopWordModel { Word = "stop" }, new StopWordModel { Word = "word" });
         _context.SaveChanges();
         
-        _stopWordService = new StopWordService(_serviceProvider);
+        _stopWordService = new StopWordService(serviceScopeFactoryMock.Object);
     }
     
     [Test]

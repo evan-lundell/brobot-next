@@ -4,6 +4,7 @@ using Brobot.HostedServices;
 using Brobot.Configuration;
 using Brobot.Repositories;
 using Brobot.Services;
+using Brobot.TaskQueue;
 using Brobot.Workers;
 using Discord;
 using Discord.WebSocket;
@@ -28,6 +29,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<Random>();
         services.AddScoped<IVersionService, VersionService>();
         services.AddScoped<IAssemblyService, AssemblyService>();
+        services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+        services.AddHostedService<QueuedHostedService>();
         return services;
     }
 
@@ -124,6 +127,7 @@ public static class ServiceCollectionExtensions
         {
             c.BaseAddress = new Uri(options.QuickChartBaseUrl);
         });
+        services.AddScoped<IStatsService, StatsService>();
 
         return services;
     }

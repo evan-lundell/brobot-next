@@ -8,13 +8,13 @@ namespace Brobot.Workers;
 
 public class BirthdayWorker(
     ICronWorkerConfig<BirthdayWorker> config,
-    IServiceProvider services,
+    IServiceScopeFactory serviceScopeFactory,
     IDiscordClient client)
     : CronWorkerBase(config.CronExpression)
 {
     protected override async Task DoWork(CancellationToken cancellationToken)
     {
-        using var scope = services.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var now = DateOnly.FromDateTime(DateTime.UtcNow);
         var users = await uow.Users.Find(u =>

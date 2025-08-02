@@ -40,8 +40,15 @@ public abstract class SyncServiceTestsBase
             FixTwitterLinks = true,
             VersionFilePath = "./version.txt"
         };
+        Mock<IServiceScope> serviceScopeMock = new Mock<IServiceScope>();
+        Mock<IServiceScopeFactory> serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
+        serviceScopeFactoryMock.Setup(ssf => ssf.CreateScope())
+            .Returns(serviceScopeMock.Object);
+        serviceScopeMock.SetupGet(ss => ss.ServiceProvider)
+            .Returns(_serviceProvider);
+        
         SyncService = new SyncService(
-            _serviceProvider,
+            serviceScopeFactoryMock.Object,
             MockDiscordClient.Object,
             LoggerMock.Object,
             Options.Create(generalOptions));

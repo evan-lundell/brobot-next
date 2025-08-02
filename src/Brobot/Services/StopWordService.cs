@@ -2,7 +2,7 @@ using Brobot.Repositories;
 
 namespace Brobot.Services;
 
-public class StopWordService(IServiceProvider services) : IStopWordService
+public class StopWordService(IServiceScopeFactory serviceScopeFactory) : IStopWordService
 {
     private HashSet<string>? _stopWords;
     private bool _isOutdated = true;
@@ -11,7 +11,7 @@ public class StopWordService(IServiceProvider services) : IStopWordService
     {
         if (_stopWords == null || _isOutdated)
         {
-            using (var scope = services.CreateScope())
+            using (var scope = serviceScopeFactory.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 var stopWordModels = await uow.StopWords.GetAll();
