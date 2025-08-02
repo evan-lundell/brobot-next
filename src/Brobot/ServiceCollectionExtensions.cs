@@ -124,6 +124,7 @@ public static class ServiceCollectionExtensions
         {
             c.BaseAddress = new Uri(options.QuickChartBaseUrl);
         });
+        services.AddScoped<IStatsService, StatsService>();
 
         return services;
     }
