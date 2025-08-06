@@ -197,7 +197,7 @@ public class CheckForVersionUpdateTests : VersionServiceTestsBase
             guildMock.Verify(
                 g => g.GetChannelAsync(It.IsAny<ulong>(), It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()),
                 Times.Once);
-            var releaseNotesFullUrl = $"https://example.com/releases/{newVersionNumber}";
+            var releaseNotesFullUrl = $"https://example.com/releases/v{newVersionNumber}";
             guildChannelMock.Verify(g => g.SendMessageAsync(
                 $"Brobot {newVersionNumber} just dropped! Check out the release notes here: {releaseNotesFullUrl}",
                 It.IsAny<bool>(),

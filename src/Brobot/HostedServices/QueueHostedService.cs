@@ -1,4 +1,6 @@
-namespace Brobot.TaskQueue;
+using Brobot.TaskQueue;
+
+namespace Brobot.HostedServices;
 
 public class QueuedHostedService(IBackgroundTaskQueue taskQueue, ILogger<QueuedHostedService> logger) : BackgroundService
 {

@@ -15,6 +15,7 @@ public interface IUnitOfWork : IDisposable
     ISecretSantaGroupRepository SecretSantaGroups { get; }
     IStopWordRepository StopWords { get; }
     IVersionRepository Versions { get; }
+    IStatPeriodRepository StatPeriods { get; }
     Task<IDbContextTransaction> BeginTransaction();
     Task CommitTransaction(IDbContextTransaction transaction);
     BrobotDbContext DbContext { get; }

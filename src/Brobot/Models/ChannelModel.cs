@@ -17,6 +17,7 @@ public class ChannelModel
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
     public virtual ICollection<HotOpModel> HotOps { get; set; }
     public virtual ICollection<DailyMessageCountModel> DailyMessageCounts { get; set; }
+    public virtual ICollection<StatPeriodModel> StatPeriods { get; set; }
 
     // This is a collection of users where the given channel is their primary channel
     public virtual ICollection<UserModel> Users { get; set; }
@@ -27,5 +28,6 @@ public class ChannelModel
         HotOps = new HashSet<HotOpModel>();
         Users = new HashSet<UserModel>();
         DailyMessageCounts = new HashSet<DailyMessageCountModel>();
+        StatPeriods = new HashSet<StatPeriodModel>();
     }
 }

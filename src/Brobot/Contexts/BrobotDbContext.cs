@@ -15,6 +15,7 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbCont
     public DbSet<SecretSantaPairModel> SecretSantaPairs => Set<SecretSantaPairModel>();
     public DbSet<StopWordModel> StopWords => Set<StopWordModel>();
     public DbSet<VersionModel> Versions => Set<VersionModel>();
+    public DbSet<StatPeriodModel> StatPeriods => Set<StatPeriodModel>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -385,5 +386,67 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbCont
             .HasColumnName("version_date")
             .IsRequired()
             .HasDefaultValueSql("NOW()");
+        
+        builder.Entity<StatPeriodModel>()
+            .ToTable(name: "stat_period", schema: "brobot")
+            .HasKey(sp => sp.Id);
+        builder.Entity<StatPeriodModel>()
+            .Property(sp => sp.Id)
+            .HasColumnName("id");
+        builder.Entity<StatPeriodModel>()
+            .Property(sp => sp.ChannelId)
+            .HasColumnName("channel_id");
+        builder.Entity<StatPeriodModel>()
+            .Property(sp => sp.StartDate)
+            .HasColumnName("start_date");
+        builder.Entity<StatPeriodModel>()
+            .Property(sp => sp.EndDate)
+            .HasColumnName("end_date");
+        builder.Entity<StatPeriodModel>()
+            .HasOne(ssp => ssp.Channel)
+            .WithMany(ch => ch.StatPeriods)
+            .HasForeignKey(ssp => ssp.ChannelId);
+        
+        builder.Entity<WordCountModel>()
+            .ToTable(name: "word_count", schema: "brobot")
+            .HasKey(wc => wc.Id);
+        builder.Entity<WordCountModel>()
+            .Property(wc => wc.Id)
+            .HasColumnName("id");
+        builder.Entity<WordCountModel>()
+            .Property(wc => wc.Word)
+            .HasColumnName("word")
+            .HasMaxLength(255);
+        builder.Entity<WordCountModel>()
+            .Property(wc => wc.Count)
+            .HasColumnName("count");
+        builder.Entity<WordCountModel>()
+            .HasOne(wc => wc.StatPeriod)
+            .WithMany(sp => sp.WordCounts)
+            .HasForeignKey(wc => wc.StatPeriodId);
+
+        builder.Entity<UserMessageCountModel>()
+            .ToTable(name: "user_message_count", schema: "brobot")
+            .HasKey(umc => umc.Id);
+        builder.Entity<UserMessageCountModel>()
+            .Property(umc => umc.Id)
+            .HasColumnName("id");
+        builder.Entity<UserMessageCountModel>()
+            .Property(umc => umc.UserId)
+            .HasColumnName("user_id");
+        builder.Entity<UserMessageCountModel>()
+            .Property(umc => umc.Count)
+            .HasColumnName("count");
+        builder.Entity<UserMessageCountModel>()
+            .Property(umc => umc.StatPeriodId)
+            .HasColumnName("stat_period_id");
+        builder.Entity<UserMessageCountModel>()
+            .HasOne(umc => umc.StatPeriod)
+            .WithMany(sp => sp.UserMessageCounts)
+            .HasForeignKey(umc => umc.StatPeriodId);
+        builder.Entity<UserMessageCountModel>()
+            .HasOne<UserModel>()
+            .WithMany()
+            .HasForeignKey(umc => umc.UserId);
     }
 }
