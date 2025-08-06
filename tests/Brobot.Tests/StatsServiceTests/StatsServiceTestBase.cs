@@ -22,8 +22,8 @@ public abstract class StatsServiceTestBase
     public void Setup()
     {
         ServiceCollection serviceCollection = new();
-        var uniquieDbName = $"Brobot_{Guid.NewGuid()}";
-        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase(uniquieDbName));
+        var uniqueDbName = $"Brobot_{Guid.NewGuid()}";
+        serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase(uniqueDbName));
         serviceCollection.AddScoped<IUnitOfWork, UnitOfWork>();
         _serviceProvider = serviceCollection.BuildServiceProvider();
         Context = _serviceProvider.GetRequiredService<BrobotDbContext>();
