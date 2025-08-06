@@ -5,6 +5,6 @@ namespace Brobot.Services;
 
 public interface IStatsService
 {
-    Task<StatsDto> GetStats(ChannelModel channel, DateOnly startDate, DateOnly endDate);
+    Task<StatsDto> GetStats(ChannelModel channel, DateOnly startDate, DateOnly endDate, int? statPeriodId = null);
     Task SendStats(ulong channelId, StatsDto stats);
 }

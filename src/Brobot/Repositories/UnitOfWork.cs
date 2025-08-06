@@ -20,6 +20,7 @@ public class UnitOfWork : IUnitOfWork
         SecretSantaGroups = new SecretSantaGroupRepository(context);
         StopWords = new StopWordRepository(context);
         Versions = new VersionRepository(context);
+        StatPeriods = new StatPeriodRepository(context);
     }
 
     public IUserRepository Users { get; }
@@ -33,7 +34,8 @@ public class UnitOfWork : IUnitOfWork
     public IDailyMessageCountRepository DailyMessageCounts { get; }
     public ISecretSantaGroupRepository SecretSantaGroups { get; }
     public IStopWordRepository StopWords { get; }
-    public IVersionRepository Versions { get; set; }
+    public IVersionRepository Versions { get; }
+    public IStatPeriodRepository StatPeriods { get; }
 
     public Task<int> CompleteAsync()
     {

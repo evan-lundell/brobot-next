@@ -18,7 +18,7 @@ public class SendStatsTests : StatsServiceTestBase
             [
                 new MessageCountDto
                 {
-                    MessageCount = 10,
+                    Count = 10,
                     UserId = 1UL,
                     Username = "test-user"
                 }
@@ -60,7 +60,7 @@ public class SendStatsTests : StatsServiceTestBase
             [
                 new MessageCountDto
                 {
-                    MessageCount = 10,
+                    Count = 10,
                     UserId = 1UL,
                     Username = "test-user"
                 }
@@ -105,7 +105,7 @@ public class SendStatsTests : StatsServiceTestBase
             [
                 new MessageCountDto
                 {
-                    MessageCount = 10,
+                    Count = 10,
                     UserId = 1UL,
                     Username = "test-user"
                 }

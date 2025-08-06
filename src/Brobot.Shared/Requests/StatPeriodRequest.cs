@@ -1,6 +1,6 @@
 namespace Brobot.Shared.Requests;
 
-public record GenerateWordCloudRequest
+public record StatPeriodRequest
 {
     public ulong ChannelId { get; init; }
     public DateOnly StartDate { get; init; }

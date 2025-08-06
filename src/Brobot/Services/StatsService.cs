@@ -11,7 +11,7 @@ public class StatsService(
     IWordCountService wordCountService,
     IWordCloudService wordCloudService) : IStatsService
 {
-    public async Task<StatsDto> GetStats(ChannelModel channel, DateOnly startDate, DateOnly endDate)
+    public async Task<StatsDto> GetStats(ChannelModel channel, DateOnly startDate, DateOnly endDate, int? statPeriodId = null)
     {
         if (endDate < startDate)
         {
@@ -33,10 +33,41 @@ public class StatsService(
                 {
                     UserId = g.Key.UserId,
                     Username = g.Key.Username,
-                    MessageCount = g.Sum(mc => mc.MessageCount)
+                    Count = g.Sum(mc => mc.MessageCount)
                 })
-                .OrderByDescending(mc => mc.MessageCount)
+                .OrderByDescending(mc => mc.Count)
         };
+        if (statPeriodId.HasValue)
+        {
+            var statPeriod = await uow.StatPeriods.GetById(statPeriodId.Value);
+            if (statPeriod != null)
+            {
+                foreach (var wordCount in stats.WordCounts.OrderByDescending(wc => wc.Count))
+                {
+                    statPeriod.WordCounts.Add(new WordCountModel
+                    {
+                        StatPeriod = statPeriod,
+                        StatPeriodId = statPeriod.Id,
+                        Word = wordCount.Word,
+                        Count = wordCount.Count,
+                    });
+                }
+
+                foreach (var messageCount in stats.MessageCounts.OrderByDescending(wc => wc.Count))
+                {
+                    statPeriod.UserMessageCounts.Add(new UserMessageCountModel
+                    {
+                        StatPeriod = statPeriod,
+                        StatPeriodId = statPeriod.Id,
+                        UserId = messageCount.UserId,
+                        Count = messageCount.Count
+                    });
+                }
+            }
+
+            await uow.CompleteAsync();
+        }
+        
         return stats;
     }
 
@@ -51,7 +82,7 @@ public class StatsService(
             .Select((mc, i) => new EmbedFieldBuilder
             {
                 Name = $"{i + 1}. {mc.Username}",
-                Value = $"Messages: {mc.MessageCount}",
+                Value = $"Messages: {mc.Count}",
                 IsInline = false
             })
             .ToList();
