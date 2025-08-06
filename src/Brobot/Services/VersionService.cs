@@ -66,7 +66,7 @@ public class VersionService(
             var channel = await guilds[guildModel.Id].GetChannelAsync(guildModel.PrimaryChannelId.Value);
             if (channel is ITextChannel textChannel)
             {
-                var releaseNotesFullUrl = $"{generalOptions.Value.ReleaseNotesUrl}/{versionName}";
+                var releaseNotesFullUrl = $"{generalOptions.Value.ReleaseNotesUrl}/v{versionName}";
                 await textChannel.SendMessageAsync(
                     $"Brobot {versionName} just dropped! Check out the release notes here: {releaseNotesFullUrl}");
             }
