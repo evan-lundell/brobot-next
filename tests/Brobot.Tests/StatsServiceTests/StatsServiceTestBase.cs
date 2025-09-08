@@ -4,6 +4,7 @@ using Brobot.Services;
 using Discord;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Brobot.Tests.StatsServiceTests;
@@ -32,7 +33,7 @@ public abstract class StatsServiceTestBase
         DiscordClientMock = new Mock<IDiscordClient>();
         WordCloudServiceMock = new Mock<IWordCloudService>();
         WordCountServiceMock = new Mock<IWordCountService>();
-        StatsService = new StatsService(unitOfWork, DiscordClientMock.Object, WordCountServiceMock.Object, WordCloudServiceMock.Object);
+        StatsService = new StatsService(unitOfWork, DiscordClientMock.Object, WordCountServiceMock.Object, WordCloudServiceMock.Object, Mock.Of<ILogger<StatsService>>());
     }
 
     [TearDown]
