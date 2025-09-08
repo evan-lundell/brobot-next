@@ -19,6 +19,7 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
             var socketChannel = await client.GetChannelAsync(channel.Id);
             if (socketChannel is not ISocketMessageChannel socketTextChannel)
             {
+                logger.LogWarning("Channel {Channel} not found or is not an ISocketMessage", channel.Id);
                 return [];
             }
 
