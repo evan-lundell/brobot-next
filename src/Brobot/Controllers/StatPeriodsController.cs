@@ -11,7 +11,7 @@ namespace Brobot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgroundTaskQueue, IServiceScopeFactory scopeFactory)  : ControllerBase
+public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgroundTaskQueue, IServiceScopeFactory scopeFactory, ILogger<StatPeriodsController> logger)  : ControllerBase
 {
     [HttpGet("{statPeriodId}")]
     [Authorize(Roles = "Admin")]
@@ -29,6 +29,7 @@ public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgro
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult> CollectStats(StatPeriodRequest request)
     {
+        logger.LogInformation("Starting collect stats for channel {Channel}", request.ChannelId);
         var channel = await uow.Channels.GetById(request.ChannelId);
         if (channel == null)
         {
@@ -40,6 +41,7 @@ public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgro
             return BadRequest("End date must be greater than start date");
         }
 
+        logger.LogInformation("Creating stat period in database");
         StatPeriodModel statPeriod = new()
         {
             Channel = channel,
@@ -49,6 +51,7 @@ public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgro
         };
         await uow.StatPeriods.Add(statPeriod);
         await uow.CompleteAsync();
+        logger.LogInformation("Stat period created, queueing background job");
         
         backgroundTaskQueue.QueueBackgroundWorkItem(async _ =>
         {
@@ -56,6 +59,7 @@ public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgro
             var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
             await statsService.GetStats(channel, request.StartDate, request.EndDate, statPeriod.Id);
         });
+        logger.LogInformation("Queued stats collecting for {Channel}", request.ChannelId);
         return Ok(statPeriod.ToStatPeriodResponse());
     }
     

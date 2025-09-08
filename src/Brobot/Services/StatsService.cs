@@ -9,18 +9,22 @@ public class StatsService(
     IUnitOfWork uow,
     IDiscordClient discordClient,
     IWordCountService wordCountService,
-    IWordCloudService wordCloudService) : IStatsService
+    IWordCloudService wordCloudService,
+    ILogger<StatsService> logger) : IStatsService
 {
     public async Task<StatsDto> GetStats(ChannelModel channel, DateOnly startDate, DateOnly endDate, int? statPeriodId = null)
     {
+        logger.LogInformation("Getting stats for channel {Channel}", channel.Id);
         if (endDate < startDate)
         {
+            logger.LogError("End date must be greater than start date");
             throw new Exception("End date must be greater than start date");
         }
         var wordCountsTask = wordCountService.GetWordCount(channel, startDate.ToDateTime(TimeOnly.MinValue), endDate.ToDateTime(TimeOnly.MaxValue));
         var messageCountsTask = uow.DailyMessageCounts.GetTotalDailyMessageCountsByChannel(startDate, endDate, channel.Id);
         await Task.WhenAll(wordCountsTask, messageCountsTask);
         
+        logger.LogInformation("Finished gathering word and message counts for {Channel}", channel.Id);
         StatsDto stats = new()
         {
             ChannelId = channel.Id,
@@ -39,6 +43,7 @@ public class StatsService(
         };
         if (statPeriodId.HasValue)
         {
+            logger.LogInformation("Stat Period found, updating database");
             var statPeriod = await uow.StatPeriods.GetById(statPeriodId.Value);
             if (statPeriod != null)
             {
@@ -66,8 +71,10 @@ public class StatsService(
             }
 
             await uow.CompleteAsync();
+            logger.LogInformation("Finished updating database");
         }
         
+        logger.LogInformation("Finished getting stats for channel {Channel}", channel.Id);
         return stats;
     }
 

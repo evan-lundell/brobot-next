@@ -15,6 +15,7 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
     {
         try
         {
+            logger.LogInformation("Getting word count for channel {Channel} from {StartDate} to {EndDate}",  channel.Id, startDate.Date.ToShortDateString(), endDate.Date.ToShortDateString());
             var socketChannel = await client.GetChannelAsync(channel.Id);
             if (socketChannel is not ISocketMessageChannel socketTextChannel)
             {
@@ -72,6 +73,7 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
                 }
             }
 
+            logger.LogInformation("Finished getting word counts for channel {Channel} from {StartDate} to {EndDate}",  channel.Id, startDate.Date.ToShortDateString(), endDate.Date.ToShortDateString());
             return wordCounts.Values;
         }
         catch (Exception e)
