@@ -19,6 +19,7 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
             var socketChannel = await client.GetChannelAsync(channel.Id);
             if (socketChannel is not ISocketMessageChannel socketTextChannel)
             {
+                logger.LogWarning("Channel {Channel} not found or is not an ISocketMessage", channel.Id);
                 return [];
             }
 
@@ -31,18 +32,28 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
 
             while (!done)
             {
+                if (fromMessageId.HasValue)
+                {
+                    logger.LogInformation("Getting messages before {MessageId}",  fromMessageId.Value);
+                }
+                else
+                {
+                    logger.LogInformation("Getting initial messages");
+                }
                 IAsyncEnumerable<IReadOnlyCollection<IMessage>> messageCollection = fromMessageId.HasValue
                     ? socketTextChannel.GetMessagesAsync(fromMessageId.Value, Direction.Before)
                     : socketTextChannel.GetMessagesAsync();
                 var messages = (await messageCollection.FlattenAsync()).ToList();
                 if (messages.Count == 0)
                 {
+                    logger.LogInformation("No more messages");
                     break;
                 }
                 foreach (var message in messages.Where(message => message.Timestamp < end))
                 {
                     if (message.Timestamp < start)
                     {
+                        logger.LogInformation("All messages in time period found");
                         done = true;
                         break;
                     }
