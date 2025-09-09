@@ -41,9 +41,9 @@ public class WordCountServiceTests
     {
         var messages = new List<IMessage>
         {
-            MockMessage(1UL, "Hello world!"),
-            MockMessage(2UL, "Hello again."),
-            MockMessage(3UL, "StopWord test")
+            CreateMockMessage(1UL, "Hello world!"),
+            CreateMockMessage(2UL, "Hello again."),
+            CreateMockMessage(3UL, "StopWord test")
         };
         var textChannelMock = new Mock<ISocketMessageChannel>();
         textChannelMock
@@ -53,13 +53,13 @@ public class WordCountServiceTests
                 It.IsAny<int>(),
                 It.IsAny<CacheMode>(),
                 It.IsAny<RequestOptions>()))
-            .Returns(MockAsyncEnumerable([]));
+            .Returns(CreateMockAsyncEnumerable([]));
         textChannelMock
             .Setup(c => c.GetMessagesAsync(
                 It.IsAny<int>(),
                 It.IsAny<CacheMode>(),
                 It.IsAny<RequestOptions>()))
-            .Returns(MockAsyncEnumerable(messages));
+            .Returns(CreateMockAsyncEnumerable(messages));
         _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
 
         _stopWordServiceMock.Setup(s => s.IsStopWord("Hello")).ReturnsAsync(false);
@@ -104,13 +104,13 @@ public class WordCountServiceTests
     {
         var messages1 = new List<IMessage>
         {
-            MockMessage(4UL, "Latest message", DateTimeOffset.UtcNow.AddDays(-1).AddHours(-1)),
-            MockMessage(3UL, "Hello again.", DateTimeOffset.UtcNow.AddDays(-2).AddHours(2)),
-            MockMessage(2UL, "Hello world!", DateTimeOffset.UtcNow.AddDays(-2).AddHours(1)),
+            CreateMockMessage(4UL, "Latest message", DateTimeOffset.UtcNow.AddDays(-1).AddHours(-1)),
+            CreateMockMessage(3UL, "Hello again.", DateTimeOffset.UtcNow.AddDays(-2).AddHours(2)),
+            CreateMockMessage(2UL, "Hello world!", DateTimeOffset.UtcNow.AddDays(-2).AddHours(1)),
         };
         var messages2 = new List<IMessage>
         {
-            MockMessage(1UL, "This shouldn't show", DateTimeOffset.UtcNow.AddDays(-3)),
+            CreateMockMessage(1UL, "This shouldn't show", DateTimeOffset.UtcNow.AddDays(-3)),
         };
         var textChannelMock = new Mock<ISocketMessageChannel>();
         textChannelMock
@@ -120,13 +120,13 @@ public class WordCountServiceTests
                 It.IsAny<int>(),
                 It.IsAny<CacheMode>(),
                 It.IsAny<RequestOptions>()))
-            .Returns(MockAsyncEnumerable(messages2));
+            .Returns(CreateMockAsyncEnumerable(messages2));
         textChannelMock
             .Setup(c => c.GetMessagesAsync(
                 It.IsAny<int>(),
                 It.IsAny<CacheMode>(),
                 It.IsAny<RequestOptions>()))
-            .Returns(MockAsyncEnumerable(messages1));
+            .Returns(CreateMockAsyncEnumerable(messages1));
         _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
         
         _stopWordServiceMock.Setup(s => s.IsStopWord("Hello")).ReturnsAsync(false);
@@ -149,12 +149,68 @@ public class WordCountServiceTests
         }
     }
 
-    private static IAsyncEnumerable<IReadOnlyCollection<IMessage>> MockAsyncEnumerable(List<IMessage> messages)
+    [Test]
+    public async Task GetWordCount_ReturnsCounts_WithMessagesNewerThanWindow()
+    {
+        var messages1 = new List<IMessage>
+        {
+            CreateMockMessage(3UL, "Latest message", DateTimeOffset.UtcNow.AddDays(-1).AddHours(6))
+        };
+        var messages2 = new List<IMessage>
+        {
+            CreateMockMessage(2UL, "Hello again.", DateTimeOffset.UtcNow.AddDays(-2).AddHours(2)),
+            CreateMockMessage(1UL, "Hello world!", DateTimeOffset.UtcNow.AddDays(-2).AddHours(1)),
+        };
+        var textChannelMock = new Mock<ISocketMessageChannel>();
+        textChannelMock
+            .Setup(c => c.GetMessagesAsync(
+                3UL,
+                Direction.Before,
+                It.IsAny<int>(),
+                It.IsAny<CacheMode>(),
+                It.IsAny<RequestOptions>())
+            ).Returns(CreateMockAsyncEnumerable(messages2));
+        textChannelMock
+            .Setup(c => c.GetMessagesAsync(
+                It.IsAny<int>(),
+                It.IsAny<CacheMode>(),
+                It.IsAny<RequestOptions>()))
+            .Returns(CreateMockAsyncEnumerable(messages1));
+        textChannelMock
+            .Setup(c => c.GetMessagesAsync(
+                It.IsNotIn(new [] { 3UL }),
+                Direction.Before,
+                It.IsAny<int>(),
+                It.IsAny<CacheMode>(),
+                It.IsAny<RequestOptions>()))
+            .Returns(CreateMockAsyncEnumerable([]));
+        _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
+            
+        _stopWordServiceMock.Setup(s => s.IsStopWord("Hello")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("world")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("again")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("Latest")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("message")).ReturnsAsync(false);
+        
+        var result = (await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-1))).ToList();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Count, Is.EqualTo(3));
+            Assert.That(result.Any(r => r is { Word: "hello", Count: 2 }), Is.True);
+            Assert.That(result.Any(r => r is { Word: "world", Count: 1 }), Is.True);
+            Assert.That(result.Any(r => r is { Word: "again", Count: 1 }), Is.True);
+            Assert.That(result.Any(r => r is { Word: "latest", Count: 1 }), Is.False);
+            Assert.That(result.Any(r => r is { Word: "message", Count: 1 }), Is.False);
+        }
+    }
+
+    private static IAsyncEnumerable<IReadOnlyCollection<IMessage>> CreateMockAsyncEnumerable(List<IMessage> messages)
     {
         return new[] { (IReadOnlyCollection<IMessage>)messages }.ToAsyncEnumerable();
     }
 
-    private static IMessage MockMessage(ulong id, string content, DateTimeOffset? timestamp = null)
+    private static IMessage CreateMockMessage(ulong id, string content, DateTimeOffset? timestamp = null)
     {
         timestamp ??= DateTimeOffset.UtcNow;
         var mock = new Mock<IMessage>();

@@ -49,7 +49,15 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
                     logger.LogInformation("No more messages");
                     break;
                 }
-                foreach (var message in messages.Where(message => message.Timestamp < end))
+                
+                var messagesInTimeRange = messages.Where(m => m.Timestamp < end).ToList();
+                if (messagesInTimeRange.Count == 0)
+                {
+                    fromMessageId = messages.Last().Id;
+                    continue;
+                }
+                
+                foreach (var message in messagesInTimeRange)
                 {
                     if (message.Timestamp < start)
                     {
