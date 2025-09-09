@@ -6,10 +6,12 @@ namespace Brobot.Workers;
 
 public class MonthlyStatsWorker(
     ICronWorkerConfig<MonthlyStatsWorker> config,
-    IServiceScopeFactory serviceScopeFactory) : CronWorkerBase(config.CronExpression)
+    IServiceScopeFactory serviceScopeFactory,
+    ILogger<MonthlyStatsWorker> logger) : CronWorkerBase(config.CronExpression)
 {
     protected override async Task DoWork(CancellationToken cancellationToken)
     {
+        logger.LogInformation("Starting monthly stats worker");
         using var scope =  serviceScopeFactory.CreateScope();
         using var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
@@ -31,5 +33,6 @@ public class MonthlyStatsWorker(
             var stats = await statsService.GetStats(channel,  startDate, endDate, statPeriod.Id); 
             await statsService.SendStats(channel.Id, stats);
         }
+        logger.LogInformation("Finished monthly stats worker");
     }
 }
