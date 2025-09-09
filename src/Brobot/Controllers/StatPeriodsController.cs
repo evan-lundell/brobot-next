@@ -68,7 +68,7 @@ public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgro
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult> GenerateWordCloud(StatPeriodRequest request)
     {
-        var channel = await uow.Channels.GetByIdNoTracking(request.ChannelId);
+        var channel = await uow.Channels.GetById(request.ChannelId);
         if (channel == null)
         {
             return NotFound($"Channel with id {request.ChannelId} not found");
