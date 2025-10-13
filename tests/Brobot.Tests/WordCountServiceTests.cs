@@ -62,11 +62,8 @@ public class WordCountServiceTests
             .Returns(CreateMockAsyncEnumerable(messages));
         _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
 
-        _stopWordServiceMock.Setup(s => s.IsStopWord("Hello")).ReturnsAsync(false);
-        _stopWordServiceMock.Setup(s => s.IsStopWord("world")).ReturnsAsync(false);
-        _stopWordServiceMock.Setup(s => s.IsStopWord("again")).ReturnsAsync(false);
         _stopWordServiceMock.Setup(s => s.IsStopWord("StopWord")).ReturnsAsync(true);
-        _stopWordServiceMock.Setup(s => s.IsStopWord("test")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord(It.IsNotIn(new[] { "StopWord" }))).ReturnsAsync(false);
 
         var result = (await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow)).ToList();
 
@@ -129,11 +126,7 @@ public class WordCountServiceTests
             .Returns(CreateMockAsyncEnumerable(messages1));
         _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
         
-        _stopWordServiceMock.Setup(s => s.IsStopWord("Hello")).ReturnsAsync(false);
-        _stopWordServiceMock.Setup(s => s.IsStopWord("world")).ReturnsAsync(false);
-        _stopWordServiceMock.Setup(s => s.IsStopWord("again")).ReturnsAsync(false);
-        _stopWordServiceMock.Setup(s => s.IsStopWord("Latest")).ReturnsAsync(false);
-        _stopWordServiceMock.Setup(s => s.IsStopWord("message")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord(It.IsAny<string>())).ReturnsAsync(false);
         
         var result = (await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-1))).ToList();
 

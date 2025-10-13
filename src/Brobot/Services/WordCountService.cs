@@ -73,6 +73,11 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
                         {
                             continue;
                         }
+
+                        if (long.TryParse(word, out _))
+                        {
+                            continue;
+                        }
                         var wordLower = word.ToLowerInvariant();
                         wordCounts.TryAdd(wordLower, new WordCountDto
                         {
