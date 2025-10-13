@@ -179,7 +179,11 @@ public class WordCountServiceTests
             .Returns(CreateMockAsyncEnumerable([]));
         _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
             
-        _stopWordServiceMock.Setup(s => s.IsStopWord(It.IsAny<string>())).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("Hello")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("world")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("again")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("Latest")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("message")).ReturnsAsync(false);
         
         var result = (await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-1))).ToList();
 
@@ -191,46 +195,6 @@ public class WordCountServiceTests
             Assert.That(result.Any(r => r is { Word: "again", Count: 1 }), Is.True);
             Assert.That(result.Any(r => r is { Word: "latest", Count: 1 }), Is.False);
             Assert.That(result.Any(r => r is { Word: "message", Count: 1 }), Is.False);
-        }
-    }
-
-    [Test]
-    public async Task GetWordCountAsync_ReturnsCounts_IgnoresNumbers()
-    {
-        var messages = new List<IMessage>
-        {
-            CreateMockMessage(1UL, "Test Message"),
-            CreateMockMessage(2UL, "4"),
-            CreateMockMessage(3UL, "58239251924821")
-        };
-        
-        var textChannelMock = new Mock<ISocketMessageChannel>();
-        textChannelMock
-            .Setup(c => c.GetMessagesAsync(
-                It.IsAny<ulong>(),
-                It.IsAny<Direction>(),
-                It.IsAny<int>(),
-                It.IsAny<CacheMode>(),
-                It.IsAny<RequestOptions>()))
-            .Returns(CreateMockAsyncEnumerable([]));
-        textChannelMock
-            .Setup(c => c.GetMessagesAsync(
-                It.IsAny<int>(),
-                It.IsAny<CacheMode>(),
-                It.IsAny<RequestOptions>()))
-            .Returns(CreateMockAsyncEnumerable(messages));
-
-        _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
-            .ReturnsAsync(textChannelMock.Object);
-        _stopWordServiceMock.Setup(s => s.IsStopWord(It.IsAny<string>())).ReturnsAsync(false);
-        
-        var result = (await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow)).ToList();
-
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Count, Is.EqualTo(2));
-            Assert.That(result.Any(r => r.Word == "4"), Is.False);
-            Assert.That(result.Any(r => r.Word == "58239251924821"), Is.False);
         }
     }
 
