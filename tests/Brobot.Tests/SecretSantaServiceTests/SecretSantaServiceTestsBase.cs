@@ -14,6 +14,7 @@ public abstract class SecretSantaServiceTestsBase
 {
     protected BrobotDbContext Context;
     protected SecretSantaService SecretSantaService;
+    protected Mock<IDiscordClient> DiscordClientMock;
     private ServiceProvider _serviceProvider;
     
     [SetUp]
@@ -60,10 +61,10 @@ public abstract class SecretSantaServiceTestsBase
         
         var unitOfWork = new UnitOfWork(Context);
         
-        var discordClientMock = new Mock<IDiscordClient>();
+        DiscordClientMock = new Mock<IDiscordClient>();
         
         Random random = new(5000);
-        SecretSantaService = new SecretSantaService(unitOfWork, discordClientMock.Object, random);
+        SecretSantaService = new SecretSantaService(unitOfWork, DiscordClientMock.Object, random);
     }
     
     [TearDown]

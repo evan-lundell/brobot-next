@@ -14,7 +14,10 @@ public class WordCloudService(HttpClient http, ILogger<WordCloudService> logger)
             {
                 text,
                 useWordList = true,
-                format = "png"
+                format = "png",
+                fontSize = 8,
+                height = 1000,
+                width = 1000
             });
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsByteArrayAsync();
