@@ -23,7 +23,7 @@ public class GetStatsTests : StatsServiceTestBase
             Guild = guild
         };
         
-        Assert.ThrowsAsync<Exception>(() => StatsService.GetStats(channelModel, new DateOnly(2025, 08, 01), new DateOnly(2025, 07, 01)));
+        Assert.ThrowsAsync<InvalidOperationException>(() => StatsService.GetStats(channelModel, new DateOnly(2025, 08, 01), new DateOnly(2025, 07, 01)));
     }
 
     [Test]

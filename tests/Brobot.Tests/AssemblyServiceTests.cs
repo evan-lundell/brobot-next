@@ -1,4 +1,6 @@
 using Brobot.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Brobot.Tests;
 
@@ -8,7 +10,8 @@ public class AssemblyServiceTests
     [Test]
     public void GetVersionFromAssembly_ReturnsVersion()
     {
-        AssemblyService assemblyService = new();
+        
+        AssemblyService assemblyService = new(Mock.Of<ILogger<AssemblyService>>());
 
         var versionNumber = assemblyService.GetVersionFromAssembly();
 

@@ -39,7 +39,8 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
         GeneralOptions generalOptions = new()
         {
             FixTwitterLinks = true,
-            VersionFilePath = "./version.txt"
+            VersionFilePath = "./version.txt",
+            SeqUrl = "http://localhost:5341"
         };
         SyncService = new SyncService(
             scopeFactoryMock.Object,
@@ -148,5 +149,37 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
                 It.Is<List<ulong>>(l => l.SequenceEqual(new[] { connectedUser1Id, connectedUser2Id }))
             ), Times.Never);
         }
+    }
+    
+    [Test]
+    public async Task ThrowsException_LogsError()
+    {
+        Mock<IServiceScopeFactory> scopeFactoryMock = new();
+        Mock<ILogger<SyncService>> loggerMock = new();
+        scopeFactoryMock.Setup(sf => sf.CreateScope()).Throws<Exception>();
+        SyncService syncService = new(
+            scopeFactoryMock.Object,
+            Mock.Of<IDiscordClient>(),
+            loggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://localhost:5341",
+                VersionFilePath = "./version.txt"
+            })
+        );
+        
+        await syncService.UserVoiceStateUpdated(
+            Mock.Of<IUser>(),
+            Mock.Of<IVoiceState>(),
+            Mock.Of<IVoiceState>());
+        
+        loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing user voice state updated for ")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Once);
     }
 }

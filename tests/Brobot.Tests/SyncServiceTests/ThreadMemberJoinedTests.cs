@@ -1,6 +1,11 @@
+using Brobot.Configuration;
 using Brobot.Models;
+using Brobot.Services;
 using Discord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -176,5 +181,40 @@ public class ThreadMemberJoinedTests : SyncServiceTestsBase
             Assert.That(channelUsersCount, Is.EqualTo(2));
             Assert.That(channelModel.ChannelUsers.FirstOrDefault(cu => cu.UserId == userId), Is.Not.Null);
         }
+    }
+    
+    [Test]
+    public async Task ThrowsException_LogsError()
+    {
+        const ulong userId = 2UL;
+        Mock<IGuildUser> guildUserMock = new();
+        Mock<IThreadUser> threadUserMock = new();
+        Mock<IServiceScopeFactory> serviceScopeFactoryMock = new();
+        guildUserMock.SetupGet(u => u.Id).Returns(userId);
+        threadUserMock.SetupGet(u => u.GuildUser).Returns(guildUserMock.Object);
+        guildUserMock.Setup(u => u.IsBot).Returns(false);
+        guildUserMock.Setup(u => u.IsWebhook).Returns(false);
+        serviceScopeFactoryMock.Setup(s => s.CreateScope()).Throws<Exception>();
+        SyncService syncService = new(
+            serviceScopeFactoryMock.Object,
+            MockDiscordClient.Object,
+            LoggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://localhost:5341",
+                VersionFilePath = "./version.txt"
+            })
+        );
+        
+        await syncService.ThreadMemberJoined(threadUserMock.Object);
+        
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Thread member joined failed")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }

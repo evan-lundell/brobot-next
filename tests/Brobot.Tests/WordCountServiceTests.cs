@@ -87,16 +87,6 @@ public class WordCountServiceTests
     }
 
     [Test]
-    public async Task GetWordCount_ReturnsEmpty_OnException()
-    {
-        _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(new Mock<ISocketMessageChannel>().Object);
-
-        var result = await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow);
-
-        Assert.That(result, Is.Empty);
-    }
-
-    [Test]
     public async Task GetWordCount_ReturnsCounts_InTimeWindow()
     {
         var messages1 = new List<IMessage>
@@ -195,6 +185,87 @@ public class WordCountServiceTests
             Assert.That(result.Any(r => r is { Word: "again", Count: 1 }), Is.True);
             Assert.That(result.Any(r => r is { Word: "latest", Count: 1 }), Is.False);
             Assert.That(result.Any(r => r is { Word: "message", Count: 1 }), Is.False);
+        }
+    }
+
+    [Test]
+    public async Task GetWordCount_WhenExceptionOccurs_LogsErrorAndReturnsEmpty()
+    {
+        // Arrange
+        Mock<ILogger<WordCountService>> mockLogger = new();
+        Mock<IDiscordClient> mockDiscordClient = new();
+        Mock<IStopWordService> mockStopWordService = new();
+        WordCountService wordCountService = new(mockLogger.Object, mockDiscordClient.Object, mockStopWordService.Object);
+        GuildModel guild = new()
+        {
+            Id = 1UL,
+            Name = "Test Guild"
+        };
+        ChannelModel channel = new()
+        {
+            Id = 2UL,
+            Name = "Test Channel",
+            Guild = guild,
+            GuildId = 1UL
+        };
+        mockDiscordClient.Setup(dc => dc.GetChannelAsync(channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
+            .ThrowsAsync(new Exception());
+        
+        // Act
+        var result = await wordCountService.GetWordCount(channel, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow);
+        
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!), Times.Once);
+            Assert.That(result, Is.Empty);
+        }
+    }
+
+    [Test]
+    public async Task GetWordCount_ReturnsCount_ExcludesNumbers()
+    {
+        var messages = new List<IMessage>
+        {
+            CreateMockMessage(1UL, "Hello 1234 world!"),
+            CreateMockMessage(2UL, "Hello again."),
+            CreateMockMessage(3UL, "69534")
+        };
+        var textChannelMock = new Mock<ISocketMessageChannel>();
+        textChannelMock
+            .Setup(c => c.GetMessagesAsync(
+                It.IsAny<ulong>(),
+                It.IsAny<Direction>(),
+                It.IsAny<int>(),
+                It.IsAny<CacheMode>(),
+                It.IsAny<RequestOptions>()))
+            .Returns(CreateMockAsyncEnumerable([]));
+        textChannelMock
+            .Setup(c => c.GetMessagesAsync(
+                It.IsAny<int>(),
+                It.IsAny<CacheMode>(),
+                It.IsAny<RequestOptions>()))
+            .Returns(CreateMockAsyncEnumerable(messages));
+        _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
+
+        _stopWordServiceMock.Setup(s => s.IsStopWord(It.IsAny<string>())).ReturnsAsync(false);
+
+        var result = (await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow)).ToList();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Count, Is.EqualTo(3));
+            Assert.That(result.Sum(r => r.Count), Is.EqualTo(4));
+            Assert.That(result.Any(r => r is { Word: "hello", Count: 2 }), Is.True);
+            Assert.That(result.Any(r => r is { Word: "world", Count: 1 }), Is.True);
+            Assert.That(result.Any(r => r.Word == "1234"), Is.False);
+            Assert.That(result.Any(r => r.Word == "69534"), Is.False);
         }
     }
 

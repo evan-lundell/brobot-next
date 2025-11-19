@@ -14,7 +14,8 @@ namespace Brobot.Controllers;
 [Route("[controller]")]
 public class UsersController(
     IUnitOfWork uow,
-    UserManager<IdentityUser> userManager) : ControllerBase
+    UserManager<IdentityUser> userManager,
+    ILogger<UsersController> logger) : ControllerBase
 {
     [HttpGet]
     [Authorize]
@@ -45,6 +46,7 @@ public class UsersController(
         var identityUser = await userManager.GetUserAsync(HttpContext.User);
         if (identityUser == null)
         {
+            logger.LogWarning("Identity user not found");
             return Unauthorized();
         }
 

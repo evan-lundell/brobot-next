@@ -1,7 +1,38 @@
+version: "3.9"
+
 services:
+  # === Reverse Proxy ===
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:latest
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    restart: unless-stopped
+    
+  # === Let's Encrypt HTTPS Companion ===
+  acme-companion:
+    image: nginxproxy/acme-companion:latest
+    container_name: acme-companion
+    environment:
+      - DEFAULT_EMAIL=evan.lundell@gmail.com
+    volumes:
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - nginx-proxy
+    restart: unless-stopped
+    
   brobot-db:
     container_name: brobot-db
-    image: postgres:alpine
+    image: postgres:17-alpine
     volumes:
       - ${BROBOT_DB_DATA_PATH}:/var/lib/postgresql/data:rw
     environment:
@@ -10,23 +41,39 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
+    restart: unless-stopped
+    
   brobot:
     container_name: brobot
-    build:
-      context: .
-      dockerfile: ./src/Brobot/Dockerfile
-      target: app
-    environment:
-      - DOTNET_ENVIRONMENT=Production
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=${FULLCHAIN_PATH}
-      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=${PRIVATEKEY_PATH}
-      - ASPNETCORE_HTTPS_PORT=443
-      - ASPNETCORE_URLS=https://+;http://+
-    volumes:
-      - /etc/letsencrypt:/https:ro
-    ports:
-      - "80:80"
-      - "443:443"
+    image: evanlundell/brobot:${IMAGE_TAG}
+    env_file:
+      - ./brobot.env
+    expose:
+      - "8080"
+    restart: unless-stopped
     depends_on:
       brobot-db:
         condition: service_started
+      seq:
+        condition: service_started
+        
+  seq:
+    image: datalust/seq:latest
+      container_name: seq
+      environment:
+        - ACCEPT_EULA=Y
+        - VIRTUAL_HOST=logs.brobot.zapto.org
+        - LETSENCRYPT_HOST=logs.brobot.zapto.org
+        - LETSENCRYPT_EMAIL=evan.lundell@gmail.com
+        - SEQ_FIRSTRUN_ADMINPASSWORD=password
+      expose:
+        - "80"
+      volumes:
+        - seq_data:/data
+      restart: unless-stopped
+      
+volumes:
+  seq_data:
+  certs:
+  vhost:
+  html:

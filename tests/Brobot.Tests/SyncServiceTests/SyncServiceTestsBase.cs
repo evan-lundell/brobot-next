@@ -38,7 +38,8 @@ public abstract class SyncServiceTestsBase
         GeneralOptions generalOptions = new()
         {
             FixTwitterLinks = true,
-            VersionFilePath = "./version.txt"
+            VersionFilePath = "./version.txt",
+            SeqUrl = "http://localhost:5341"
         };
         Mock<IServiceScope> serviceScopeMock = new Mock<IServiceScope>();
         Mock<IServiceScopeFactory> serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();

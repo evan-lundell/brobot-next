@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Brobot.Configuration;
 using Brobot.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
@@ -49,7 +50,7 @@ public class DiscordOauthServiceTests
 
         
         
-        var service = new DiscordOauthService(_httpClient, _options);
+        var service = new DiscordOauthService(_httpClient, _options, Mock.Of<ILogger<DiscordOauthService>>());
         var token = await service.GetToken("auth_code");
         Assert.That(token, Is.EqualTo("abc123"));
     }
@@ -68,7 +69,7 @@ public class DiscordOauthServiceTests
                 Content = new StringContent(json)
             });
 
-        var service = new DiscordOauthService(_httpClient, _options);
+        var service = new DiscordOauthService(_httpClient, _options, Mock.Of<ILogger<DiscordOauthService>>());
         Assert.ThrowsAsync<Exception>(async () => await service.GetToken("auth_code"));
     }
 
@@ -87,7 +88,7 @@ public class DiscordOauthServiceTests
                 Content = new StringContent(json)
             });
 
-        var service = new DiscordOauthService(new HttpClient(handler.Object), _options);
+        var service = new DiscordOauthService(new HttpClient(handler.Object), _options, Mock.Of<ILogger<DiscordOauthService>>());
         var id = await service.GetDiscordUserId("token");
         Assert.That(id, Is.EqualTo(123456789UL));
     }
@@ -107,7 +108,7 @@ public class DiscordOauthServiceTests
                 Content = new StringContent(json)
             });
 
-        var service = new DiscordOauthService(new HttpClient(handler.Object), _options);
+        var service = new DiscordOauthService(new HttpClient(handler.Object), _options, Mock.Of<ILogger<DiscordOauthService>>());
         Assert.ThrowsAsync<Exception>(async () => await service.GetDiscordUserId("token"));
     }
     

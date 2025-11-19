@@ -9,6 +9,7 @@ public class WordCloudService(HttpClient http, ILogger<WordCloudService> logger)
     {
         try
         {
+            logger.LogInformation("Getting wordcloud");
             var text = string.Join(",", wordCounts.Select(wc => $"{wc.Word}:{wc.Count}"));
             var response = await http.PostAsJsonAsync("wordcloud", new
             {
@@ -20,6 +21,7 @@ public class WordCloudService(HttpClient http, ILogger<WordCloudService> logger)
                 width = 1000
             });
             response.EnsureSuccessStatusCode();
+            logger.LogInformation("Finished getting wordcloud");
             return await response.Content.ReadAsByteArrayAsync();
         }
         catch (Exception e)

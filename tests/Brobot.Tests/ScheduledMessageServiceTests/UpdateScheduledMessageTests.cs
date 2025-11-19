@@ -118,7 +118,7 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
         var dateTimeUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
         var sendDateTimeOffset = new DateTimeOffset(dateTimeUnspecified, offset).AddDays(-1);
         
-        var ex = Assert.ThrowsAsync<Exception>(() => ScheduledMessageService.UpdateScheduledMessage(scheduledMessageId, null, null, sendDateTimeOffset.DateTime));
+        var ex = Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(scheduledMessageId, null, null, sendDateTimeOffset.DateTime));
         Assert.That(ex.Message, Is.EqualTo("Send date cannot be in the past"));
     }
     
@@ -131,7 +131,7 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
             throw new Exception("Scheduled message not found");
         }
         
-        var ex = Assert.ThrowsAsync<Exception>(() => ScheduledMessageService.UpdateScheduledMessage(1, null, 100));
+        var ex = Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(1, null, 100));
         Assert.That(ex.Message, Is.EqualTo("Channel not found"));
     }
     
@@ -144,7 +144,7 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
     [Test]
     public void UpdateSentMessage_ThrowsError()
     {
-        var ex = Assert.ThrowsAsync<Exception>(() => ScheduledMessageService.UpdateScheduledMessage(4, "Test", 1));
+        var ex = Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(4, "Test", 1));
         Assert.That(ex.Message, Is.EqualTo("Cannot update a sent message"));
     }
 }

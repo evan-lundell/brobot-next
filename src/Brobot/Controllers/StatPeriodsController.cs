@@ -11,7 +11,11 @@ namespace Brobot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgroundTaskQueue, IServiceScopeFactory scopeFactory, ILogger<StatPeriodsController> logger)  : ControllerBase
+public class StatPeriodsController(
+    IUnitOfWork uow,
+    IBackgroundTaskQueue backgroundTaskQueue,
+    IServiceScopeFactory scopeFactory,
+    ILogger<StatPeriodsController> logger)  : ControllerBase
 {
     [HttpGet("{statPeriodId}")]
     [Authorize(Roles = "Admin")]
@@ -20,6 +24,7 @@ public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgro
         var statPeriodModel = await uow.StatPeriods.GetStatPeriodWithCounts(statPeriodId);
         if (statPeriodModel == null)
         {
+            logger.LogWarning("StatPeriod {StatPeriodId} not found", statPeriodId);
             return NotFound($"Stat period with id {statPeriodId} not found");
         }
         return Ok(statPeriodModel.ToStatPeriodResponse());
@@ -33,11 +38,13 @@ public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgro
         var channel = await uow.Channels.GetById(request.ChannelId);
         if (channel == null)
         {
+            logger.LogWarning("Channel {ChannelId} not found", request.ChannelId);
             return NotFound($"Channel with id {request.ChannelId} not found");
         }
 
         if (request.EndDate < request.StartDate)
         {
+            logger.LogWarning("End date must be greater than start date");
             return BadRequest("End date must be greater than start date");
         }
 
@@ -71,11 +78,13 @@ public class StatPeriodsController(IUnitOfWork uow, IBackgroundTaskQueue backgro
         var channel = await uow.Channels.GetById(request.ChannelId);
         if (channel == null)
         {
+            logger.LogWarning("Channel {ChannelId} not found", request.ChannelId);
             return NotFound($"Channel with id {request.ChannelId} not found");
         }
 
         if (request.EndDate < request.StartDate)
         {
+            logger.LogWarning("End date must be greater than start date");
             return BadRequest("End date must be greater than start date");
         }
 

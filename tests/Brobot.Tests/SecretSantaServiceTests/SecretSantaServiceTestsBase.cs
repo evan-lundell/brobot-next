@@ -5,6 +5,7 @@ using Brobot.Services;
 using Discord;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Brobot.Tests.SecretSantaServiceTests;
@@ -64,7 +65,7 @@ public abstract class SecretSantaServiceTestsBase
         DiscordClientMock = new Mock<IDiscordClient>();
         
         Random random = new(5000);
-        SecretSantaService = new SecretSantaService(unitOfWork, DiscordClientMock.Object, random);
+        SecretSantaService = new SecretSantaService(unitOfWork, DiscordClientMock.Object, random, Mock.Of<ILogger<SecretSantaService>>());
     }
     
     [TearDown]

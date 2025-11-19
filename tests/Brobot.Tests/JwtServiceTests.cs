@@ -4,6 +4,7 @@ using Brobot.Configuration;
 using Brobot.Models;
 using Brobot.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -28,7 +29,7 @@ public class JwtServiceTests
             Expiry = 30
         };
         
-        _jwtService = new JwtService(Options.Create(options));
+        _jwtService = new JwtService(Options.Create(options), Mock.Of<ILogger<JwtService>>());
     }
 
     [Test]

@@ -8,7 +8,7 @@ namespace Brobot.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class MessagesController(IDiscordClient client) : ControllerBase
+public class MessagesController(IDiscordClient client, ILogger<MessagesController> logger) : ControllerBase
 {
     [HttpPost("send")]
     [Authorize(Roles = "Admin")]
@@ -16,6 +16,7 @@ public class MessagesController(IDiscordClient client) : ControllerBase
     {
         if (await client.GetChannelAsync(sendMessageRequest.ChannelId) is not ISocketMessageChannel channel)
         {
+            logger.LogWarning($"Channel {sendMessageRequest.ChannelId} not found");
             return BadRequest("Cannot find channel");
         }
 

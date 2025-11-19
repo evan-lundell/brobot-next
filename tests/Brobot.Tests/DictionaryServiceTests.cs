@@ -2,6 +2,7 @@ using Moq;
 using Moq.Protected;
 using System.Net;
 using Brobot.Services;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Brobot.Tests;
@@ -21,7 +22,7 @@ public class DictionaryServiceTests
         {
             BaseAddress = new Uri("http://localhost/")
         };
-        _dictionaryService = new DictionaryService(_mockHttpClient);
+        _dictionaryService = new DictionaryService(_mockHttpClient, Mock.Of<ILogger<DictionaryService>>());
     }
     
     [TearDown]

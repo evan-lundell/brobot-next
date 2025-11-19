@@ -48,7 +48,7 @@ public class CreateScheduledMessageTests : ScheduledMessageServiceTestBase
             throw new Exception("User not found");
         }
         
-        var ex = Assert.ThrowsAsync<Exception>(
+        var ex = Assert.ThrowsAsync<InvalidOperationException>(
             () => ScheduledMessageService.CreateScheduledMessage("New Message", user, DateTime.UtcNow.AddDays(-1), 1));
         Assert.That(ex.Message, Is.EqualTo("Send date cannot be in the past"));
     }
@@ -62,7 +62,7 @@ public class CreateScheduledMessageTests : ScheduledMessageServiceTestBase
             throw new Exception("User not found");
         }
         
-        var ex = Assert.ThrowsAsync<Exception>(
+        var ex = Assert.ThrowsAsync<InvalidOperationException>(
             () => ScheduledMessageService.CreateScheduledMessage("New Message", user, DateTime.UtcNow.AddDays(1), 100));
         Assert.That(ex.Message, Is.EqualTo("Channel not found"));
     }

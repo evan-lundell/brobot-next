@@ -1,3 +1,4 @@
+using Brobot.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +13,7 @@ public class ErrorController(ILogger<ErrorController> logger) : ControllerBase
     {
         var exceptionHandlerFeature = HttpContext.Features.Get<IExceptionHandlerFeature>()!;
         logger.LogError(exceptionHandlerFeature.Error, "API Exception");
-        return Problem(title: exceptionHandlerFeature.Error.Message);
+        return Problem(title: exceptionHandlerFeature.Error.Message, statusCode: GetStatusCodeFromException(exceptionHandlerFeature.Error));
     }
 
     [Route("/error-development")]
@@ -25,6 +26,14 @@ public class ErrorController(ILogger<ErrorController> logger) : ControllerBase
         }
         var exceptionHandlerFeature = HttpContext.Features.Get<IExceptionHandlerFeature>()!;
         logger.LogError(exceptionHandlerFeature.Error, "API Exception");
-        return Problem(detail: exceptionHandlerFeature.Error.StackTrace, title: exceptionHandlerFeature.Error.Message);
+        return Problem(detail: exceptionHandlerFeature.Error.StackTrace, title: exceptionHandlerFeature.Error.Message, statusCode: GetStatusCodeFromException(exceptionHandlerFeature.Error));
     }
+
+    private int GetStatusCodeFromException(Exception exception) =>
+        exception switch
+        {
+            InvalidOperationException => StatusCodes.Status400BadRequest,
+            ModelNotFoundException => StatusCodes.Status404NotFound,
+            _ => StatusCodes.Status500InternalServerError
+        };
 }

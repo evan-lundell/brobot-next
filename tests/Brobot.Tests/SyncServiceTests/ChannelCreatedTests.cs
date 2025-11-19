@@ -1,7 +1,9 @@
 using Brobot.Models;
 using Discord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
+using Serilog;
 
 namespace Brobot.Tests.SyncServiceTests;
 
@@ -107,5 +109,26 @@ public class ChannelCreatedTests : SyncServiceTestsBase
             Assert.That(channelModel.ChannelUsers.Any(u => u.UserId == user1Id), Is.True);
             Assert.That(channelModel.ChannelUsers.Any(u => u.UserId == user2Id), Is.True);
         }
+    }
+
+    [Test]
+    public async Task WhenExceptionThrown_LogsError()
+    {
+        const ulong channelId = 1UL;
+        const ulong guildId = 1UL;
+        var channelMock = new Mock<IGuildChannel>();
+        channelMock.Setup(c => c.Name).Throws(new Exception("Test exception"));
+        channelMock.Setup(c => c.Id).Returns(channelId);
+        channelMock.SetupGet(c => c.GuildId).Returns(guildId);
+
+        await SyncService.ChannelCreated(channelMock.Object);
+
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!), Times.Once);
     }
 }

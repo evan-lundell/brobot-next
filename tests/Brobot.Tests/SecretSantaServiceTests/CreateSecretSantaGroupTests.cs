@@ -62,6 +62,6 @@ public class CreateSecretSantaGroupTests : SecretSantaServiceTestsBase
             }
         };
 
-        Assert.ThrowsAsync<ModelNotFoundException<SecretSantaGroupModel, ulong>>(async () => await SecretSantaService.CreateSecretSantaGroup(secretSantaGroup));
+        Assert.ThrowsAsync<InvalidOperationException>(async () => await SecretSantaService.CreateSecretSantaGroup(secretSantaGroup));
     }
 }
