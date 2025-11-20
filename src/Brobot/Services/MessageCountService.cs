@@ -14,7 +14,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         var userModel = await uow.Users.GetByIdNoTracking(userId);
         if (userModel == null || string.IsNullOrWhiteSpace(userModel.Timezone))
         {
-            logger.LogWarning("User {userId} not found or has no time zone", userId);
+            logger.LogWarning("User {UserId} not found or has no time zone", userId);
             return [];
         }
         

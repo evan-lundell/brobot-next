@@ -35,7 +35,7 @@ public class GiphyService(HttpClient http, IOptions<ExternalApisOptions> options
         }
         else
         {
-            logger.LogInformation("Giphy giphy response {Url}", url);
+            logger.LogInformation("Giphy response {Url}", url);
         }
 
         return url;

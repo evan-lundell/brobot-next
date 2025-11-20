@@ -16,7 +16,7 @@ public class MessagesController(IDiscordClient client, ILogger<MessagesControlle
     {
         if (await client.GetChannelAsync(sendMessageRequest.ChannelId) is not ISocketMessageChannel channel)
         {
-            logger.LogWarning($"Channel {sendMessageRequest.ChannelId} not found");
+            logger.LogWarning("Channel {ChannelId} not found", sendMessageRequest.ChannelId);
             return BadRequest("Cannot find channel");
         }
 

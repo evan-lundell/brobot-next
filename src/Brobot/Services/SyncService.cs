@@ -29,7 +29,7 @@ public class SyncService(
             }
 
             var userModels = (await uow.Users.GetAllWithGuildsAndChannels())
-                .Where(u => u.Archived == false)
+                .Where(u => !u.Archived)
                 .ToDictionary(u => u.Id);
             var newChannel = new ChannelModel
             {
@@ -94,7 +94,7 @@ public class SyncService(
             }
 
             logger.LogInformation("Channel {ChannelId} name updated from {PreviousName} to {CurrentName}.",
-                previous.Name, current.Name, previous.Name);
+                current.Id, previous.Name, current.Name);
             var userName = "";
             var auditLogs = await guild.GetAuditLogsAsync(limit: 1, actionType: ActionType.ChannelUpdated);
             var auditLog = auditLogs.FirstOrDefault();
@@ -151,7 +151,7 @@ public class SyncService(
             }
 
             var userLookup = (await uow.Users.GetAllWithGuildsAndChannels())
-                .Where(u => u.Archived == false)
+                .Where(u => !u.Archived)
                 .ToDictionary(u => u.Id);
             var newGuild = new GuildModel
             {
@@ -284,9 +284,9 @@ public class SyncService(
             logger.LogInformation("Starting up sync service");
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var guildModels = (await uow.Guilds.Find(g => g.Archived == false)).ToDictionary(g => g.Id);
-            var channelModels = (await uow.Channels.Find(c => c.Archived == false)).ToDictionary(c => c.Id);
-            var userModels = (await uow.Users.GetAllWithGuildsAndChannels()).Where(u => u.Archived == false)
+            var guildModels = (await uow.Guilds.Find(g => !g.Archived)).ToDictionary(g => g.Id);
+            var channelModels = (await uow.Channels.Find(c => !c.Archived)).ToDictionary(c => c.Id);
+            var userModels = (await uow.Users.GetAllWithGuildsAndChannels()).Where(u => !u.Archived)
                 .ToDictionary(u => u.Id);
 
             var guildIds = new HashSet<ulong>();
@@ -367,10 +367,11 @@ public class SyncService(
                         }
                         else if (userModel.Username != user.Username)
                         {
+                            var previousUsername = userModel.Username;
                             userModel.Username = user.Username;
                             logger.LogInformation(
                                 "User {UserId} username updated from {PreviousUsername} to {CurrentUsername}", user.Id,
-                                userModel.Username, userModel.Username);
+                                previousUsername, userModel.Username);
                         }
 
                         if (userModels[user.Id].ChannelUsers.All(cu => cu.ChannelId != channel.Id))
@@ -409,7 +410,7 @@ public class SyncService(
             // Remove old entities
             foreach (var guild in guildModels.Values.Where(g => !guildIds.Contains(g.Id)))
             {
-                logger.LogInformation("Removing  guild {GuildId}", guild.Id);
+                logger.LogInformation("Removing guild {GuildId}", guild.Id);
                 uow.Guilds.Remove(guild);
             }
 

@@ -25,7 +25,7 @@ public class HotOpsController(
     public async Task<ActionResult<IEnumerable<HotOpResponse>>> GetHotOps([FromQuery] HotOpQueryType type = HotOpQueryType.All)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
-        var now = DateTimeOffset.Now;
+        var now = DateTimeOffset.UtcNow;
         var hotOps = (type switch
         {
             HotOpQueryType.Upcoming => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id && ho.StartDate > now),

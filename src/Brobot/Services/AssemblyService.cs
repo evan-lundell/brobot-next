@@ -6,7 +6,7 @@ public class AssemblyService(ILogger<AssemblyService> logger) : IAssemblyService
 {
     public string GetVersionFromAssembly()
     {
-        logger.LogInformation("Getting  version from assembly");
+        logger.LogInformation("Getting version from assembly");
         var assembly = Assembly.GetExecutingAssembly();
         var assemblyVersion = assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?

@@ -44,7 +44,7 @@ public class ScheduledMessagesController(
         var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         if (scheduledMessage.ChannelId == null)
         {
-            logger.LogWarning($"{nameof(scheduledMessage.ChannelId)} is required.");
+            logger.LogWarning("{Property} is required.", nameof(scheduledMessage.ChannelId));
             return BadRequest("Channel Id not given");
         }
 

@@ -88,7 +88,8 @@ public class DiscordOauthServiceTests
                 Content = new StringContent(json)
             });
 
-        var service = new DiscordOauthService(new HttpClient(handler.Object), _options, Mock.Of<ILogger<DiscordOauthService>>());
+        using var httpClient = new HttpClient(handler.Object);
+        var service = new DiscordOauthService(httpClient, _options, Mock.Of<ILogger<DiscordOauthService>>());
         var id = await service.GetDiscordUserId("token");
         Assert.That(id, Is.EqualTo(123456789UL));
     }
