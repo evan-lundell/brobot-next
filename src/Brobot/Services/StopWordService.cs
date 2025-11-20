@@ -11,7 +11,6 @@ public class StopWordService(
 
     public async Task<bool> IsStopWord(string word)
     {
-        logger.LogInformation("Checking stop word {Word}", word);
         if (_stopWords == null || _isOutdated)
         {
             logger.LogInformation("Getting stop words");
@@ -26,7 +25,6 @@ public class StopWordService(
             logger.LogInformation("Finished getting stop words");
         }
         
-        logger.LogInformation("Finished checking stop word {Word}", word);
         return _stopWords.Contains(word.ToLower());
     }
 

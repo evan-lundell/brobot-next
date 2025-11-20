@@ -16,7 +16,6 @@ public class JwtService(IOptions<JwtOptions> options, ILogger<JwtService> logger
         using var scope = logger.BeginScope(new Dictionary<string, object>
         {
             { "IdentityUserId", user.Id }
-
         });
         logger.LogInformation("Creating JWT");
         var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Value.SigningKey));

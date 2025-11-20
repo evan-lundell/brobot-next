@@ -1,7 +1,6 @@
 using Brobot.Configuration;
 using Brobot.HostedServices;
 using Microsoft.OpenApi.Models;
-using Microsoft.Extensions.Logging;
 using Serilog;
 
 namespace Brobot;

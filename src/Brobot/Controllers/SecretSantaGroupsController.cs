@@ -1,4 +1,3 @@
-using Brobot.Exceptions;
 using Brobot.Services;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
