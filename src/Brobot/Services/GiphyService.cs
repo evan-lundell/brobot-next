@@ -11,25 +11,33 @@ public class GiphyService(HttpClient http, IOptions<ExternalApisOptions> options
 {
     public async Task<string> GetGif(string? tag)
     {
-        try
+        var queryStringBuilder = HttpUtility.ParseQueryString("");
+        queryStringBuilder.Add("api_key", options.Value.GiphyApiKey);
+        if (!string.IsNullOrWhiteSpace(tag))
         {
-            var queryStringBuilder = HttpUtility.ParseQueryString("");
-            queryStringBuilder.Add("api_key", options.Value.GiphyApiKey);
-            if (!string.IsNullOrWhiteSpace(tag))
-            {
-                queryStringBuilder.Add("tag", tag);
-            }
-
-            queryStringBuilder.Add("rating", "pg-13");
-
-            var response = await http.GetStringAsync($"random?{queryStringBuilder}");
-            var giphy = JsonConvert.DeserializeObject<GiphyResponse>(response);
-            return giphy?.Data?.Url ?? "";
+            logger.LogInformation("Getting Giphy gif with tag {Tag}", tag);
+            queryStringBuilder.Add("tag", tag);
         }
-        catch (HttpRequestException hre)
+        else
         {
-            logger.LogError(hre, "Error getting Giphy gif");
-            return "";
+            logger.LogInformation("Getting Giphy gif");
         }
+
+        queryStringBuilder.Add("rating", "pg-13");
+
+        var response = await http.GetStringAsync($"random?{queryStringBuilder}");
+        var giphy = JsonConvert.DeserializeObject<GiphyResponse>(response);
+        var url = giphy?.Data?.Url ?? "";
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            logger.LogWarning("Unable to parse giphy response");
+        }
+        else
+        {
+            logger.LogInformation("Giphy response {Url}", url);
+        }
+
+        return url;
     }
 }

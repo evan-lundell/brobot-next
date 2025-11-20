@@ -16,6 +16,7 @@ public class BrobotModule(
     IDictionaryService dictionaryService,
     IHotOpService hotOpService,
     IScheduledMessageService scheduledMessageService,
+    IAssemblyService assemblyService,
     ILogger<BrobotModule> logger)
     : InteractionModuleBase
 {
@@ -359,6 +360,21 @@ public class BrobotModule(
         {
             logger.LogError(ex, "HotOp command failed");
             await RespondAsync(text: "Failed to get hot op scores", ephemeral: true);
+        }
+    }
+
+    [SlashCommand("version", "Gets the version of brobot")]
+    public async Task Version()
+    {
+        try
+        {
+            var version = assemblyService.GetVersionFromAssembly();
+            await RespondAsync(text: $"Brobot version: {version}", ephemeral: true);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Version command failed");
+            await RespondAsync(text: "Failed to get version of brobot", ephemeral: true);
         }
     }
 }

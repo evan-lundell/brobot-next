@@ -17,8 +17,7 @@ public class StatsService(
         logger.LogInformation("Getting stats for channel {Channel}", channel.Id);
         if (endDate < startDate)
         {
-            logger.LogError("End date must be greater than start date");
-            throw new Exception("End date must be greater than start date");
+            throw new InvalidOperationException("End date must be greater than start date");
         }
         var wordCountsTask = wordCountService.GetWordCount(channel, startDate.ToDateTime(TimeOnly.MinValue), endDate.ToDateTime(TimeOnly.MaxValue));
         var messageCountsTask = uow.DailyMessageCounts.GetTotalDailyMessageCountsByChannel(startDate, endDate, channel.Id);
@@ -80,8 +79,10 @@ public class StatsService(
 
     public async Task SendStats(ulong channelId, StatsDto stats)
     {
+        logger.LogInformation("Sending stats for channel {Channel}", channelId);
         if (await discordClient.GetChannelAsync(channelId) is not ITextChannel textChannel)
         {
+            logger.LogWarning("Unable to find text channel {Channel}", channelId);
             return;
         }
 
@@ -109,5 +110,6 @@ public class StatsService(
             using var stream = new MemoryStream(wordCloudBytes);
             await textChannel.SendFileAsync(stream: stream, filename: "wordcloud.png", embed: embedBuilder.Build());
         }
+        logger.LogInformation("Sent stats for channel {Channel}", channelId);
     }
 }

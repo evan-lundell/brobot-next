@@ -1,6 +1,11 @@
+using Brobot.Configuration;
 using Brobot.Models;
+using Brobot.Services;
 using Discord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -184,5 +189,37 @@ public class ThreadMemberLeftTests : SyncServiceTestsBase
             Assert.That(channelModel!.ChannelUsers, Has.Count.EqualTo(0));
             Assert.That(userModel!.ChannelUsers, Has.Count.EqualTo(0));
         }
+    }
+    
+    [Test]
+    public async Task ThrowsException_LogsError()
+    {
+        Mock<IThreadUser> threadUserMock = new();
+        Mock<IGuildUser> guildUserMock = new();
+        Mock<IServiceScopeFactory> scopeFactoryMock = new();
+        threadUserMock.SetupGet(s => s.GuildUser).Returns(guildUserMock.Object);
+        guildUserMock.SetupGet(gu => gu.IsBot).Returns(false);
+        scopeFactoryMock.Setup(sf => sf.CreateScope()).Throws<Exception>();
+        SyncService syncService = new(
+            scopeFactoryMock.Object,
+            MockDiscordClient.Object,
+            LoggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://localhost:5341",
+                VersionFilePath = "./version.txt"
+            })
+        );
+        
+        await syncService.ThreadMemberLeft(threadUserMock.Object);
+        
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Thread member left failed")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Once);
     }
 }

@@ -1,4 +1,8 @@
+using Brobot.Repositories;
+using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 using TimeZoneConverter;
 
 namespace Brobot.Tests.MessageCountServiceTests;
@@ -89,5 +93,33 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
             Assert.That(newCount, Is.EqualTo(count));
             Assert.That(newSum, Is.EqualTo(sum));
         });
+    }
+    
+    [Test]
+    public async Task WhenExceptionOccurs_LogsError()
+    {
+        // Arrange
+        var userId = 123ul;
+        var channelId = 456ul;
+        var mockUow = new Mock<IUnitOfWork>();
+        var mockLogger = new Mock<ILogger<MessageCountService>>();
+    
+        mockUow.Setup(x => x.Users.GetById(userId))
+            .ThrowsAsync(new Exception("Database error"));
+    
+        var service = new MessageCountService(mockUow.Object, mockLogger.Object);
+    
+        // Act
+        await service.AddToDailyCount(userId, channelId);
+    
+        // Assert
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Error adding daily count for user {userId}")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }

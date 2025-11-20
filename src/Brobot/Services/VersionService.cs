@@ -15,6 +15,7 @@ public class VersionService(
 {
     public async Task CheckForVersionUpdate()
     {
+        logger.LogInformation("Checking for version update");
         var isVersionNew = false;
         var assemblyVersion = assemblyService.GetVersionFromAssembly();
 
@@ -34,8 +35,11 @@ public class VersionService(
         
         if (isVersionNew && !string.IsNullOrEmpty(generalOptions.Value.ReleaseNotesUrl))
         {
+            logger.LogInformation("Sending version upgrade message for version '{Version}'", assemblyVersion);
             await SendVersionUpgradeMessage(assemblyVersion);
         }
+        
+        logger.LogInformation("Finished checking for version update");
     }
     
     private async Task<VersionModel> CreateNewVersion(string versionName)

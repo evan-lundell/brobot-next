@@ -16,7 +16,8 @@ public class MessageDeletedTests : SyncServiceTestsBase
         GeneralOptions generalOptions = new()
         {
             FixTwitterLinks = true,
-            VersionFilePath = "./version.txt"
+            VersionFilePath = "./version.txt",
+            SeqUrl = "http://localhost:5341"
         };
         _loggerMock = new Mock<ILogger<SyncService>>();
         SyncService = new SyncService(
@@ -41,7 +42,9 @@ public class MessageDeletedTests : SyncServiceTestsBase
         Mock<IMessage> messageMock = new();
         Mock<IMessageChannel> channelMock = new();
         Mock<IGuild> guildMock = new();
-        
+        Mock<IUser> userMock = new();
+        userMock.SetupGet(u => u.Username).Returns("user");
+        messageMock.SetupGet(m => m.Author).Returns(userMock.Object);
         channelMock.Setup(c => c.SendMessageAsync(It.IsAny<string>(),
                 It.IsAny<bool>(),
                 It.IsAny<Embed>(),
@@ -227,7 +230,7 @@ public class MessageDeletedTests : SyncServiceTestsBase
     }
 
     [Test]
-    public async Task ExceptionThrow_LogsException()
+    public async Task ExceptionThrown_LogsException()
     {
         Mock<IMessage> messageMock = new();
         Mock<IMessageChannel> channelMock = new();

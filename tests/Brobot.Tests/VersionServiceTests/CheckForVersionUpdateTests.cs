@@ -104,7 +104,8 @@ public class CheckForVersionUpdateTests : VersionServiceTestsBase
         GeneralOptions newGeneralOptions = new()
         {
             ReleaseNotesUrl = "",
-            VersionFilePath = ""
+            VersionFilePath = "",
+            SeqUrl = "http://localhost:5341"
         };
         MockGeneralOptions.SetupGet(go => go.Value).Returns(newGeneralOptions);
         MockAssemblyService.Setup(a => a.GetVersionFromAssembly()).Returns("v1.0.0");

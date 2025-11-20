@@ -34,7 +34,8 @@ public abstract class VersionServiceTestsBase
         GeneralOptions generalOptions = new()
         {
             VersionFilePath = "",
-            ReleaseNotesUrl = "https://example.com/releases"
+            ReleaseNotesUrl = "https://example.com/releases",
+            SeqUrl = "http://localhost:5341"
         };
         MockGeneralOptions.Setup(x => x.Value).Returns(generalOptions);
 

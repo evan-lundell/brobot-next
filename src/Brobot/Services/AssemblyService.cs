@@ -2,10 +2,11 @@ using System.Reflection;
 
 namespace Brobot.Services;
 
-public class AssemblyService : IAssemblyService
+public class AssemblyService(ILogger<AssemblyService> logger) : IAssemblyService
 {
     public string GetVersionFromAssembly()
     {
+        logger.LogInformation("Getting version from assembly");
         var assembly = Assembly.GetExecutingAssembly();
         var assemblyVersion = assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
@@ -16,6 +17,7 @@ public class AssemblyService : IAssemblyService
             assemblyVersion = assemblyVersion[..index];
         }
 
+        logger.LogInformation("Found version {AssemblyVersion}", assemblyVersion);
         return assemblyVersion;
     }
 }

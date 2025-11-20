@@ -1,7 +1,11 @@
+using Brobot.Configuration;
 using Brobot.Models;
+using Brobot.Services;
 using Discord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -155,5 +159,35 @@ public class ThreadCreatedTests : SyncServiceTestsBase
             Assert.That(newThreadModel.ChannelUsers, Has.Count.EqualTo(1));
             Assert.That(newThreadModel.ChannelUsers.First().UserId, Is.EqualTo(userId));
         }
+    }
+
+    [Test]
+    public async Task ExceptionThrown_LogsException()
+    {
+        Mock<IServiceScopeFactory> serviceScopeFactoryMock = new();
+        serviceScopeFactoryMock.Setup(s => s.CreateScope()).Throws<Exception>();
+        Mock<IThreadChannel> threadChannelMock = new();
+        threadChannelMock.SetupGet(t => t.Id).Returns(1UL);
+        
+        SyncService syncService = new(
+            serviceScopeFactoryMock.Object,
+            MockDiscordClient.Object,
+            LoggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://localhost:5341",
+                VersionFilePath = "./version.txt"
+            }));
+
+        await syncService.ThreadCreated(threadChannelMock.Object);
+        
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Thread creation failed")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Once);
     }
 }

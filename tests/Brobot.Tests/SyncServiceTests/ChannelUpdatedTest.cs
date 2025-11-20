@@ -1,6 +1,7 @@
 using Brobot.Models;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -244,4 +245,33 @@ public class ChannelUpdatedTest : SyncServiceTestsBase
             Assert.That(channelModel, Is.Null);
         }
     }
+
+    [Test]
+    public async Task ExceptionThrown_LogsError()
+    {
+        Mock<IGuild> guildMock = new();
+        guildMock.Setup(g => g.GetAuditLogsAsync(
+            1,
+            CacheMode.AllowDownload,
+            null,
+            null,
+            null,
+            ActionType.ChannelUpdated,
+            null)).Throws<Exception>();
+        Mock<ISocketMessageChannel> previousChannelMock = new();
+        Mock<ISocketMessageChannel> currentChannelMock = new();
+        previousChannelMock.SetupGet(pc => pc.Name).Returns("previous");
+        currentChannelMock.SetupGet(cc => cc.Name).Returns("current");
+        await SyncService.ChannelUpdated(guildMock.Object, previousChannelMock.Object, currentChannelMock.Object);
+        
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing channel updated for ChannelId")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Once);
+    }
+    
 }

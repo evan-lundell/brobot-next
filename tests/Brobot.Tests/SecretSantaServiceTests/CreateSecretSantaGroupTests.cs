@@ -1,5 +1,3 @@
-using Brobot.Exceptions;
-using Brobot.Models;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 
@@ -62,6 +60,6 @@ public class CreateSecretSantaGroupTests : SecretSantaServiceTestsBase
             }
         };
 
-        Assert.ThrowsAsync<ModelNotFoundException<SecretSantaGroupModel, ulong>>(async () => await SecretSantaService.CreateSecretSantaGroup(secretSantaGroup));
+        Assert.ThrowsAsync<InvalidOperationException>(async () => await SecretSantaService.CreateSecretSantaGroup(secretSantaGroup));
     }
 }

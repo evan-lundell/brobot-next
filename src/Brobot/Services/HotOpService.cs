@@ -8,23 +8,35 @@ using Discord;
 
 namespace Brobot.Services;
 
-public class HotOpService(IUnitOfWork uow) : IHotOpService
+public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotOpService
 {
     private const int MinuteMultiplier = 10;
 
     public async Task UpdateHotOps(ulong userId, UserVoiceStateAction action, IReadOnlyCollection<ulong> connectedUsers)
     {
-
+        var actionString = action == UserVoiceStateAction.Connected ? "Connected" : "Disconnected";
+        using var userScope = logger.BeginScope(new Dictionary<string, object>
+        {
+            { "UserId", userId },
+            { "Action", actionString }
+        });
+        logger.LogInformation("Updating active HotOps");
         var now = DateTimeOffset.UtcNow;
         var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now);
         var users = (await uow.Users.Find(u => u.Archived == false)).ToDictionary(u => u.Id);
 
         foreach (var hotOp in activeHotOps)
         {
+            using var hotOpScope = logger.BeginScope(new Dictionary<string, object>
+            {
+                { "HotOpId", hotOp.Id }
+            });
+            logger.LogInformation("Updating HotOp");
             if (hotOp.UserId == userId)
             {
                 if (action == UserVoiceStateAction.Connected)
                 {
+                    logger.LogInformation("Creating sessions for all other users");
                     var sessions = connectedUsers
                         .Where(u => u != userId)
                         .Select(u => new HotOpSessionModel
@@ -36,9 +48,11 @@ public class HotOpService(IUnitOfWork uow) : IHotOpService
                             StartDateTime = now
                         });
                     await uow.HotOpSessions.AddRange(sessions);
+                    logger.LogInformation("Finished creating sessions for all other users");
                 }
                 else
                 {
+                    logger.LogInformation("Setting endtime for all other users' sessions");
                     var existingSessions =
                         await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
                     foreach (var existingSession in existingSessions)
@@ -48,6 +62,7 @@ public class HotOpService(IUnitOfWork uow) : IHotOpService
                             existingSession.EndDateTime = now;
                         }
                     }
+                    logger.LogInformation("Finished setting endtime for all other users' sessions");
                 }
             }
             else
@@ -57,9 +72,11 @@ public class HotOpService(IUnitOfWork uow) : IHotOpService
                     // if the owner isn't in the channel, do nothing
                     if (connectedUsers.All(cu => cu != hotOp.UserId))
                     {
+                        logger.LogInformation("HotOp owner is not in voice channel");
                         continue;
                     }
 
+                    logger.LogInformation("Creating session for user");
                     await uow.HotOpSessions.Add(new HotOpSessionModel
                     {
                         HotOp = hotOp,
@@ -68,15 +85,18 @@ public class HotOpService(IUnitOfWork uow) : IHotOpService
                         UserId = userId,
                         StartDateTime = now
                     });
+                    logger.LogInformation("Finished creating session for user");
                 }
                 else
                 {
                     // if the owner isn't in the channel, do nothing
                     if (connectedUsers.All(cu => cu != hotOp.UserId))
                     {
+                        logger.LogInformation("HotOp owner is not in voice channel");
                         continue;
                     }
 
+                    logger.LogInformation("Setting endtime for user");
                     var session = (await uow.HotOpSessions.Find(hos =>
                             hos.HotOpId == hotOp.Id && hos.UserId == userId && hos.EndDateTime == null))
                         .FirstOrDefault();
@@ -84,16 +104,25 @@ public class HotOpService(IUnitOfWork uow) : IHotOpService
                     {
                         session.EndDateTime = now;
                     }
+                    logger.LogInformation("Finished setting endtime for user");
                 }
             }
+            
+            logger.LogInformation("Finished updating HotOp");
         }
 
         await uow.CompleteAsync();
+        logger.LogInformation("Finished updating active HotOps");
 
     }
 
     public ScoreboardDto GetScoreboard(HotOpModel hotOp)
     {
+        using var hotOpScope = logger.BeginScope(new Dictionary<string, object>
+        {
+            { "HotOpId", hotOp.Id }
+        });
+        logger.LogInformation("Getting HotOp scores");
         var scores = hotOp.Channel.ChannelUsers.Select(cu => new ScoreboardItemDto
         {
             UserId = cu.UserId,
@@ -127,11 +156,17 @@ public class HotOpService(IUnitOfWork uow) : IHotOpService
             OwnerUsername = hotOp.User.Username
         };
 
+        logger.LogInformation("Retrieved HotOp scoreboard");
         return scoreboard;
     }
     
     public Embed CreateScoreboardEmbed(HotOpModel hotOp)
     {
+        using var hotOpScope = logger.BeginScope(new Dictionary<string, object>
+        {
+            { "HotOpId", hotOp.Id }
+        });
+        logger.LogInformation("Creating scoreboard embed");
         var scoreboard = GetScoreboard(hotOp);
         var builder = new EmbedBuilder
         {
@@ -150,6 +185,7 @@ public class HotOpService(IUnitOfWork uow) : IHotOpService
             });
         }
 
+        logger.LogInformation("Finished creating scoreboard embed");
         return builder.Build();
     }
 }

@@ -4,6 +4,8 @@ using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 using TimeZoneConverter;
 
 namespace Brobot.Tests.MessageCountServiceTests;
@@ -66,7 +68,7 @@ public abstract class MessageCountServiceTestBase
         Context.SaveChanges();
 
         var unitOfWork = new UnitOfWork(Context);
-        MessageCountService = new MessageCountService(unitOfWork);
+        MessageCountService = new MessageCountService(unitOfWork, Mock.Of<ILogger<MessageCountService>>());
     }
     
     private ChannelModel CreateChannel(ulong id, string name, GuildModel guild)

@@ -1,5 +1,11 @@
+using Brobot.Configuration;
 using Brobot.Models;
+using Brobot.Repositories;
+using Brobot.Services;
 using Discord;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -77,5 +83,35 @@ public class ChannelDestroyedTests : SyncServiceTestsBase
             Assert.That(channelModel1!.Archived, Is.False);
             Assert.That(channelModel2!.Archived, Is.False);
         }
+    }
+
+    [Test]
+    public async Task WhenExceptionOccurs_LogError()
+    {
+        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+        var scopeMock = new Mock<IServiceScope>();
+        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
+        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IUnitOfWork)))
+            .Throws(new Exception("Database error"));
+        
+        var syncServiceWithFaultyUow = new SyncService(
+            scopeFactoryMock.Object,
+            MockDiscordClient.Object,
+            LoggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://localhost:5341",
+                VersionFilePath = "./version.txt"
+            }));
+        
+        await syncServiceWithFaultyUow.ChannelDestroyed(Mock.Of<IGuildChannel>());
+        
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!), Times.Once);
     }
 }

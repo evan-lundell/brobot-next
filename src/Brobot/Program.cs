@@ -1,5 +1,7 @@
+using Brobot.Configuration;
 using Brobot.HostedServices;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
 namespace Brobot;
 
@@ -19,8 +21,16 @@ public static class Program
         builder.Services.AddBrobotOptions(builder.Configuration);
         builder.Services.AddControllersWithViews();
         builder.Services.AddRazorPages();
+
+        var generalOptions = builder.Configuration.GetSection(GeneralOptions.SectionName).Get<GeneralOptions>()!;
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(builder.Configuration)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .WriteTo.Seq(generalOptions.SeqUrl)
+            .CreateLogger();
+        
         builder.Services
-            .AddLogging()
             .AddEndpointsApiExplorer()
             .AddSwaggerGen(c =>
             {
@@ -51,7 +61,8 @@ public static class Program
             .AddBrobotInfrastructure(builder.Configuration)
             .AddUserManagement(builder.Configuration)
             .AddBrobotServices(builder.Configuration)
-            .AddHostedService<MigrationsHostedService>();
+            .AddHostedService<MigrationsHostedService>()
+            .AddSerilog();
 
         if (!args.Contains("--no-jobs"))
         {

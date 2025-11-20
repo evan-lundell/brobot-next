@@ -1,6 +1,11 @@
+using Brobot.Configuration;
 using Brobot.Models;
+using Brobot.Services;
 using Discord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -586,6 +591,34 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             Assert.That(channel2Model!.Name, Is.EqualTo(channel2Name));
             Assert.That(channel2Model.ChannelUsers, Has.Count.EqualTo(2));
         }
+    }
+
+    [Test]
+    public async Task ExceptionOccurs_LogsErrorMessage()
+    {
+        Mock<IServiceScopeFactory> mockServiceScopeFactory = new();
+        mockServiceScopeFactory.Setup(sp => sp.CreateScope())
+            .Throws(new Exception("Test exception"));
+        var syncServiceWithException = new SyncService(
+            mockServiceScopeFactory.Object,
+            MockDiscordClient.Object,
+            LoggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://localhost:5341",
+                VersionFilePath = "./version.txt"
+            }));
+        
+        await syncServiceWithException.SyncOnStartup();
+        
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error in sync process")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Once);
     }
 
     private Mock<IGuildUser> SetupUserMock(ulong userId, string username)

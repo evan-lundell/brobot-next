@@ -1,6 +1,11 @@
+using Brobot.Configuration;
 using Brobot.Models;
+using Brobot.Services;
 using Discord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -174,5 +179,36 @@ public class GuildAvailableTests : SyncServiceTestsBase
             Assert.That(userModel, Is.Not.Null);
             Assert.That(userModel!.Username, Is.EqualTo(user2Name));
         }
+    }
+
+    [Test]
+    public async Task ExceptionThrown_ErrorLogged()
+    {
+        var guildId = 1UL;
+        Mock<IServiceScopeFactory> serviceScopeFactoryMock = new();
+        serviceScopeFactoryMock.Setup(s => s.CreateScope()).Throws<Exception>();
+        Mock<IGuild> guildMock = new();
+        guildMock.SetupGet(g => g.Id).Returns(guildId);
+
+        SyncService syncService = new(
+            serviceScopeFactoryMock.Object,
+            MockDiscordClient.Object,
+            LoggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://seq:5341",
+                VersionFilePath = "version.txt"
+            }));
+        
+        await syncService.GuildAvailable(Mock.Of<IGuild>());
+        
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Error processing guild")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Once);
     }
 }

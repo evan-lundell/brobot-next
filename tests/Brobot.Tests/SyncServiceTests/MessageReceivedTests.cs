@@ -45,7 +45,8 @@ public class MessageReceivedTests : SyncServiceTestsBase
         GeneralOptions generalOptions = new()
         {
             FixTwitterLinks = true,
-            VersionFilePath = "./version.txt"
+            VersionFilePath = "./version.txt",
+            SeqUrl = "http://localhost:5341"
         };
         SyncService = new SyncService(
             scopeFactoryMock.Object, 
@@ -240,5 +241,40 @@ public class MessageReceivedTests : SyncServiceTestsBase
                 It.IsAny<MessageFlags>(),
                 It.IsAny<PollProperties>()), Times.Once);
         }
+    }
+    
+    [Test]
+    public async Task ThrowsException_LogsError()
+    {
+        // Arrange
+        Mock<IMessage> messageMock = new();
+        Mock<IUser> authorMock = new();
+        authorMock.Setup(a => a.IsBot).Returns(false);
+        messageMock.Setup(m => m.Author).Returns(authorMock.Object);
+        Mock<IServiceScopeFactory> scopeFactoryMock = new();
+        scopeFactoryMock.Setup(sf => sf.CreateScope()).Throws<Exception>();
+        Mock<ILogger<SyncService>> loggerMock = new();
+        SyncService syncService = new(
+            scopeFactoryMock.Object, 
+            Mock.Of<IDiscordClient>(),
+            loggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://localhost:5341",
+                VersionFilePath = "./version.txt"
+            }));
+        
+        // Act
+        await syncService.MessageReceived(messageMock.Object);
+        
+        // Assert
+        loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing message received")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Once);
     }
 }

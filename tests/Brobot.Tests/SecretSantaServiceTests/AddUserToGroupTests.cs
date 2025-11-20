@@ -66,7 +66,7 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
             Username = "User 15"
         };
         
-        Assert.ThrowsAsync<ModelNotFoundException<UserModel, ulong>>(async () =>
+        Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             await SecretSantaService.AddUserToGroup(1, user);
         });

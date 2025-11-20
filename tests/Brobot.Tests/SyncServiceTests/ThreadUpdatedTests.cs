@@ -1,5 +1,10 @@
+using Brobot.Configuration;
 using Brobot.Models;
+using Brobot.Services;
 using Discord;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -115,5 +120,35 @@ public class ThreadUpdatedTests : SyncServiceTestsBase
             Assert.That(threadModel!.Name, Is.EqualTo(threadName));
             Assert.That(threadModel.Archived, Is.True);
         }
+    }
+    
+    [Test]
+    public async Task ThrowsException_LogsError()
+    {
+        Mock<IThreadChannel> oldThreadMock = new();
+        Mock<IThreadChannel> newThreadMock = new();
+        Mock<IServiceScopeFactory> serviceScopeFactoryMock = new();
+        serviceScopeFactoryMock.Setup(s => s.CreateScope()).Throws<Exception>();
+        SyncService syncService = new(
+            serviceScopeFactoryMock.Object,
+            MockDiscordClient.Object,
+            LoggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://localhost:5341",
+                VersionFilePath = "./version.txt"
+            })
+        );
+        
+        await syncService.ThreadUpdated(oldThreadMock.Object, newThreadMock.Object);
+        
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Thread updated failed")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }

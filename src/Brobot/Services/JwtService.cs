@@ -9,10 +9,15 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Brobot.Services;
 
-public class JwtService(IOptions<JwtOptions> options) : IJwtService
+public class JwtService(IOptions<JwtOptions> options, ILogger<JwtService> logger) : IJwtService
 {
     public string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null)
     {
+        using var scope = logger.BeginScope(new Dictionary<string, object>
+        {
+            { "IdentityUserId", user.Id }
+        });
+        logger.LogInformation("Creating JWT");
         var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Value.SigningKey));
         var credentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
@@ -45,6 +50,7 @@ public class JwtService(IOptions<JwtOptions> options) : IJwtService
             signingCredentials: credentials
         );
 
+        logger.LogInformation("JWT token created");
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

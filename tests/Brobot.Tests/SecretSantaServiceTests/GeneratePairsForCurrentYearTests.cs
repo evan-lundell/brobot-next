@@ -16,7 +16,7 @@ public class GeneratePairsForCurrentYearTests : SecretSantaServiceTestsBase
     [Test]
     public void ThrowsExceptionWhenGroupHasCurrentYearPairings()
     {
-        Assert.ThrowsAsync<Exception>(() => SecretSantaService.GeneratePairsForCurrentYear(2));
+        Assert.ThrowsAsync<InvalidOperationException>(() => SecretSantaService.GeneratePairsForCurrentYear(2));
     }
 
     [Test]

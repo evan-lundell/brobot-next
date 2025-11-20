@@ -11,7 +11,10 @@ namespace Brobot.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
-public class StopWordsController(IUnitOfWork uow, IStopWordService stopWordService) : ControllerBase
+public class StopWordsController(
+    IUnitOfWork uow,
+    IStopWordService stopWordService,
+    ILogger<StopWordsController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<StopWordResponse>>> GetAll()
@@ -26,6 +29,7 @@ public class StopWordsController(IUnitOfWork uow, IStopWordService stopWordServi
         stopWordRequest.Word = stopWordRequest.Word.ToLower();
         if (await uow.StopWords.StopWordExists(stopWordRequest.Word))
         {
+            logger.LogWarning("Stop word already exists");
             return BadRequest("Stop word already exists");
         }
 
@@ -42,6 +46,7 @@ public class StopWordsController(IUnitOfWork uow, IStopWordService stopWordServi
         var stopWordModel = await uow.StopWords.GetByWord(word);
         if (stopWordModel == null)
         {
+            logger.LogWarning("Stop word not found");
             return BadRequest("Stop word doesn't exist");
         }
         

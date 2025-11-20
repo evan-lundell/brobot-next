@@ -17,31 +17,22 @@ namespace Brobot.Controllers;
 [Authorize]
 public class HotOpsController(
     IUnitOfWork uow,
-    IHotOpService hotOpService) : ControllerBase
+    IHotOpService hotOpService,
+    ILogger<HotOpsController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<HotOpResponse>>> GetHotOps([FromQuery] HotOpQueryType type = HotOpQueryType.All)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
-        IEnumerable<HotOpModel>? hotOpModels;
-        switch (type)
+        var now = DateTimeOffset.UtcNow;
+        var hotOps = (type switch
         {
-            case HotOpQueryType.Upcoming:
-                var now = DateTimeOffset.UtcNow;
-                 hotOpModels = await uow.HotOps.Find(ho => ho.UserId == discordUser.Id && ho.StartDate > now);
-                break;
-            case HotOpQueryType.Current:
-                hotOpModels = await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current);
-                break;
-            case HotOpQueryType.Completed:
-                hotOpModels = await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed);
-                break;
-            default:
-                hotOpModels = await uow.HotOps.Find(ho => ho.UserId == discordUser.Id);
-                break;
-        }
-
-        var hotOps = hotOpModels.Select(h => h.ToHotOpResponse()).ToArray();
+            HotOpQueryType.Upcoming => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id && ho.StartDate > now),
+            HotOpQueryType.Current => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current),
+            HotOpQueryType.Completed => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed),
+            _ => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id)
+        }).Select(hotOp => hotOp.ToHotOpResponse());
+        
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             foreach (var hotOp in hotOps)
@@ -60,12 +51,14 @@ public class HotOpsController(
         var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
         if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
         {
+            logger.LogWarning("Start date must be before end date");
             return BadRequest("Start date must be before end date");
         }
         
         var channel = await uow.Channels.GetById(hotOpRequest.ChannelId);
         if (channel == null)
         {
+            logger.LogWarning("Channel not found");
             return BadRequest("Invalid channel");
         }
 
@@ -111,22 +104,26 @@ public class HotOpsController(
         var hotOpModel = await uow.HotOps.GetById(id);
         if (hotOpModel == null)
         {
+            logger.LogWarning("Hot Op {HotOpId} not found", id);
             return NotFound("Hot Op not found");
         }
 
         if (hotOpModel.UserId != discordUser.Id)
         {
+            logger.LogWarning("User {UserId} cannot modify hot op", discordUser.Id);
             return Unauthorized();
         }
 
         if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
         {
+            logger.LogWarning("Start date must be before end date");
             return BadRequest("Start date must be before end date");
         }
         
         var channel = await uow.Channels.GetById(hotOpRequest.ChannelId);
         if (channel == null)
         {
+            logger.LogWarning("Channel not found");
             return BadRequest("Invalid channel");
         }
 
@@ -158,11 +155,13 @@ public class HotOpsController(
         var hotOpModel = await uow.HotOps.GetById(id);
         if (hotOpModel == null)
         {
+            logger.LogWarning("Hot Op {HotOpId} not found", id);
             return NotFound("Hot Op not found");
         }
 
         if (hotOpModel.UserId != discordUser.Id)
         {
+            logger.LogWarning("User {UserId} cannot modify hot op", discordUser.Id);
             return Unauthorized();
         }
 
@@ -177,11 +176,13 @@ public class HotOpsController(
         var hotOp = await uow.HotOps.GetById(id);
         if (hotOp == null)
         {
+            logger.LogWarning("Hot Op {HotOpId} not found", id);
             return NotFound();
         }
 
         if (hotOp.StartDate > DateTimeOffset.UtcNow)
         {
+            logger.LogWarning("Hot Op {HotOpId} has not started yet", id);
             return BadRequest("Hot Op hasn't started yet");
         }
 

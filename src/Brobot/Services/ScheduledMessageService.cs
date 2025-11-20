@@ -5,11 +5,19 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class ScheduledMessageService(IUnitOfWork uow) : IScheduledMessageService
+public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageService> logger) : IScheduledMessageService
 {
     public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(UserModel user, int? limit = null, int skip = 0,
         DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
+        logger.LogInformation(
+            "Getting scheduled messages for user {UserId}. Limit: {Limit}, Skip: {Skip}, ScheduledBefore: {ScheduledBefore}, ScheduledAfter: {ScheduledAfter}",
+            user.Id,
+            limit,
+            skip,
+            scheduledBefore, 
+            scheduledAfter
+        );
         var scheduledMessages = (await uow.ScheduledMessages.GetScheduledMessagesByUser(user.Id, limit, skip, scheduledBefore, scheduledAfter)).ToList();
         if (!string.IsNullOrWhiteSpace(user.Timezone))
         {
@@ -28,12 +36,21 @@ public class ScheduledMessageService(IUnitOfWork uow) : IScheduledMessageService
             }
         }
 
+        logger.LogInformation(
+            "Finished getting scheduled messages for user {UserId}. Limit: {Limit}, Skip: {Skip}, ScheduledBefore: {ScheduledBefore}, ScheduledAfter: {ScheduledAfter}",
+            user.Id,
+            limit,
+            skip,
+            scheduledBefore, 
+            scheduledAfter
+        );
         return scheduledMessages;
     }
 
     public async Task<ScheduledMessageModel> CreateScheduledMessage(string messageText, UserModel createdBy,
         DateTime sendDate, ulong channelId)
     {
+        logger.LogInformation("Creating a scheduled message for user {UserId}, channel {ChannelId}, with send date of {SendDate}", createdBy.Id,  channelId, sendDate);
         var offset = TimeSpan.FromHours(0);
         var sendDateUnspecified = new DateTime(sendDate.Ticks, DateTimeKind.Unspecified);
         if (!string.IsNullOrWhiteSpace(createdBy.Timezone))
@@ -45,14 +62,14 @@ public class ScheduledMessageService(IUnitOfWork uow) : IScheduledMessageService
         
         if (sendDateAdjusted < DateTimeOffset.UtcNow)
         {
-            throw new Exception("Send date cannot be in the past");
+            throw new InvalidOperationException("Send date cannot be in the past");
         }
         
         var channelModel = await uow.Channels.GetById(channelId);
 
         if (channelModel == null)
         {
-            throw new Exception("Channel not found");
+            throw new InvalidOperationException("Channel not found");
         }
         
         var reminder = new ScheduledMessageModel
@@ -68,11 +85,13 @@ public class ScheduledMessageService(IUnitOfWork uow) : IScheduledMessageService
         await uow.ScheduledMessages.Add(reminder);
         await uow.CompleteAsync();
 
+        logger.LogInformation("Finished creating a scheduled message for user {UserId}, channel {ChannelId}, with send date of {SendDate}", createdBy.Id,  channelId, sendDate);
         return reminder;
     }
     
     public async Task<ScheduledMessageModel> UpdateScheduledMessage(int id, string? text = null, ulong? channelId = null, DateTime? sendDate = null)
     {
+        logger.LogInformation("Updating scheduled message {ScheduledMessageId}", id);
         var scheduledMessage = await uow.ScheduledMessages.GetById(id);
         if (scheduledMessage == null)
         {
@@ -81,7 +100,7 @@ public class ScheduledMessageService(IUnitOfWork uow) : IScheduledMessageService
 
         if (scheduledMessage.SentDate.HasValue)
         {
-            throw new Exception("Cannot update a sent message");
+            throw new InvalidOperationException("Cannot update a sent message");
         }
 
         if (!string.IsNullOrWhiteSpace(text))
@@ -94,7 +113,7 @@ public class ScheduledMessageService(IUnitOfWork uow) : IScheduledMessageService
             var channel = await uow.Channels.GetById(channelId.Value);
             if (channel == null)
             {
-                throw new Exception("Channel not found");
+                throw new InvalidOperationException("Channel not found");
             }
             scheduledMessage.ChannelId = channelId.Value;
         }
@@ -111,14 +130,15 @@ public class ScheduledMessageService(IUnitOfWork uow) : IScheduledMessageService
             var newSendDate = new DateTimeOffset(sendDate.Value, offset).ToUniversalTime();
             if (newSendDate < DateTimeOffset.UtcNow)
             {
-                throw new Exception("Send date cannot be in the past");
+                throw new InvalidOperationException("Send date cannot be in the past");
             }
             scheduledMessage.SendDate = newSendDate;
         }
         
         await uow.CompleteAsync();
-        
         scheduledMessage.SendDate = scheduledMessage.SendDate?.ToOffset(offset);
+        
+        logger.LogInformation("Finished updating scheduled message {ScheduledMessageId}", id);
         return scheduledMessage;
     }
     

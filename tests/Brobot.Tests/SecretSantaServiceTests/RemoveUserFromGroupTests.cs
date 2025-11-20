@@ -30,15 +30,11 @@ public class RemoveUserFromGroupTests : SecretSantaServiceTestsBase
     }
     
     [Test]
-    public async Task ReturnsGroupWhenUserNotInGroup()
+    public void ReturnsInvalidOperationExceptionWhenUserNotInGroup()
     {
-        var group = await SecretSantaService.RemoveUserFromGroup(1, 7);
-        var groupModel = await Context.SecretSantaGroups
-            .Include(ssg => ssg.SecretSantaGroupUsers)
-            .ThenInclude(ssgu => ssgu.User)
-            .SingleAsync(ssg => ssg.Id == 1);
-        
-        Assert.That(group.Users.Count, Is.EqualTo(6));
-        Assert.That(groupModel.SecretSantaGroupUsers.Count, Is.EqualTo(6));
+        Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            await SecretSantaService.RemoveUserFromGroup(1, 7);
+        });
     }
 }

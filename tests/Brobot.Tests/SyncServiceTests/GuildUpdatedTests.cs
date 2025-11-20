@@ -1,5 +1,10 @@
+using Brobot.Configuration;
 using Brobot.Models;
+using Brobot.Services;
 using Discord;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Brobot.Tests.SyncServiceTests;
@@ -88,5 +93,38 @@ public class GuildUpdatedTests : SyncServiceTestsBase
             Assert.That(guildModel, Is.Not.Null);
             Assert.That(guildModel!.Name, Is.EqualTo(currentGuildName));
         }
+    }
+
+    [Test]
+    public async Task ThrowsException_LogsError()
+    {
+        Mock<IGuild> previousGuildMock = new();
+        Mock<IGuild> currentGuildMock = new();
+        Mock<IServiceScopeFactory> serviceScopeFactoryMock = new();
+        previousGuildMock.SetupGet(p => p.Name).Returns("previous");
+        currentGuildMock.SetupGet(p => p.Name).Returns("current");
+        serviceScopeFactoryMock.Setup(s => s.CreateScope())
+            .Throws<Exception>();
+        SyncService syncServiceWithFaultyScopeFactory = new(
+            serviceScopeFactoryMock.Object,
+            MockDiscordClient.Object,
+            LoggerMock.Object,
+            Options.Create(new GeneralOptions
+            {
+                SeqUrl = "http://localhost:5341",
+                VersionFilePath = "./version.txt"
+            })
+        );
+        
+        await syncServiceWithFaultyScopeFactory.GuildUpdated(previousGuildMock.Object, currentGuildMock.Object);
+        
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing guild unavailable for GuildId")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }

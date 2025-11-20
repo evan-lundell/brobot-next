@@ -4,6 +4,8 @@ using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Brobot.Tests.HotOpServiceTests;
 
@@ -29,7 +31,7 @@ public abstract class HotOpServiceTestsBase
 
         _context.SaveChanges();
         UnitOfWork = new UnitOfWork(_context);
-        HotOpService = new HotOpService(UnitOfWork);
+        HotOpService = new HotOpService(UnitOfWork, Mock.Of<ILogger<HotOpService>>());
     }
     
     [TearDown]

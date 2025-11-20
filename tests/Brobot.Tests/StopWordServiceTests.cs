@@ -4,6 +4,7 @@ using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Brobot.Tests;
@@ -33,7 +34,7 @@ public class StopWordServiceTests
         _context.StopWords.AddRange(new StopWordModel { Word = "test" }, new StopWordModel { Word = "stop" }, new StopWordModel { Word = "word" });
         _context.SaveChanges();
         
-        _stopWordService = new StopWordService(serviceScopeFactoryMock.Object);
+        _stopWordService = new StopWordService(serviceScopeFactoryMock.Object, Mock.Of<ILogger<StopWordService>>());
     }
     
     [Test]

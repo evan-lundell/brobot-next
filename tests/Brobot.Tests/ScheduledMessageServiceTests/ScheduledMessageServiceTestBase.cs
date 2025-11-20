@@ -4,6 +4,8 @@ using Brobot.Repositories;
 using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Brobot.Tests.ScheduledMessageServiceTests;
 
@@ -24,7 +26,7 @@ public abstract class ScheduledMessageServiceTestBase
         _serviceProvider = serviceCollection.BuildServiceProvider();
         Context = _serviceProvider.GetRequiredService<BrobotDbContext>();
         SetupDatabase();
-        ScheduledMessageService = new ScheduledMessageService(_serviceProvider.GetRequiredService<IUnitOfWork>());
+        ScheduledMessageService = new ScheduledMessageService(_serviceProvider.GetRequiredService<IUnitOfWork>(), Mock.Of<ILogger<ScheduledMessageService>>());
     }
     
     [TearDown]

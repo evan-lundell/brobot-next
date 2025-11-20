@@ -23,7 +23,8 @@ public class AuthController(
     IUnitOfWork uow,
     DiscordOauthService discordOauthService,
     IOptions<JwtOptions> jwtOptions,
-    IOptions<DiscordOptions> discordOptions)
+    IOptions<DiscordOptions> discordOptions,
+    ILogger<AuthController> logger)
     : ControllerBase
 {
     private const string RefreshTokenCookieKey = "refreshCookie";
@@ -33,6 +34,7 @@ public class AuthController(
     {
         if (request.Password != request.ConfirmPassword)
         {
+            logger.LogWarning("Passwords do not match for {EmailAddress}.", request.EmailAddress);
             return BadRequest("Passwords don't match");
         }
         var user = new IdentityUser
@@ -43,6 +45,7 @@ public class AuthController(
         var result = await userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
+            logger.LogError("User creation failed: {Error}", result.Errors.First().Description);
             return BadRequest(new RegisterResponse
             {
                 Succeeded = false,
@@ -64,6 +67,7 @@ public class AuthController(
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
+            logger.LogWarning("User {Email} not found.", request.Email);
             return BadRequest(new LoginResponse
             {
                 Succeeded = false,
@@ -74,6 +78,7 @@ public class AuthController(
         var result = await userManager.CheckPasswordAsync(user, request.Password);
         if (!result)
         {
+            logger.LogError("Login failed for {Email}.", request.Email);
             return BadRequest(new LoginResponse
             {
                 Succeeded = false,
@@ -166,6 +171,7 @@ public class AuthController(
         var nameIdentifierClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
         if (nameIdentifierClaim == null || string.IsNullOrWhiteSpace(nameIdentifierClaim.Value))
         {
+            logger.LogWarning("Cannot find user by name identifier claim.");
             return BadRequest("Unknown user");
         }
 
@@ -174,6 +180,7 @@ public class AuthController(
         var user = await uow.Users.GetById(id);
         if (user == null)
         {
+            logger.LogWarning("Cannot find user from Discord OAuth service.");
             return BadRequest("Unknown user");
         }
 
@@ -188,12 +195,14 @@ public class AuthController(
     {
         if (!ModelState.IsValid)
         {
+            logger.LogWarning("Invalid password change request");
             return BadRequest("Invalid password");
         }
         
         var identityUser = await userManager.GetUserAsync(HttpContext.User);
         if (identityUser == null)
         {
+            logger.LogWarning("Cannot find user by identity user.");
             return Unauthorized();
         }
 
@@ -201,6 +210,7 @@ public class AuthController(
             changePasswordRequest.NewPassword);
         if (!result.Succeeded)
         {
+            logger.LogWarning("User {UserId} failed to change password. {Error}", identityUser.Id,  result.Errors.FirstOrDefault()?.Description ?? "Password update failed");
             return BadRequest(result.Errors.FirstOrDefault()?.Description ?? "Password update failed");
         }
         
