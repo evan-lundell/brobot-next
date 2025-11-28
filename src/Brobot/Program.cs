@@ -1,6 +1,6 @@
 using Brobot.Configuration;
 using Brobot.HostedServices;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Serilog;
 
 namespace Brobot;
@@ -43,19 +43,9 @@ public static class Program
                     BearerFormat = "JWT",
                     Scheme = "Bearer"
                 });
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
                 {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
+                    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
                 });
             })
             .AddBrobotInfrastructure(builder.Configuration)
