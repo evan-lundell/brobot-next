@@ -1,13 +1,13 @@
-using Microsoft.AspNetCore.Identity;
+using Brobot.Models;
 using Brobot.Shared.Responses;
 
 namespace Brobot.Mappers;
 
 public static class IdentityUserMappingExtensions
 {
-    public static IdentityUserResponse ToIdentityUserResponse(this IdentityUser user)
+    public static ApplicationUserResponse ToApplicationUserResponse(this ApplicationUserModel user)
     {
-        return new IdentityUserResponse
+        return new ApplicationUserResponse
         {
             Id = user.Id,
             Email = user.Email,

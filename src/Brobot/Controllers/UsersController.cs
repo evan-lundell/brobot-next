@@ -1,6 +1,7 @@
 using Brobot.Mappers;
 using Brobot.Models;
 using Brobot.Repositories;
+using Brobot.Shared;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,7 @@ namespace Brobot.Controllers;
 [Route("[controller]")]
 public class UsersController(
     IUnitOfWork uow,
-    UserManager<IdentityUser> userManager,
+    UserManager<ApplicationUserModel> userManager,
     ILogger<UsersController> logger) : ControllerBase
 {
     [HttpGet]
@@ -65,7 +66,7 @@ public class UsersController(
     }
 
     [HttpGet("all")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Constants.AdminRoleName)]
     public async Task<ActionResult<IEnumerable<DiscordUserModel>>> GetAllUsers()
     {
         var users = await uow.Users.GetAll();

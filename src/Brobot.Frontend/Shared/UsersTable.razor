@@ -17,7 +17,7 @@
         @foreach (var user in _userResponses ?? [])
         {
             <tr>
-                <td>@(user.Email ?? user.Username ?? "unknown")</td>
+                <td>@(user.Username ?? user.Id)</td>
                 <td><a href="#">Edit</a></td>
                 <td><a href="#">Delete</a></td>
             </tr>
@@ -28,11 +28,11 @@
 </div>
 
 @code {
-    private IdentityUserResponse[]? _userResponses;
+    private ApplicationUserResponse[]? _userResponses;
 
     protected override async Task OnInitializedAsync()
     {
-        _userResponses = await ApiService.GetIdentityUsers();
+        _userResponses = await ApiService.GetApplicationUsers();
         await UpdateLoaded(true);
     }
 }

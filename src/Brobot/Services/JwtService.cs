@@ -11,7 +11,7 @@ namespace Brobot.Services;
 
 public class JwtService(IOptions<JwtOptions> options, ILogger<JwtService> logger) : IJwtService
 {
-    public string CreateJwt(IdentityUser user, DiscordUserModel? discordUser, string? role = null)
+    public string CreateJwt(ApplicationUserModel user, DiscordUserModel discordUser, string role)
     {
         using var scope = logger.BeginScope(new Dictionary<string, object>
         {
@@ -21,7 +21,7 @@ public class JwtService(IOptions<JwtOptions> options, ILogger<JwtService> logger
         var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Value.SigningKey));
         var credentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
-        var username = discordUser?.Username ?? user.UserName ?? "";
+        var username = discordUser.Username;
 
         var claims = new List<Claim>
         {
@@ -29,18 +29,10 @@ public class JwtService(IOptions<JwtOptions> options, ILogger<JwtService> logger
             new (ClaimTypes.NameIdentifier, user.Id),
             new (ClaimTypes.Email, user.Email ?? ""),
             new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new (JwtRegisteredClaimNames.Sub, user.Id)
+            new (JwtRegisteredClaimNames.Sub, user.Id),
+            new (Shared.Claims.ClaimTypes.DiscordId, discordUser.Id.ToString()),
+            new (ClaimTypes.Role, role)
         };
-
-        if (discordUser?.Id != null)
-        {
-            claims.Add(new Claim(Shared.Claims.ClaimTypes.DiscordId, discordUser.Id.ToString()));
-        }
-
-        if (!string.IsNullOrWhiteSpace(role))
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
         
         var token = new JwtSecurityToken(
             issuer: options.Value.ValidIssuer,
