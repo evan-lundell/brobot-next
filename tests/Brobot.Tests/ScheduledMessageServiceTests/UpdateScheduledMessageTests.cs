@@ -67,7 +67,7 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
         {
             throw new Exception("Scheduled message not found");
         }
-        var user = await Context.Users.FindAsync(scheduledMessage.CreatedById);
+        var user = await Context.DiscordUsers.FindAsync(scheduledMessage.CreatedById);
         if (user == null)
         {
             throw new Exception("User not found");
@@ -104,7 +104,7 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
         {
             throw new Exception("Scheduled message not found");
         }
-        var user = await Context.Users.FindAsync(scheduledMessage.CreatedById);
+        var user = await Context.DiscordUsers.FindAsync(scheduledMessage.CreatedById);
         if (user == null)
         {
             throw new Exception("User not found");

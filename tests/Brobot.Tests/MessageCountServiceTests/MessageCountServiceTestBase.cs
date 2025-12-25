@@ -85,33 +85,33 @@ public abstract class MessageCountServiceTestBase
         return channel;
     }
 
-    private UserModel CreateUser(ulong id, string username, string? timezone, GuildModel guild,
+    private DiscordUserModel CreateUser(ulong id, string username, string? timezone, GuildModel guild,
         IEnumerable<ChannelModel> channelModels)
     {
-        var user = new UserModel
+        var user = new DiscordUserModel
         {
             Id = id,
             Username = username,
             Timezone = timezone
         };
-        var guildUser = new GuildUserModel
+        var guildUser = new GuildDiscordUserModel
         {
             Guild = guild,
             GuildId = guild.Id,
-            User = user,
-            UserId = user.Id
+            DiscordUser = user,
+            DiscordUserId = user.Id
         };
-        Context.Users.Add(user);
+        Context.DiscordUsers.Add(user);
         user.GuildUsers.Add(guildUser);
-        guild.GuildUsers.Add(guildUser);
+        guild.GuildDiscordUsers.Add(guildUser);
 
         foreach (var channel in channelModels)
         {
-            var channelUser = new ChannelUserModel
+            var channelUser = new ChannelDiscordUserModel
             {
                 Channel = channel,
                 ChannelId = channel.Id,
-                User = user,
+                DiscordUser = user,
                 UserId = user.Id
             };
             channel.ChannelUsers.Add(channelUser);
@@ -121,20 +121,20 @@ public abstract class MessageCountServiceTestBase
         return user;
     }
 
-    private void CreateDailyMessageCount(UserModel user, ChannelModel channelModel, DateOnly countDate,
+    private void CreateDailyMessageCount(DiscordUserModel discordUser, ChannelModel channelModel, DateOnly countDate,
         int messageCount)
     {
         var messageCounts = new DailyMessageCountModel
         {
-            User = user,
-            UserId = user.Id,
+            DiscordUser = discordUser,
+            DiscordUserId = discordUser.Id,
             Channel = channelModel,
             ChannelId = channelModel.Id,
             CountDate = countDate,
             MessageCount = messageCount
         };
         Context.DailyMessageCounts.Add(messageCounts);
-        user.DailyCounts.Add(messageCounts);
+        discordUser.DailyCounts.Add(messageCounts);
         channelModel.DailyMessageCounts.Add(messageCounts);
     }
     

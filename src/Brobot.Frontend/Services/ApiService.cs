@@ -16,12 +16,17 @@ public class ApiService(HttpClient client)
         var response = await client.PostAsync("auth/refresh-token", null);
         var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
         return loginResponse;
-
     }
 
-    public async Task<LoginResponse?> Login(LoginRequest loginRequest)
+    public async Task<LoginResponse?> DiscordLogin(string authorizationCode, string redirectUri, string state)
     {
-        var response = await client.PostAsJsonAsync("auth/login", loginRequest);
+        var request = new DiscordLoginRequest
+        {
+            AuthorizationCode = authorizationCode,
+            RedirectUri = redirectUri,
+            State = state
+        };
+        var response = await client.PostAsJsonAsync("auth/discord-login", request);
         var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
         return loginResponse;
     }
@@ -39,19 +44,6 @@ public class ApiService(HttpClient client)
         }
 
         return discordAuthResponse.Url;
-    }
-
-    public Task SyncDiscordUser(string authCode)
-        => client.PostAsJsonAsync("auth/sync-discord-user", new SyncDiscordUserRequest
-        {
-            AuthorizationCode = authCode
-        });
-
-    public async Task<RegisterResponse?> RegisterUser(RegisterRequest registerRequest)
-    {
-        var response = await client.PostAsJsonAsync("auth/register", registerRequest);
-        var registerResponse = await response.Content.ReadFromJsonAsync<RegisterResponse>();
-        return registerResponse;
     }
 
     public async Task<ChannelResponse[]> GetChannels()
@@ -134,9 +126,6 @@ public class ApiService(HttpClient client)
 
     public Task SendMessage(SendMessageRequest sendMessageRequest)
         => client.PostAsJsonAsync("Messages/send", sendMessageRequest);
-
-    public Task ChangePassword(ChangePasswordRequest changePasswordRequest)
-        => client.PostAsJsonAsync("auth/change-password", changePasswordRequest);
 
     public async Task<IdentityUserResponse[]> GetIdentityUsers()
         => await client.GetFromJsonAsync<IdentityUserResponse[]>("Auth/users") ?? [];

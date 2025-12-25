@@ -9,6 +9,7 @@ using Brobot.TaskQueue;
 using Brobot.Workers;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -44,7 +45,11 @@ public static class ServiceCollectionExtensions
             .AddDefaultTokenProviders();
 
         services.AddSingleton<IJwtService, JwtService>();
-        services.AddAuthentication()
+        services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters

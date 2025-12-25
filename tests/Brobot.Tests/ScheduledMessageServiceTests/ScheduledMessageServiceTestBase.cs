@@ -65,7 +65,7 @@ public abstract class ScheduledMessageServiceTestBase
         ];
         Context.Channels.AddRange(channels);
         
-        UserModel[] users =
+        DiscordUserModel[] users =
         [
             CreateUser(1, guild, channels, "america/chicago"),
             CreateUser(2, guild, channels),
@@ -82,33 +82,33 @@ public abstract class ScheduledMessageServiceTestBase
         Context.SaveChanges();
     }
 
-    protected UserModel CreateUser(ulong id, GuildModel guild, ChannelModel[] channels, string? timezone = null)
+    protected DiscordUserModel CreateUser(ulong id, GuildModel guild, ChannelModel[] channels, string? timezone = null)
     {
-        var user = new UserModel
+        var user = new DiscordUserModel
         {
             Id = id,
             Username = $"Test User {id}",
             Timezone = timezone
         };
-        Context.Users.Add(user);
-        var guildUser = new GuildUserModel
+        Context.DiscordUsers.Add(user);
+        var guildUser = new GuildDiscordUserModel
         {
-            UserId = user.Id,
+            DiscordUserId = user.Id,
             GuildId = guild.Id,
             Guild = guild,
-            User = user
+            DiscordUser = user
         };
-        guild.GuildUsers.Add(guildUser);
+        guild.GuildDiscordUsers.Add(guildUser);
         user.GuildUsers.Add(guildUser);
         
         foreach (var channel in channels)
         {
-            var userChannel = new ChannelUserModel
+            var userChannel = new ChannelDiscordUserModel
             {
                 UserId = user.Id,
                 ChannelId = channel.Id,
                 Channel = channel,
-                User = user
+                DiscordUser = user
             };
             user.ChannelUsers.Add(userChannel);
             channel.ChannelUsers.Add(userChannel);
@@ -117,7 +117,7 @@ public abstract class ScheduledMessageServiceTestBase
         return user;
     }
 
-    protected void CreateScheduledMessage(string messageText, UserModel createdBy, ChannelModel channel, DateTimeOffset sendDate, DateTimeOffset? sentDate = null)
+    protected void CreateScheduledMessage(string messageText, DiscordUserModel createdBy, ChannelModel channel, DateTimeOffset sendDate, DateTimeOffset? sentDate = null)
     {
         var scheduledMessage = new ScheduledMessageModel
         {

@@ -192,7 +192,7 @@ public class SyncService(
                     if (!usersAddedToGuild.Contains(user.Id))
                     {
                         logger.LogInformation("Associating user {UserId} to guild {GuildId}", user.Id, guild.Id);
-                        newGuild.GuildUsers.Add(new GuildDiscordUserModel
+                        newGuild.GuildDiscordUsers.Add(new GuildDiscordUserModel
                         {
                             Guild = newGuild,
                             GuildId = guild.Id,

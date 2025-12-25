@@ -30,25 +30,25 @@ public class ThreadMemberLeftTests : SyncServiceTestsBase
         };
         Context.Channels.Add(thread);
 
-        UserModel user = new()
+        DiscordUserModel discordUser = new()
         {
             Id = 1UL,
             Username = "test-user"
         };
-        Context.Users.Add(user);
+        Context.DiscordUsers.Add(discordUser);
 
-        UserModel user2 = new()
+        DiscordUserModel user2 = new()
         {
             Id = 2UL,
             Username = "test-user2"
         };
-        Context.Users.Add(user2);
-        thread.ChannelUsers.Add(new ChannelUserModel
+        Context.DiscordUsers.Add(user2);
+        thread.ChannelUsers.Add(new ChannelDiscordUserModel
         {
             ChannelId = thread.Id,
             Channel = thread,
-            UserId = user.Id,
-            User = user
+            UserId = discordUser.Id,
+            DiscordUser = discordUser
         });
         Context.SaveChanges();
     }
@@ -92,7 +92,7 @@ public class ThreadMemberLeftTests : SyncServiceTestsBase
         
         Context.ChangeTracker.Clear();
         var channelModel = await Context.Channels.FindAsync(channelId);
-        var userModel = await Context.Users
+        var userModel = await Context.DiscordUsers
             .Include(u => u.ChannelUsers)
             .SingleOrDefaultAsync(u => u.Id == userId);
         using (Assert.EnterMultipleScope())
@@ -122,7 +122,7 @@ public class ThreadMemberLeftTests : SyncServiceTestsBase
         var channelModel = await Context.Channels
             .Include(c => c.ChannelUsers)
             .SingleOrDefaultAsync(c => c.Id == channelId);
-        var userModel = await Context.Users.FindAsync(userId);
+        var userModel = await Context.DiscordUsers.FindAsync(userId);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(channelModel, Is.Not.Null);
@@ -150,7 +150,7 @@ public class ThreadMemberLeftTests : SyncServiceTestsBase
         var channelModel = await Context.Channels
             .Include(c => c.ChannelUsers)
             .SingleOrDefaultAsync(c => c.Id == channelId);
-        var userModel = await Context.Users.FindAsync(userId);
+        var userModel = await Context.DiscordUsers.FindAsync(userId);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(channelModel, Is.Not.Null);
@@ -179,7 +179,7 @@ public class ThreadMemberLeftTests : SyncServiceTestsBase
         var channelModel = await Context.Channels
             .Include(c => c.ChannelUsers)
             .SingleOrDefaultAsync(c => c.Id == channelId);
-        var userModel = await Context.Users
+        var userModel = await Context.DiscordUsers
             .Include(u => u.ChannelUsers)
             .SingleOrDefaultAsync(u => u.Id == userId);
         using (Assert.EnterMultipleScope())

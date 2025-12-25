@@ -28,7 +28,6 @@ public class SendStatsTests : StatsServiceTestBase
                 new WordCountDto
                 {
                     Count = 15,
-                    ChannelId = 1UL,
                     Word = "test"
                 }
             ]
@@ -115,7 +114,6 @@ public class SendStatsTests : StatsServiceTestBase
                 new WordCountDto
                 {
                     Count = 15,
-                    ChannelId = 1UL,
                     Word = "test"
                 }
             ]

@@ -6,7 +6,7 @@ namespace Brobot.Services;
 
 public class DiscordOauthService(HttpClient client, IOptions<DiscordOptions> discordOptions, ILogger<DiscordOauthService> logger)
 {
-    public async Task<string> GetToken(string authorizationCode)
+    public async Task<string> GetToken(string authorizationCode, string redirectUri)
     {
         logger.LogInformation("Getting token");
         var body = new Dictionary<string, string>
@@ -14,7 +14,8 @@ public class DiscordOauthService(HttpClient client, IOptions<DiscordOptions> dis
             { "client_id", discordOptions.Value.ClientId },
             { "client_secret", discordOptions.Value.ClientSecret },
             { "grant_type", "authorization_code" },
-            { "code", authorizationCode }
+            { "code", authorizationCode },
+            { "redirect_uri", redirectUri }
         };
 
         var response = await client.PostAsync(discordOptions.Value.TokenEndpoint, new FormUrlEncodedContent(body));

@@ -2,10 +2,10 @@ namespace Brobot.Models;
 
 public class DiscordUserMessageCountModel
 {
-    public int Id { get; set; }
-    public ulong DiscordUserId { get; set; }
-    public int Count { get; set; }
+    public int Id { get; init; }
+    public ulong DiscordUserId { get; init; }
+    public int Count { get; init; }
 
-    public required StatPeriodModel StatPeriod { get; set; }
-    public int StatPeriodId { get; set; }
+    public required StatPeriodModel StatPeriod { get; init; }
+    public int StatPeriodId { get; init; }
 }

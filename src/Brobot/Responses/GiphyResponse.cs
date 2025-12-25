@@ -3,10 +3,10 @@ namespace Brobot.Responses;
 
 public class GiphyResponse
 {
-    public GiphyData? Data { get; set; }
+    public GiphyData? Data { get; init; }
 }
 
 public class GiphyData
 {
-    public string? Url { get; set; }
+    public string? Url { get; init; }
 }

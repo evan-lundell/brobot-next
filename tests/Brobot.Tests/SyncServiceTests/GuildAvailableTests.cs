@@ -20,12 +20,12 @@ public class GuildAvailableTests : SyncServiceTestsBase
             Name = "test-guild"
         };
         Context.Guilds.Add(guild);
-        UserModel user = new()
+        DiscordUserModel discordUser = new()
         {
             Id = 1UL,
             Username = "test-user"
         };
-        Context.Users.Add(user);
+        Context.DiscordUsers.Add(discordUser);
         Context.SaveChanges();
     }
 
@@ -165,15 +165,15 @@ public class GuildAvailableTests : SyncServiceTestsBase
 
         var guildModel =  await Context.Guilds
             .AsSplitQuery()
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
             .SingleOrDefaultAsync(g => g.Id == guildId);
-        var userModel = await Context.Users.FindAsync(user2Id);
+        var userModel = await Context.DiscordUsers.FindAsync(user2Id);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(guildModel, Is.Not.Null);
-            Assert.That(guildModel!.GuildUsers, Has.Count.EqualTo(2));
+            Assert.That(guildModel!.GuildDiscordUsers, Has.Count.EqualTo(2));
             Assert.That(guildModel.Channels, Has.Count.EqualTo(2));
             Assert.That(guildModel.Channels.First(c => c.Id == channel1Id).ChannelUsers, Has.Count.EqualTo(2));
             Assert.That(userModel, Is.Not.Null);

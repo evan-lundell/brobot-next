@@ -56,7 +56,7 @@ public class SecretSantaService(
         await uow.SecretSantaGroups.Add(secretSantaGroupModel);
         await uow.CompleteAsync();
         
-        logger.LogInformation("Finished creating secret santa group with id of {SecretSantaGroupId}", secretSantaGroup.Id);
+        logger.LogInformation("Finished creating secret santa group with id of {SecretSantaGroupId}", secretSantaGroupModel.Id);
         return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 

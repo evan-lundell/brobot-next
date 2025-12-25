@@ -7,7 +7,7 @@ public class GetUsersTotalDailyMessageCountsTests : MessageCountServiceTestBase
     [Test]
     public async Task WhenUserTimezoneExists_ReturnsCorrectCounts()
     {
-        var user = await Context.Users.FindAsync((ulong)1);
+        var user = await Context.DiscordUsers.FindAsync((ulong)1);
         if (user == null)
         {
             throw new Exception("User not defined");
@@ -33,7 +33,7 @@ public class GetUsersTotalDailyMessageCountsTests : MessageCountServiceTestBase
     [Test]
     public async Task WhenUserHasNoTimezone_ReturnsEmptyArray()
     {
-        var user4 = await Context.Users.FindAsync(4UL);
+        var user4 = await Context.DiscordUsers.FindAsync(4UL);
         if (user4 == null)
         {
             throw new Exception("User4 not defined");

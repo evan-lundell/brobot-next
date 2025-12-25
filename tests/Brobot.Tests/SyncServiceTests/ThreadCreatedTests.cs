@@ -38,18 +38,18 @@ public class ThreadCreatedTests : SyncServiceTestsBase
             Archived = true
         };
         Context.Channels.Add(archivedThreadChannelModel);
-        UserModel user = new()
+        DiscordUserModel discordUser = new()
         {
             Id = 1UL,
             Username = "test-user"
         };
-        Context.Users.Add(user);
-        guildModel.GuildUsers.Add(new  GuildUserModel
+        Context.DiscordUsers.Add(discordUser);
+        guildModel.GuildDiscordUsers.Add(new  GuildDiscordUserModel
         {
             Guild = guildModel,
             GuildId = guildModel.Id,
-            User = user,
-            UserId =  user.Id
+            DiscordUser = discordUser,
+            DiscordUserId =  discordUser.Id
         });
         Context.SaveChanges();
     }

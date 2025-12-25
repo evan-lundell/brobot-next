@@ -9,8 +9,8 @@ public class SecretSantaPairMappingExtensionsTests
     [Test]
     public void ToSecretSantaPairResponse_MapsModelToResponse()
     {
-        var giver = new UserModel { Id = 1, Username = "giver" };
-        var recipient = new UserModel { Id = 2, Username = "recipient" };
+        var giver = new DiscordUserModel { Id = 1, Username = "giver" };
+        var recipient = new DiscordUserModel { Id = 2, Username = "recipient" };
         var secretSantaGroup = new SecretSantaGroupModel
         {
             Id = 1,
@@ -18,8 +18,8 @@ public class SecretSantaPairMappingExtensionsTests
         };
         var model = new SecretSantaPairModel
         {
-            GiverUser = giver,
-            RecipientUser = recipient,
+            GiverDiscordUser = giver,
+            RecipientDiscordUser = recipient,
             Year = 2023,
             SecretSantaGroup = secretSantaGroup
         };

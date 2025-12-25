@@ -51,7 +51,7 @@ public class DiscordOauthServiceTests
         
         
         var service = new DiscordOauthService(_httpClient, _options, Mock.Of<ILogger<DiscordOauthService>>());
-        var token = await service.GetToken("auth_code");
+        var token = await service.GetToken("auth_code", "https://example.com/discord-cb");
         Assert.That(token, Is.EqualTo("abc123"));
     }
 
@@ -70,7 +70,7 @@ public class DiscordOauthServiceTests
             });
 
         var service = new DiscordOauthService(_httpClient, _options, Mock.Of<ILogger<DiscordOauthService>>());
-        Assert.ThrowsAsync<Exception>(async () => await service.GetToken("auth_code"));
+        Assert.ThrowsAsync<Exception>(async () => await service.GetToken("auth_code", "https://example.com/discord-cb"));
     }
 
     [Test]

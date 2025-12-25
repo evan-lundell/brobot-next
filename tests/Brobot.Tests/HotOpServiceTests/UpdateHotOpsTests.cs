@@ -14,7 +14,7 @@ public class UpdateHotOpsTests : HotOpServiceTestsBase
         Assert.Multiple(() =>
         {
             Assert.That(hotOp!.HotOpSessions, Has.Count.EqualTo(1));
-            Assert.That(hotOp.HotOpSessions.First().UserId, Is.EqualTo(1UL));
+            Assert.That(hotOp.HotOpSessions.First().DiscordUserId, Is.EqualTo(1UL));
             Assert.That(DateTimeOffset.Now - hotOp.HotOpSessions.First().StartDateTime, Is.LessThan(TimeSpan.FromSeconds(5)));
             Assert.That(hotOp.HotOpSessions.First().EndDateTime, Is.Null);
         });
@@ -42,7 +42,7 @@ public class UpdateHotOpsTests : HotOpServiceTestsBase
         Assert.Multiple(() =>
         {
             Assert.That(hotOp!.HotOpSessions, Has.Count.EqualTo(1));
-            Assert.That(hotOp.HotOpSessions.First().UserId, Is.EqualTo(1UL));
+            Assert.That(hotOp.HotOpSessions.First().DiscordUserId, Is.EqualTo(1UL));
             Assert.That(DateTimeOffset.UtcNow - hotOp.HotOpSessions.First().StartDateTime, Is.LessThan(TimeSpan.FromSeconds(5)));
             Assert.That(hotOp.HotOpSessions.First().EndDateTime, Is.Null);
         });

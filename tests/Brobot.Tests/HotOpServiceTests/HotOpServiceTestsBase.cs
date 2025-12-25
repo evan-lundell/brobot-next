@@ -59,7 +59,7 @@ public abstract class HotOpServiceTestsBase
             CreateChannel(3, guild)
         ];
 
-        UserModel[] users =
+        DiscordUserModel[] users =
         [
             CreateUser(1, guild, channels),
             CreateUser(2, guild, channels),
@@ -80,7 +80,7 @@ public abstract class HotOpServiceTestsBase
         {
             Channel = channels[0],
             ChannelId = channels[0].Id,
-            User = users[0],
+            DiscordUser = users[0],
             UserId = users[0].Id,
             StartDate = DateTimeOffset.UtcNow.AddDays(-1),
             EndDate = DateTimeOffset.UtcNow.AddDays(1)
@@ -104,7 +104,7 @@ public abstract class HotOpServiceTestsBase
         {
             Channel = channels[1],
             ChannelId = channels[1].Id,
-            User = users[1],
+            DiscordUser = users[1],
             UserId = users[1].Id,
             StartDate = DateTimeOffset.UtcNow.AddDays(-10),
             EndDate = DateTimeOffset.UtcNow.AddDays(-8)
@@ -124,7 +124,7 @@ public abstract class HotOpServiceTestsBase
         {
             Channel = channels[0],
             ChannelId = channels[0].Id,
-            User = users[2],
+            DiscordUser = users[2],
             UserId = users[2].Id,
             StartDate = DateTimeOffset.UtcNow.AddDays(5),
             EndDate = DateTimeOffset.UtcNow.AddDays(10)
@@ -144,7 +144,7 @@ public abstract class HotOpServiceTestsBase
         {
             Channel = channels[1],
             ChannelId = channels[1].Id,
-            User = users[1],
+            DiscordUser = users[1],
             UserId = users[1].Id,
             StartDate = DateTimeOffset.UtcNow.AddHours(-1),
             EndDate = DateTimeOffset.UtcNow.AddDays(5)
@@ -165,7 +165,7 @@ public abstract class HotOpServiceTestsBase
         {
             Channel = channels[1],
             ChannelId = channels[1].Id,
-            User = users[0],
+            DiscordUser = users[0],
             UserId = users[0].Id,
             StartDate = DateTimeOffset.UtcNow.AddDays(-1),
             EndDate = DateTimeOffset.UtcNow.AddDays(1)
@@ -191,32 +191,32 @@ public abstract class HotOpServiceTestsBase
         return channel;
     }
 
-    protected UserModel CreateUser(ulong id, GuildModel guild, ChannelModel[] channels, string timezone = "america/chicago")
+    protected DiscordUserModel CreateUser(ulong id, GuildModel guild, ChannelModel[] channels, string timezone = "america/chicago")
     {
-        var user = new UserModel
+        var user = new DiscordUserModel
         {
             Id = id,
             Username = $"Test User {id}",
             Timezone = timezone
         };
-        _context.Users.Add(user);
-        var guildUser = new GuildUserModel
+        _context.DiscordUsers.Add(user);
+        var guildUser = new GuildDiscordUserModel
         {
             Guild = guild,
             GuildId = guild.Id,
-            User = user,
-            UserId = user.Id
+            DiscordUser = user,
+            DiscordUserId = user.Id
         };
-        guild.GuildUsers.Add(guildUser);
+        guild.GuildDiscordUsers.Add(guildUser);
         user.GuildUsers.Add(guildUser);
 
         foreach (var channel in channels)
         {
-            var channelUser = new ChannelUserModel
+            var channelUser = new ChannelDiscordUserModel
             {
                 Channel = channel,
                 ChannelId = channel.Id,
-                User = user,
+                DiscordUser = user,
                 UserId = user.Id
             };
             channel.ChannelUsers.Add(channelUser);
@@ -226,14 +226,14 @@ public abstract class HotOpServiceTestsBase
         return user;
     }
     
-    private void CreateHotOpSession(HotOpModel hotOpModel, UserModel user, DateTimeOffset startDateTime, int? lengthInMinutes)
+    private void CreateHotOpSession(HotOpModel hotOpModel, DiscordUserModel discordUser, DateTimeOffset startDateTime, int? lengthInMinutes)
     {
         var hotOpSession = new HotOpSessionModel
         {
             HotOp = hotOpModel,
             HotOpId = hotOpModel.Id,
-            User = user,
-            UserId = user.Id,
+            DiscordUser = discordUser,
+            DiscordUserId = discordUser.Id,
             StartDateTime = startDateTime,
             EndDateTime = lengthInMinutes.HasValue ? startDateTime.AddMinutes(lengthInMinutes.Value) : null
         };
@@ -244,12 +244,12 @@ public abstract class HotOpServiceTestsBase
     protected async Task<HotOpModel> GetHotOp(int id)
     {
         return await _context.HotOps
-            .Include(ho => ho.User)
+            .Include(ho => ho.DiscordUser)
             .Include(ho => ho.HotOpSessions)
-            .ThenInclude(hos => hos.User)
+            .ThenInclude(hos => hos.DiscordUser)
             .Include(ho => ho.Channel)
             .ThenInclude(c => c.ChannelUsers)
-            .ThenInclude(cu => cu.User)
+            .ThenInclude(cu => cu.DiscordUser)
             .SingleAsync(ho => ho.Id == 5);
     }
 }

@@ -24,11 +24,11 @@ public class GeneratePairsForCurrentYearTests : SecretSantaServiceTestsBase
     {
         var secretSantaGroupModel = await Context.SecretSantaGroups
             .Include(ssg => ssg.SecretSantaPairs)
-            .ThenInclude(ssp => ssp.GiverUser)
+            .ThenInclude(ssp => ssp.GiverDiscordUser)
             .Include(ssg => ssg.SecretSantaPairs)
-            .ThenInclude(ssp => ssp.RecipientUser)
+            .ThenInclude(ssp => ssp.RecipientDiscordUser)
             .Include(ssg => ssg.SecretSantaGroupUsers)
-            .ThenInclude(ssgu => ssgu.User)
+            .ThenInclude(ssgu => ssgu.DiscordUser)
             .SingleAsync(ssg => ssg.Id == 1);
         
         var pairs = await SecretSantaService.GeneratePairsForCurrentYear(1);
@@ -40,7 +40,7 @@ public class GeneratePairsForCurrentYearTests : SecretSantaServiceTestsBase
             Assert.That(giverIds.Contains(pair.Giver.Id), Is.False);
             Assert.That(recipientIds.Contains(pair.Recipient.Id), Is.False);
             var lastYearPair = secretSantaGroupModel.SecretSantaPairs.FirstOrDefault((ssp) =>
-                ssp.Year == DateTime.UtcNow.AddYears(-1).Year && ssp.GiverUserId == pair.Giver.Id && ssp.RecipientUserId == pair.Recipient.Id);
+                ssp.Year == DateTime.UtcNow.AddYears(-1).Year && ssp.GiverDiscordUserId == pair.Giver.Id && ssp.RecipientDiscordUserId == pair.Recipient.Id);
             Assert.That(lastYearPair, Is.Null);
             giverIds.Add(pair.Giver.Id);
             recipientIds.Add(pair.Recipient.Id);

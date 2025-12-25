@@ -9,22 +9,22 @@ public class SecretSantaGroupMappingExtensionsTests
     [Test]
     public void ToSecretSantaGroupResponse_MapsModelToResponse()
     {
-        var userModel = new UserModel { Id = 1, Username = "user1" };
+        var userModel = new DiscordUserModel { Id = 1, Username = "user1" };
         var secretSantaGroupModel = new SecretSantaGroupModel
         {
             Id = 1,
             Name = "secret"
         };
-        var groupUser = new SecretSantaGroupUserModel
+        var groupUser = new SecretSantaGroupDiscordUserModel
         {
-            User = userModel,
+            DiscordUser = userModel,
             SecretSantaGroup = secretSantaGroupModel
         };
         var model = new SecretSantaGroupModel
         {
             Id = 11,
             Name = "GroupA",
-            SecretSantaGroupUsers = new List<SecretSantaGroupUserModel> { groupUser }
+            SecretSantaGroupUsers = new List<SecretSantaGroupDiscordUserModel> { groupUser }
         };
         var response = model.ToSecretSantaGroupResponse();
         var responseUsers = response.Users.ToArray();

@@ -16,7 +16,7 @@ public class ChannelCreatedTests : SyncServiceTestsBase
             Name = "guild-test"
         });
 
-        Context.Users.AddRange(new List<UserModel>
+        Context.DiscordUsers.AddRange(new List<DiscordUserModel>
         {
             new() { Id = 3UL, Username = "user3" },
             new() { Id = 4UL, Username = "user4" }

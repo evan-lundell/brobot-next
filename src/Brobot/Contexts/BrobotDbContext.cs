@@ -110,7 +110,7 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : Identi
                 .IsRequired(false);
             
             entity.HasOne(e => e.PrimaryChannel)
-                .WithMany(c => c.Users)
+                .WithMany(c => c.DiscordUsers)
                 .HasForeignKey(e => e.PrimaryChannelId);
         });
 
@@ -125,7 +125,7 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : Identi
                 .HasColumnName("discord_user_id");
             
             entity.HasOne(e => e.Guild)
-                .WithMany(g => g.GuildUsers)
+                .WithMany(g => g.GuildDiscordUsers)
                 .HasForeignKey(e => e.GuildId);
             entity.HasOne(e => e.DiscordUser)
                 .WithMany(u => u.GuildUsers)

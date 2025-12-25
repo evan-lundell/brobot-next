@@ -10,7 +10,7 @@ public class UserMappingExtensionsTests
     public void ToUserResponse_MapsModelToResponse()
     {
         var now = DateTimeOffset.UtcNow;
-        var model = new UserModel
+        var model = new DiscordUserModel
         {
             Id = 7,
             Username = "testuser",
