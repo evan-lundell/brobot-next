@@ -7,38 +7,38 @@ namespace Brobot.Services;
 
 public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageService> logger) : IScheduledMessageService
 {
-    public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(UserModel user, int? limit = null, int skip = 0,
+    public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(DiscordUserModel discordUser, int? limit = null, int skip = 0,
         DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
     {
         logger.LogInformation(
             "Getting scheduled messages for user {UserId}. Limit: {Limit}, Skip: {Skip}, ScheduledBefore: {ScheduledBefore}, ScheduledAfter: {ScheduledAfter}",
-            user.Id,
+            discordUser.Id,
             limit,
             skip,
             scheduledBefore, 
             scheduledAfter
         );
-        var scheduledMessages = (await uow.ScheduledMessages.GetScheduledMessagesByUser(user.Id, limit, skip, scheduledBefore, scheduledAfter)).ToList();
-        if (!string.IsNullOrWhiteSpace(user.Timezone))
+        var scheduledMessages = (await uow.ScheduledMessages.GetScheduledMessagesByUser(discordUser.Id, limit, skip, scheduledBefore, scheduledAfter)).ToList();
+        if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
 
             foreach (var message in scheduledMessages)
             {
                 if (message.SendDate.HasValue)
                 {
-                    message.SendDate = message.SendDate.Value.AdjustToUsersTimezone(user.Timezone);
+                    message.SendDate = message.SendDate.Value.AdjustToUsersTimezone(discordUser.Timezone);
                 }
 
                 if (message.SentDate.HasValue)
                 {
-                    message.SentDate = message.SentDate.Value.AdjustToUsersTimezone(user.Timezone);
+                    message.SentDate = message.SentDate.Value.AdjustToUsersTimezone(discordUser.Timezone);
                 }
             }
         }
 
         logger.LogInformation(
             "Finished getting scheduled messages for user {UserId}. Limit: {Limit}, Skip: {Skip}, ScheduledBefore: {ScheduledBefore}, ScheduledAfter: {ScheduledAfter}",
-            user.Id,
+            discordUser.Id,
             limit,
             skip,
             scheduledBefore, 
@@ -47,7 +47,7 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
         return scheduledMessages;
     }
 
-    public async Task<ScheduledMessageModel> CreateScheduledMessage(string messageText, UserModel createdBy,
+    public async Task<ScheduledMessageModel> CreateScheduledMessage(string messageText, DiscordUserModel createdBy,
         DateTime sendDate, ulong channelId)
     {
         logger.LogInformation("Creating a scheduled message for user {UserId}, channel {ChannelId}, with send date of {SendDate}", createdBy.Id,  channelId, sendDate);
@@ -155,9 +155,9 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
         return true;
     }
     
-    public async Task<bool> CanUserUpdateScheduledMessage(UserModel user, int scheduledMessageId)
+    public async Task<bool> CanUserUpdateScheduledMessage(DiscordUserModel discordUser, int scheduledMessageId)
     {
         var scheduledMessage = await uow.ScheduledMessages.GetById(scheduledMessageId);
-        return scheduledMessage != null && scheduledMessage.CreatedById == user.Id;
+        return scheduledMessage != null && scheduledMessage.CreatedById == discordUser.Id;
     }
 }

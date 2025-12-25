@@ -11,7 +11,7 @@ public class ScheduledMessageMappingExtensionsTests
     {
         var guild = new GuildModel { Id = 1, Name = "guild" };
         var channel = new ChannelModel { Id = 1, Name = "general", Guild = guild };
-        var user  = new UserModel { Id = 99, Username = "user" };
+        var user  = new DiscordUserModel { Id = 99, Username = "user" };
         var model = new ScheduledMessageModel
         {
             Id = 10,

@@ -5,5 +5,5 @@ namespace Brobot.Services;
 
 public interface IJwtService
 {
-    string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null);
+    string CreateJwt(IdentityUser user, DiscordUserModel? discordUser, string? role = null);
 }

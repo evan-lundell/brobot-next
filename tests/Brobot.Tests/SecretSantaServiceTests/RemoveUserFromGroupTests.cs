@@ -13,7 +13,7 @@ public class RemoveUserFromGroupTests : SecretSantaServiceTestsBase
         var group = await SecretSantaService.RemoveUserFromGroup(1, 1);
         var groupModel = await Context.SecretSantaGroups
             .Include(ssg => ssg.SecretSantaGroupUsers)
-            .ThenInclude(ssgu => ssgu.User)
+            .ThenInclude(ssgu => ssgu.DiscordUser)
             .SingleAsync(ssg => ssg.Id == 1);
         
         Assert.That(group.Users.Count, Is.EqualTo(5));

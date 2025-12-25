@@ -10,7 +10,7 @@ public static class HotOpMappingExtensions
         return new HotOpResponse
         {
             Id = model.Id,
-            User = model.User.ToUserResponse(),
+            User = model.DiscordUser.ToUserResponse(),
             Channel = model.Channel.ToChannelResponse(),
             StartDate = model.StartDate,
             EndDate = model.EndDate

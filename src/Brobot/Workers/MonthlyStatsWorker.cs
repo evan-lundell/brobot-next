@@ -4,6 +4,7 @@ using Brobot.Services;
 
 namespace Brobot.Workers;
 
+// ReSharper disable once ClassNeverInstantiated.Global
 public class MonthlyStatsWorker(
     ICronWorkerConfig<MonthlyStatsWorker> config,
     IServiceScopeFactory serviceScopeFactory,

@@ -20,7 +20,7 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
         var group = await SecretSantaService.AddUserToGroup(1, user);
         var groupModel = await Context.SecretSantaGroups
             .Include(ssg => ssg.SecretSantaGroupUsers)
-            .ThenInclude(ssgu => ssgu.User)
+            .ThenInclude(ssgu => ssgu.DiscordUser)
             .SingleAsync(ssg => ssg.Id == 1);
         
         Assert.That(group.Users.Count, Is.EqualTo(7));

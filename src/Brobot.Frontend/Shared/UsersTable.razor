@@ -18,12 +18,6 @@
         {
             <tr>
                 <td>@(user.Email ?? user.Username ?? "unknown")</td>
-                <td>
-                    @if (user.IsDiscordAuthenticated)
-                    {
-                        <span class="oi oi-check"></span>
-                    }
-                </td>
                 <td><a href="#">Edit</a></td>
                 <td><a href="#">Delete</a></td>
             </tr>

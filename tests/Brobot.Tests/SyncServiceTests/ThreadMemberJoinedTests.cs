@@ -30,35 +30,35 @@ public class ThreadMemberJoinedTests : SyncServiceTestsBase
         };
         Context.Channels.Add(thread);
 
-        UserModel user1 = new()
+        DiscordUserModel user1 = new()
         {
             Id = 1UL,
             Username = "existing-user"
         };
-        Context.Users.Add(user1);
+        Context.DiscordUsers.Add(user1);
         
-        guild.GuildUsers.Add(new GuildUserModel
+        guild.GuildDiscordUsers.Add(new GuildDiscordUserModel
         {
             GuildId = guild.Id,
             Guild = guild,
-            UserId = user1.Id,
-            User = user1
+            DiscordUserId = user1.Id,
+            DiscordUser = user1
         });
         
-        thread.ChannelUsers.Add(new ChannelUserModel
+        thread.ChannelUsers.Add(new ChannelDiscordUserModel
         {
             ChannelId = thread.Id,
             Channel = thread,
             UserId = user1.Id,
-            User = user1
+            DiscordUser = user1
         });
 
-        UserModel user2 = new()
+        DiscordUserModel user2 = new()
         {
             Id = 2UL,
             Username = "new-user"
         };
-        Context.Users.Add(user2);
+        Context.DiscordUsers.Add(user2);
         
         Context.SaveChanges();
     }
@@ -110,7 +110,7 @@ public class ThreadMemberJoinedTests : SyncServiceTestsBase
         var channelModel = await Context.Channels
             .Include(c => c.ChannelUsers)
             .SingleOrDefaultAsync(c => c.Id == threadId);
-        var channelUsersCount = await Context.Users
+        var channelUsersCount = await Context.DiscordUsers
             .Include(u => u.ChannelUsers)
             .Where(u => u.ChannelUsers.Count > 0)
             .CountAsync();
@@ -140,7 +140,7 @@ public class ThreadMemberJoinedTests : SyncServiceTestsBase
         var channelModel = await Context.Channels
             .Include(c => c.ChannelUsers)
             .SingleOrDefaultAsync(c => c.Id == threadId);
-        var channelUsersCount = await Context.Users
+        var channelUsersCount = await Context.DiscordUsers
             .Include(u => u.ChannelUsers)
             .Where(u => u.ChannelUsers.Count > 0)
             .CountAsync();
@@ -171,7 +171,7 @@ public class ThreadMemberJoinedTests : SyncServiceTestsBase
         var channelModel = await Context.Channels
             .Include(c => c.ChannelUsers)
             .SingleOrDefaultAsync(c => c.Id == threadId);
-        var channelUsersCount = await Context.Users
+        var channelUsersCount = await Context.DiscordUsers
             .Include(u => u.ChannelUsers)
             .CountAsync();
         using (Assert.EnterMultipleScope())

@@ -5,7 +5,7 @@ namespace Brobot.Mappers;
 
 public static class UserMappingExtensions
 {
-    public static UserResponse ToUserResponse(this UserModel model)
+    public static UserResponse ToUserResponse(this DiscordUserModel model)
     {
         return new UserResponse
         {

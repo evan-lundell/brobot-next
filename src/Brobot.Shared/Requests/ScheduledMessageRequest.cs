@@ -4,7 +4,7 @@ namespace Brobot.Shared.Requests;
 
 public record ScheduledMessageRequest
 {
-    public int? Id { get; set; }
+    public int? Id { get; init; }
     
     [Required]
     [MaxLength(250)]

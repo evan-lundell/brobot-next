@@ -31,7 +31,7 @@ public class StatsService(
             EndDate = endDate,
             WordCounts = wordCountsTask.Result,
             MessageCounts = messageCountsTask.Result
-                .GroupBy(mc => (mc.UserId, mc.User.Username))
+                .GroupBy(mc => (UserId: mc.DiscordUserId, mc.DiscordUser.Username))
                 .Select(g => new MessageCountDto
                 {
                     UserId = g.Key.UserId,
@@ -59,11 +59,11 @@ public class StatsService(
 
                 foreach (var messageCount in stats.MessageCounts.OrderByDescending(wc => wc.Count))
                 {
-                    statPeriod.UserMessageCounts.Add(new UserMessageCountModel
+                    statPeriod.UserMessageCounts.Add(new DiscordUserMessageCountModel
                     {
                         StatPeriod = statPeriod,
                         StatPeriodId = statPeriod.Id,
-                        UserId = messageCount.UserId,
+                        DiscordUserId = messageCount.UserId,
                         Count = messageCount.Count
                     });
                 }

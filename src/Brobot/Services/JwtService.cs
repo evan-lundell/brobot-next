@@ -11,7 +11,7 @@ namespace Brobot.Services;
 
 public class JwtService(IOptions<JwtOptions> options, ILogger<JwtService> logger) : IJwtService
 {
-    public string CreateJwt(IdentityUser user, UserModel? discordUser, string? role = null)
+    public string CreateJwt(IdentityUser user, DiscordUserModel? discordUser, string? role = null)
     {
         using var scope = logger.BeginScope(new Dictionary<string, object>
         {

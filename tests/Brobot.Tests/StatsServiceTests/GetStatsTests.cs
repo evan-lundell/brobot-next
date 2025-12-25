@@ -59,41 +59,41 @@ public class GetStatsTests : StatsServiceTestBase
             Guild = guild
         };
         await Context.Channels.AddAsync(channelModel);
-        UserModel user1Model = new()
+        DiscordUserModel user1Model = new()
         {
             Id = user1Id,
             Username = user1Name
         };
-        UserModel user2Model = new()
+        DiscordUserModel user2Model = new()
         {
             Id = user2Id,
             Username = user2Name
         };
-        await Context.Users.AddRangeAsync(user1Model, user2Model);
+        await Context.DiscordUsers.AddRangeAsync(user1Model, user2Model);
         await Context.DailyMessageCounts.AddRangeAsync(new DailyMessageCountModel
         {
             Channel = channelModel,
             ChannelId = channelId,
             CountDate = new DateOnly(2025, 8, 1),
             MessageCount = messageCount1,
-            User = user1Model,
-            UserId = user1Id,
+            DiscordUser = user1Model,
+            DiscordUserId = user1Id,
         }, new DailyMessageCountModel
         {
             Channel = channelModel,
             ChannelId = channelId,
             CountDate = new DateOnly(2025, 8, 2),
             MessageCount = messageCount2,
-            User = user1Model,
-            UserId = user1Id
+            DiscordUser = user1Model,
+            DiscordUserId = user1Id
         }, new DailyMessageCountModel
         {
             Channel = channelModel,
             ChannelId = channelId,
             CountDate = new DateOnly(2025, 8, 1),
             MessageCount = messageCount3,
-            User = user2Model,
-            UserId = user2Id
+            DiscordUser = user2Model,
+            DiscordUserId = user2Id
         });
         await Context.SaveChangesAsync();
         
@@ -106,13 +106,11 @@ public class GetStatsTests : StatsServiceTestBase
             .ReturnsAsync([
                 new WordCountDto
                 {
-                    ChannelId = channelModel.Id,
                     Count = word1Count,
                     Word = word1
                 },
                 new  WordCountDto
                 {
-                    ChannelId = channelModel.Id,
                     Count = word2Count,
                     Word = word2
                 }
@@ -172,41 +170,41 @@ public class GetStatsTests : StatsServiceTestBase
             Guild = guild
         };
         await Context.Channels.AddAsync(channelModel);
-        UserModel user1Model = new()
+        DiscordUserModel user1Model = new()
         {
             Id = user1Id,
             Username = user1Name
         };
-        UserModel user2Model = new()
+        DiscordUserModel user2Model = new()
         {
             Id = user2Id,
             Username = user2Name
         };
-        await Context.Users.AddRangeAsync(user1Model, user2Model);
+        await Context.DiscordUsers.AddRangeAsync(user1Model, user2Model);
         await Context.DailyMessageCounts.AddRangeAsync(new DailyMessageCountModel
         {
             Channel = channelModel,
             ChannelId = channelId,
             CountDate = new DateOnly(2025, 8, 1),
             MessageCount = messageCount1,
-            User = user1Model,
-            UserId = user1Id,
+            DiscordUser = user1Model,
+            DiscordUserId = user1Id,
         }, new DailyMessageCountModel
         {
             Channel = channelModel,
             ChannelId = channelId,
             CountDate = new DateOnly(2025, 8, 2),
             MessageCount = messageCount2,
-            User = user1Model,
-            UserId = user1Id
+            DiscordUser = user1Model,
+            DiscordUserId = user1Id
         }, new DailyMessageCountModel
         {
             Channel = channelModel,
             ChannelId = channelId,
             CountDate = new DateOnly(2025, 8, 1),
             MessageCount = messageCount3,
-            User = user2Model,
-            UserId = user2Id
+            DiscordUser = user2Model,
+            DiscordUserId = user2Id
         });
         var startDate = new DateOnly(2025, 8, 1);
         var endDate = new DateOnly(2025, 9, 1);
@@ -228,13 +226,11 @@ public class GetStatsTests : StatsServiceTestBase
             .ReturnsAsync([
                 new WordCountDto
                 {
-                    ChannelId = channelModel.Id,
                     Count = word1Count,
                     Word = word1
                 },
                 new  WordCountDto
                 {
-                    ChannelId = channelModel.Id,
                     Count = word2Count,
                     Word = word2
                 }

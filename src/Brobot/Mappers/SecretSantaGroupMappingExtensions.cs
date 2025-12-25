@@ -11,7 +11,7 @@ public static class SecretSantaGroupMappingExtensions
         {
             Id = model.Id,
             Name = model.Name,
-            Users = model.SecretSantaGroupUsers.Select(user => user.User.ToUserResponse()).ToArray()
+            Users = model.SecretSantaGroupUsers.Select(user => user.DiscordUser.ToUserResponse()).ToArray()
         };
     }
 }

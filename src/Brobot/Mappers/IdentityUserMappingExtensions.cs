@@ -11,8 +11,7 @@ public static class IdentityUserMappingExtensions
         {
             Id = user.Id,
             Email = user.Email,
-            Username = user.UserName,
-            // IsDiscordAuthenticated will be set elsewhere
+            Username = user.UserName
         };
     }
 }

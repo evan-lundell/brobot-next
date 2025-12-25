@@ -1,24 +1,31 @@
 @page "/discord-cb"
 @inject ApiService ApiService
 @inject NavigationManager NavigationManager
-@inject JwtService JwtService
+@inject JwtAuthenticationStateProvider JwtAuthenticationStateProvider
 
-<PageTitle>Discord Auth Callback</PageTitle>
+<PageTitle>Discord Login</PageTitle>
 
-@if (_syncing)
+@if (_loading)
 {
-    <p><em>Syncing user data...</em></p>
+    <p><em>Logging in...</em></p>
 }
 
-<p>@_message</p>
+@if (!string.IsNullOrEmpty(_message))
+{
+    <p style="color: red">@_message</p>
+    <p><a href="/">Back to Home</a></p>
+}
 
 @code {
     [Parameter]
     [SupplyParameterFromQuery]
     public string Code { get; set; } = "";
+    
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string State { get; set; } = "";
 
-    private bool _syncing = true;
-
+    private bool _loading = true;
     private string _message = "";
 
     protected override async Task OnInitializedAsync()
@@ -27,20 +34,40 @@
         {
             if (string.IsNullOrWhiteSpace(Code))
             {
-                _message = "Unable to sync user. Please logout and try again.";
+                _message = "Login failed. No authorization code received.";
+                _loading = false;
+                return;
+            }
+            
+            if (string.IsNullOrWhiteSpace(State))
+            {
+                _message = "Login failed. Invalid authentication state.";
+                _loading = false;
+                return;
+            }
+
+            // Build the redirect URI to match what was sent to Discord
+            var uri = new Uri(NavigationManager.Uri);
+            var redirectUri = $"{uri.Scheme}://{uri.Host}{(uri.IsDefaultPort ? "" : $":{uri.Port}")}/discord-cb";
+
+            var loginResponse = await ApiService.DiscordLogin(Code, redirectUri, State);
+            
+            if (loginResponse is { Succeeded: true, Token: not null })
+            {
+                JwtAuthenticationStateProvider.Login(loginResponse.Token);
+                NavigationManager.NavigateTo("/");
             }
             else
             {
-                await ApiService.SyncDiscordUser(Code);
-                await JwtService.RefreshJwtToken();
-                NavigationManager.NavigateTo("/");
+                _message = loginResponse?.Errors?.FirstOrDefault() ?? "Login failed. Please try again.";
+                _loading = false;
             }
-            _syncing = false;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            _syncing = false;
-            _message = "Unable to sync user. Please logout and try again.";
+            Console.WriteLine(ex.Message);
+            _message = "An error occurred during login. Please try again.";
+            _loading = false;
         }
     }
 }

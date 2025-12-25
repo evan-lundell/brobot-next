@@ -46,9 +46,9 @@ public class SecretSantaService(
                 throw new InvalidOperationException($"User with id {user.Id} does not exist");
             }
 
-            secretSantaGroupModel.SecretSantaGroupUsers.Add(new SecretSantaGroupUserModel
+            secretSantaGroupModel.SecretSantaGroupUsers.Add(new SecretSantaGroupDiscordUserModel
             {
-                User = userModel,
+                DiscordUser = userModel,
                 SecretSantaGroup = secretSantaGroupModel
             });
         }
@@ -56,7 +56,7 @@ public class SecretSantaService(
         await uow.SecretSantaGroups.Add(secretSantaGroupModel);
         await uow.CompleteAsync();
         
-        logger.LogInformation("Finished creating secret santa group with id of {SecretSantaGroupId}", secretSantaGroup.Id);
+        logger.LogInformation("Finished creating secret santa group with id of {SecretSantaGroupId}", secretSantaGroupModel.Id);
         return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 
@@ -75,9 +75,9 @@ public class SecretSantaService(
             throw new InvalidOperationException($"User with id {user.Id} does not exist");
         }
 
-        var secretSantaGroupUserModel = new SecretSantaGroupUserModel
+        var secretSantaGroupUserModel = new SecretSantaGroupDiscordUserModel
         {
-            User = userModel,
+            DiscordUser = userModel,
             SecretSantaGroup = secretSantaGroupModel
         };
         secretSantaGroupModel.SecretSantaGroupUsers.Add(secretSantaGroupUserModel);
@@ -97,7 +97,7 @@ public class SecretSantaService(
         }
 
         var secretSantaGroupUserModel =
-            secretSantaGroupModel.SecretSantaGroupUsers.FirstOrDefault(ssgu => ssgu.UserId == userId);
+            secretSantaGroupModel.SecretSantaGroupUsers.FirstOrDefault(ssgu => ssgu.DiscordUserId == userId);
         if (secretSantaGroupUserModel == null)
         {
             throw new  InvalidOperationException($"User with id {userId} does not exist");
@@ -127,8 +127,8 @@ public class SecretSantaService(
         }
 
         var previousYearPairs = (await uow.SecretSantaGroups.GetPairs(secretSantaGroupId, currentYear - 1)).ToArray();
-        var availableGivers = secretSantaGroup.SecretSantaGroupUsers.Select(ssgu => ssgu.User).ToList();
-        var availableRecipients = secretSantaGroup.SecretSantaGroupUsers.Select(ssgu => ssgu.User).ToList();
+        var availableGivers = secretSantaGroup.SecretSantaGroupUsers.Select(ssgu => ssgu.DiscordUser).ToList();
+        var availableRecipients = secretSantaGroup.SecretSantaGroupUsers.Select(ssgu => ssgu.DiscordUser).ToList();
         var newPairs = new List<SecretSantaPairModel>();
         while (availableGivers.Count > 0)
         {
@@ -138,11 +138,11 @@ public class SecretSantaService(
             if (validRecipients.Length == 0)
             {
                 var swappable = newPairs.Where(p =>
-                    IsAllowedPair(giver, p.RecipientUser, previousYearPairs)).ToArray();
+                    IsAllowedPair(giver, p.RecipientDiscordUser, previousYearPairs)).ToArray();
                 var swap = swappable[random.Next(swappable.Length)];
-                availableGivers.Add(swap.GiverUser);
-                swap.GiverUser = giver;
-                swap.GiverUserId = giver.Id;
+                availableGivers.Add(swap.GiverDiscordUser);
+                swap.GiverDiscordUser = giver;
+                swap.GiverDiscordUserId = giver.Id;
             }
             else
             {
@@ -152,10 +152,10 @@ public class SecretSantaService(
                 {
                     SecretSantaGroup = secretSantaGroup,
                     SecretSantaGroupId = secretSantaGroupId,
-                    GiverUser = giver,
-                    GiverUserId = giver.Id,
-                    RecipientUser = recipient,
-                    RecipientUserId = recipient.Id,
+                    GiverDiscordUser = giver,
+                    GiverDiscordUserId = giver.Id,
+                    RecipientDiscordUser = recipient,
+                    RecipientDiscordUserId = recipient.Id,
                     Year = currentYear
                 });
             }
@@ -184,13 +184,13 @@ public class SecretSantaService(
         logger.LogInformation("Finished sending pairs for secret santa pairs");
     }
 
-    private bool IsAllowedPair(UserModel giver, UserModel recipient, ICollection<SecretSantaPairModel> previousYearPairs)
+    private bool IsAllowedPair(DiscordUserModel giver, DiscordUserModel recipient, ICollection<SecretSantaPairModel> previousYearPairs)
     {
         if (recipient.Id == giver.Id)
         {
             return false;
         }
 
-        return !previousYearPairs.Any(p => p.GiverUserId == giver.Id && p.RecipientUserId == recipient.Id);
+        return !previousYearPairs.Any(p => p.GiverDiscordUserId == giver.Id && p.RecipientDiscordUserId == recipient.Id);
     }
 }

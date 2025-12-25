@@ -5,11 +5,11 @@ namespace Brobot.Mappers;
 
 public static class UserMessageCountMappingExtensions
 {
-    public static UserMessageCountResponse ToUserMessageCountResponse(this UserMessageCountModel model)
+    public static UserMessageCountResponse ToUserMessageCountResponse(this DiscordUserMessageCountModel model)
     {
         return new UserMessageCountResponse
         {
-            UserId = model.UserId,
+            UserId = model.DiscordUserId,
             Count = model.Count
         };
     }

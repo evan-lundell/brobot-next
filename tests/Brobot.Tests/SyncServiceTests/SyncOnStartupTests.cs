@@ -36,83 +36,83 @@ public class SyncOnStartupTests : SyncServiceTestsBase
         };
         Context.Channels.AddRange(channel1, channel2);
 
-        UserModel user1 = new()
+        DiscordUserModel user1 = new()
         {
             Id = 1UL,
             Username = "test-user1"
         };
-        UserModel user2 = new()
+        DiscordUserModel user2 = new()
         {
             Id = 2UL,
             Username = "test-user2"
         };
-        UserModel user3 = new()
+        DiscordUserModel user3 = new()
         {
             Id = 3UL,
             Username = "test-user3"
         };
-        UserModel user4 = new()
+        DiscordUserModel user4 = new()
         {
             Id = 4UL,
             Username = "test-user4"
         };
-        Context.Users.AddRange(user1, user2, user3, user4);
+        Context.DiscordUsers.AddRange(user1, user2, user3, user4);
 
-        guild.GuildUsers.Add(new GuildUserModel
+        guild.GuildDiscordUsers.Add(new GuildDiscordUserModel
         {
             Guild = guild,
             GuildId = guild.Id,
-            User = user1,
-            UserId = user1.Id
+            DiscordUser = user1,
+            DiscordUserId = user1.Id
         });
-        guild.GuildUsers.Add(new GuildUserModel
+        guild.GuildDiscordUsers.Add(new GuildDiscordUserModel
         {
             Guild = guild,
             GuildId = guild.Id,
-            User = user2,
-            UserId = user2.Id
+            DiscordUser = user2,
+            DiscordUserId = user2.Id
         });
-        guild.GuildUsers.Add(new GuildUserModel
+        guild.GuildDiscordUsers.Add(new GuildDiscordUserModel
         {
             Guild = guild,
             GuildId = guild.Id,
-            User = user3,
-            UserId = user3.Id
+            DiscordUser = user3,
+            DiscordUserId = user3.Id
         });
-        guild.GuildUsers.Add(new GuildUserModel
+        guild.GuildDiscordUsers.Add(new GuildDiscordUserModel
         {
             Guild = guild,
             GuildId = guild.Id,
-            User = user4,
-            UserId = user4.Id
+            DiscordUser = user4,
+            DiscordUserId = user4.Id
         });
         
-        channel1.ChannelUsers.Add(new ChannelUserModel
+        channel1.ChannelUsers.Add(new ChannelDiscordUserModel
         {
             Channel = channel1,
             ChannelId = channel1.Id,
-            User = user1,
+            DiscordUser = user1,
             UserId = user1.Id
         });
-        channel1.ChannelUsers.Add(new ChannelUserModel
+        channel1.ChannelUsers.Add(new ChannelDiscordUserModel
         {
             Channel = channel1,
             ChannelId = channel1.Id,
-            User = user2,
+            DiscordUser = user2,
             UserId = user2.Id
         });
-        channel2.ChannelUsers.Add(new ChannelUserModel
+        channel2.ChannelUsers.Add(new ChannelDiscordUserModel
         {
             Channel = channel2,
             ChannelId = channel2.Id,
-            User = user3,
+            DiscordUser = user3,
             UserId = user3.Id
         });
-        channel2.ChannelUsers.Add(new ChannelUserModel
+        channel2.ChannelUsers.Add(new ChannelDiscordUserModel
         {
             Channel = channel2,
             ChannelId = channel2.Id,
-            User = user4,
+            DiscordUser = user4,
             UserId = user4.Id
         });
         
@@ -154,7 +154,7 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             .AsSplitQuery()
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .SingleOrDefaultAsync(g => g.Id == guildId);
         
         using (Assert.EnterMultipleScope())
@@ -211,7 +211,7 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             .AsSplitQuery()
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .SingleOrDefaultAsync(g => g.Id == guildId);
         
         using (Assert.EnterMultipleScope())
@@ -263,9 +263,9 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             .AsSplitQuery()
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .SingleOrDefaultAsync(g => g.Id == guildId);
-        var removedUserModel = await Context.Users.FindAsync(removedUserId);
+        var removedUserModel = await Context.DiscordUsers.FindAsync(removedUserId);
         
         using (Assert.EnterMultipleScope())
         {
@@ -312,7 +312,7 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             .AsSplitQuery()
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .SingleOrDefaultAsync(g => g.Id == guildId);
         var removedChannelModel = await Context.Channels.FindAsync(removedChannelId);
         
@@ -345,7 +345,7 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             .AsSplitQuery()
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .SingleOrDefaultAsync(g => g.Id == removedGuildId);
         using (Assert.EnterMultipleScope())
         {
@@ -393,9 +393,9 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             .AsSplitQuery()
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .SingleOrDefaultAsync(g => g.Id == guildId);
-        var newUserModel = await Context.Users.FindAsync(user5Id);
+        var newUserModel = await Context.DiscordUsers.FindAsync(user5Id);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(newUserModel, Is.Not.Null);
@@ -452,7 +452,7 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             .AsSplitQuery()
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .SingleOrDefaultAsync(g => g.Id == guildId);
         var newChannelModel = await Context.Channels
             .Include(c => c.ChannelUsers)
@@ -523,7 +523,7 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             .AsSplitQuery()
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .SingleOrDefaultAsync(g => g.Id == newGuildId);
         
         using (Assert.EnterMultipleScope())
@@ -532,7 +532,7 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             Assert.That(newGuildModel, Is.Not.Null);
             Assert.That(newGuildModel!.Name, Is.EqualTo(newGuildName));
             Assert.That(newGuildModel.Channels, Has.Count.EqualTo(1));
-            Assert.That(newGuildModel.GuildUsers, Has.Count.EqualTo(1));
+            Assert.That(newGuildModel.GuildDiscordUsers, Has.Count.EqualTo(1));
         }
     }
 
@@ -574,7 +574,7 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             .AsSplitQuery()
             .Include(g => g.Channels)
             .ThenInclude(c => c.ChannelUsers)
-            .Include(g => g.GuildUsers)
+            .Include(g => g.GuildDiscordUsers)
             .SingleOrDefaultAsync(g => g.Id == guildId);
         
         using (Assert.EnterMultipleScope())

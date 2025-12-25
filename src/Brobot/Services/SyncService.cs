@@ -41,11 +41,11 @@ public class SyncService(
 
             await foreach (var user in channel.GetUsersAsync().Flatten())
             {
-                newChannel.ChannelUsers.Add(new ChannelUserModel
+                newChannel.ChannelUsers.Add(new ChannelDiscordUserModel
                 {
                     Channel = newChannel,
                     ChannelId = channel.Id,
-                    User = userModels[user.Id],
+                    DiscordUser = userModels[user.Id],
                     UserId = user.Id
                 });
             }
@@ -181,7 +181,7 @@ public class SyncService(
                     if (!userLookup.ContainsKey(user.Id))
                     {
                         logger.LogInformation("User {UserId} not found, creating a new one", user.Id);
-                        var newUser = new UserModel
+                        var newUser = new DiscordUserModel
                         {
                             Id = user.Id,
                             Username = user.Username
@@ -192,21 +192,21 @@ public class SyncService(
                     if (!usersAddedToGuild.Contains(user.Id))
                     {
                         logger.LogInformation("Associating user {UserId} to guild {GuildId}", user.Id, guild.Id);
-                        newGuild.GuildUsers.Add(new GuildUserModel
+                        newGuild.GuildDiscordUsers.Add(new GuildDiscordUserModel
                         {
                             Guild = newGuild,
                             GuildId = guild.Id,
-                            User = userLookup[user.Id],
-                            UserId = user.Id
+                            DiscordUser = userLookup[user.Id],
+                            DiscordUserId = user.Id
                         });
                         usersAddedToGuild.Add(user.Id);
                     }
 
-                    newChannel.ChannelUsers.Add(new ChannelUserModel
+                    newChannel.ChannelUsers.Add(new ChannelDiscordUserModel
                     {
                         Channel = newChannel,
                         ChannelId = channel.Id,
-                        User = userLookup[user.Id],
+                        DiscordUser = userLookup[user.Id],
                         UserId = user.Id
                     });
 
@@ -356,7 +356,7 @@ public class SyncService(
                         if (!userModels.TryGetValue(user.Id, out var userModel))
                         {
                             logger.LogInformation("User {UserId} does not exist, adding to database", user.Id);
-                            var newUser = new UserModel
+                            var newUser = new DiscordUserModel
                             {
                                 Id = user.Id,
                                 Username = user.Username
@@ -379,9 +379,9 @@ public class SyncService(
                             logger.LogInformation(
                                 "User {UserId} is not associated to channel {ChannelId}. Creating association", user.Id,
                                 channel.Id);
-                            userModels[user.Id].ChannelUsers.Add(new ChannelUserModel
+                            userModels[user.Id].ChannelUsers.Add(new ChannelDiscordUserModel
                             {
-                                User = userModels[user.Id],
+                                DiscordUser = userModels[user.Id],
                                 UserId = user.Id,
                                 Channel = channelModels[channel.Id],
                                 ChannelId = channel.Id
@@ -394,10 +394,10 @@ public class SyncService(
                         {
                             logger.LogInformation("User {UserId} is not associated to guild {GuildId}", user.Id,
                                 guild.Id);
-                            userModels[user.Id].GuildUsers.Add(new GuildUserModel
+                            userModels[user.Id].GuildUsers.Add(new GuildDiscordUserModel
                             {
-                                User = userModels[user.Id],
-                                UserId = user.Id,
+                                DiscordUser = userModels[user.Id],
+                                DiscordUserId = user.Id,
                                 Guild = guildModels[guild.Id],
                                 GuildId = guild.Id
                             });
@@ -612,9 +612,9 @@ public class SyncService(
                 var discordUser = await uow.Users.GetById(thread.OwnerId);
                 if (discordUser != null)
                 {
-                    newThread.ChannelUsers.Add(new ChannelUserModel
+                    newThread.ChannelUsers.Add(new ChannelDiscordUserModel
                     {
-                        User = discordUser,
+                        DiscordUser = discordUser,
                         UserId = discordUser.Id,
                         Channel = newThread,
                         ChannelId = newThread.Id
@@ -684,11 +684,11 @@ public class SyncService(
             if (existingChannelModel.ChannelUsers.All(cu => cu.UserId != user.GuildUser.Id))
             {
                 logger.LogInformation("Adding user {UserId} to thread {ThreadId}", user.GuildUser.Id, user.Thread.Id);
-                existingChannelModel.ChannelUsers.Add(new ChannelUserModel
+                existingChannelModel.ChannelUsers.Add(new ChannelDiscordUserModel
                 {
                     Channel = existingChannelModel,
                     ChannelId = existingChannelModel.Id,
-                    User = existingDiscordUser,
+                    DiscordUser = existingDiscordUser,
                     UserId = existingDiscordUser.Id
                 });
                 await uow.CompleteAsync();

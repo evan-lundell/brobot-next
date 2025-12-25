@@ -9,8 +9,8 @@ public static class SecretSantaPairMappingExtensions
     {
         return new SecretSantaPairResponse
         {
-            Giver = model.GiverUser.ToUserResponse(),
-            Recipient = model.RecipientUser.ToUserResponse(),
+            Giver = model.GiverDiscordUser.ToUserResponse(),
+            Recipient = model.RecipientDiscordUser.ToUserResponse(),
             Year = model.Year
         };
     }

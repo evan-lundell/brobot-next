@@ -17,10 +17,112 @@ namespace Brobot.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Brobot.Models.ApplicationUserModel", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("access_failed_count");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("text")
+                        .HasColumnName("concurrency_stamp");
+
+                    b.Property<decimal>("DiscordUserId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("discord_user_id");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("email");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("email_confirmed");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("lockout_enabled");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lockout_end");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("normalized_email");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("normalized_user_name");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text")
+                        .HasColumnName("password_hash");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("phone_number");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("phone_number_confirmed");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("text")
+                        .HasColumnName("security_stamp");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("two_factor_enabled");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("user_name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscordUserId");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("Brobot.Models.ChannelDiscordUserModel", b =>
+                {
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("channel_id");
+
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("discord_user_id");
+
+                    b.HasKey("ChannelId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("channel_discord_users", "brobot");
+                });
 
             modelBuilder.Entity("Brobot.Models.ChannelModel", b =>
                 {
@@ -63,31 +165,14 @@ namespace Brobot.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.ToTable("channel", "brobot");
-                });
-
-            modelBuilder.Entity("Brobot.Models.ChannelUserModel", b =>
-                {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("channel_id");
-
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("ChannelId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("channel_user", "brobot");
+                    b.ToTable("channels", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.DailyMessageCountModel", b =>
                 {
-                    b.Property<decimal>("UserId")
+                    b.Property<decimal>("DiscordUserId")
                         .HasColumnType("numeric(20,0)")
-                        .HasColumnName("user_id");
+                        .HasColumnName("discord_user_id");
 
                     b.Property<decimal>("ChannelId")
                         .HasColumnType("numeric(20,0)")
@@ -103,11 +188,101 @@ namespace Brobot.Migrations
                         .HasDefaultValue(0)
                         .HasColumnName("message_count");
 
-                    b.HasKey("UserId", "ChannelId", "CountDate");
+                    b.HasKey("DiscordUserId", "ChannelId", "CountDate");
 
                     b.HasIndex("ChannelId");
 
-                    b.ToTable("daily_message_count", "brobot");
+                    b.ToTable("daily_message_counts", "brobot");
+                });
+
+            modelBuilder.Entity("Brobot.Models.DiscordUserMessageCountModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Count")
+                        .HasColumnType("integer")
+                        .HasColumnName("count");
+
+                    b.Property<decimal>("DiscordUserId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("discord_user_id");
+
+                    b.Property<int>("StatPeriodId")
+                        .HasColumnType("integer")
+                        .HasColumnName("stat_period_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscordUserId");
+
+                    b.HasIndex("StatPeriodId");
+
+                    b.ToTable("user_message_counts", "brobot");
+                });
+
+            modelBuilder.Entity("Brobot.Models.DiscordUserModel", b =>
+                {
+                    b.Property<decimal>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Archived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("archived");
+
+                    b.Property<DateOnly?>("Birthdate")
+                        .HasColumnType("date")
+                        .HasColumnName("birthdate");
+
+                    b.Property<DateTimeOffset?>("LastOnline")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_online");
+
+                    b.Property<decimal?>("PrimaryChannelId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("primary_channel_id");
+
+                    b.Property<string>("Timezone")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("timezone");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("username");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrimaryChannelId");
+
+                    b.ToTable("discord_users", "brobot");
+                });
+
+            modelBuilder.Entity("Brobot.Models.GuildDiscordUserModel", b =>
+                {
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("guild_id");
+
+                    b.Property<decimal>("DiscordUserId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("discord_user_id");
+
+                    b.HasKey("GuildId", "DiscordUserId");
+
+                    b.HasIndex("DiscordUserId");
+
+                    b.ToTable("guild_discord_users", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.GuildModel", b =>
@@ -138,24 +313,7 @@ namespace Brobot.Migrations
                     b.HasIndex("PrimaryChannelId")
                         .IsUnique();
 
-                    b.ToTable("guild", "brobot");
-                });
-
-            modelBuilder.Entity("Brobot.Models.GuildUserModel", b =>
-                {
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("guild_id");
-
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("GuildId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("guild_user", "brobot");
+                    b.ToTable("guilds", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.HotOpModel", b =>
@@ -181,7 +339,7 @@ namespace Brobot.Migrations
 
                     b.Property<decimal>("UserId")
                         .HasColumnType("numeric(20,0)")
-                        .HasColumnName("user_id");
+                        .HasColumnName("discord_user_id");
 
                     b.HasKey("Id");
 
@@ -189,7 +347,7 @@ namespace Brobot.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("hot_op", "brobot");
+                    b.ToTable("hot_ops", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.HotOpSessionModel", b =>
@@ -200,6 +358,10 @@ namespace Brobot.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("DiscordUserId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("discord_user_id");
 
                     b.Property<DateTimeOffset?>("EndDateTime")
                         .HasColumnType("timestamp with time zone")
@@ -213,17 +375,13 @@ namespace Brobot.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("start_date_time");
 
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("user_id");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("DiscordUserId");
 
                     b.HasIndex("HotOpId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("hot_op_session", "brobot");
+                    b.ToTable("hot_op_sessions", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.ScheduledMessageModel", b =>
@@ -263,7 +421,24 @@ namespace Brobot.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.ToTable("scheduled_message", "brobot");
+                    b.ToTable("scheduled_messages", "brobot");
+                });
+
+            modelBuilder.Entity("Brobot.Models.SecretSantaGroupDiscordUserModel", b =>
+                {
+                    b.Property<decimal>("DiscordUserId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("discord_user_id");
+
+                    b.Property<int>("SecretSantaGroupId")
+                        .HasColumnType("integer")
+                        .HasColumnName("secret_santa_group_id");
+
+                    b.HasKey("DiscordUserId", "SecretSantaGroupId");
+
+                    b.HasIndex("SecretSantaGroupId");
+
+                    b.ToTable("secret_santa_group_users", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.SecretSantaGroupModel", b =>
@@ -283,24 +458,7 @@ namespace Brobot.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("secret_santa_group", "brobot");
-                });
-
-            modelBuilder.Entity("Brobot.Models.SecretSantaGroupUserModel", b =>
-                {
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("user_id");
-
-                    b.Property<int>("SecretSantaGroupId")
-                        .HasColumnType("integer")
-                        .HasColumnName("secret_santa_group_id");
-
-                    b.HasKey("UserId", "SecretSantaGroupId");
-
-                    b.HasIndex("SecretSantaGroupId");
-
-                    b.ToTable("secret_santa_group_user", "brobot");
+                    b.ToTable("secret_santa_groups", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.SecretSantaPairModel", b =>
@@ -312,13 +470,13 @@ namespace Brobot.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("GiverUserId")
+                    b.Property<decimal>("GiverDiscordUserId")
                         .HasColumnType("numeric(20,0)")
-                        .HasColumnName("giver_user_id");
+                        .HasColumnName("giver_discord_user_id");
 
-                    b.Property<decimal>("RecipientUserId")
+                    b.Property<decimal>("RecipientDiscordUserId")
                         .HasColumnType("numeric(20,0)")
-                        .HasColumnName("recipient_user_id");
+                        .HasColumnName("recipient_discord_user_id");
 
                     b.Property<int>("SecretSantaGroupId")
                         .HasColumnType("integer")
@@ -330,13 +488,13 @@ namespace Brobot.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GiverUserId");
+                    b.HasIndex("GiverDiscordUserId");
 
-                    b.HasIndex("RecipientUserId");
+                    b.HasIndex("RecipientDiscordUserId");
 
                     b.HasIndex("SecretSantaGroupId");
 
-                    b.ToTable("secret_santa_pair", "brobot");
+                    b.ToTable("secret_santa_pairs", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.StatPeriodModel", b =>
@@ -364,7 +522,7 @@ namespace Brobot.Migrations
 
                     b.HasIndex("ChannelId");
 
-                    b.ToTable("stat_period", "brobot");
+                    b.ToTable("stat_periods", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.StopWordModel", b =>
@@ -387,88 +545,7 @@ namespace Brobot.Migrations
                     b.HasIndex("Word")
                         .IsUnique();
 
-                    b.ToTable("stop_word", "brobot");
-                });
-
-            modelBuilder.Entity("Brobot.Models.UserMessageCountModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Count")
-                        .HasColumnType("integer")
-                        .HasColumnName("count");
-
-                    b.Property<int>("StatPeriodId")
-                        .HasColumnType("integer")
-                        .HasColumnName("stat_period_id");
-
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StatPeriodId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("user_message_count", "brobot");
-                });
-
-            modelBuilder.Entity("Brobot.Models.UserModel", b =>
-                {
-                    b.Property<decimal>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("id");
-
-                    b.Property<bool>("Archived")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("archived");
-
-                    b.Property<DateOnly?>("Birthdate")
-                        .HasColumnType("date")
-                        .HasColumnName("birthdate");
-
-                    b.Property<string>("IdentityUserId")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("identity_user_id");
-
-                    b.Property<DateTimeOffset?>("LastOnline")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_online");
-
-                    b.Property<decimal?>("PrimaryChannelId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("primary_channel_id");
-
-                    b.Property<string>("Timezone")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("timezone");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("username");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdentityUserId")
-                        .IsUnique();
-
-                    b.HasIndex("PrimaryChannelId");
-
-                    b.ToTable("discord_user", "brobot");
+                    b.ToTable("stop_words", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.VersionModel", b =>
@@ -494,7 +571,7 @@ namespace Brobot.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("version", "brobot");
+                    b.ToTable("versions", "brobot");
                 });
 
             modelBuilder.Entity("Brobot.Models.WordCountModel", b =>
@@ -523,59 +600,191 @@ namespace Brobot.Migrations
 
                     b.HasIndex("StatPeriodId");
 
-                    b.ToTable("word_count", "brobot");
+                    b.ToTable("word_counts", "brobot");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("integer");
+                        .HasColumnType("text")
+                        .HasColumnName("id");
 
                     b.Property<string>("ConcurrencyStamp")
-                        .HasColumnType("text");
+                        .IsConcurrencyToken()
+                        .HasColumnType("text")
+                        .HasColumnName("concurrency_stamp");
 
-                    b.Property<string>("Email")
-                        .HasColumnType("text");
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("name");
 
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasColumnType("text");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("text");
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("normalized_name");
 
                     b.HasKey("Id");
 
-                    b.ToTable("IdentityUser");
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
+                    b.ToTable("roles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("text")
+                        .HasColumnName("claim_type");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("text")
+                        .HasColumnName("claim_value");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("role_claims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("text")
+                        .HasColumnName("claim_type");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("text")
+                        .HasColumnName("claim_value");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("user_claims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("text")
+                        .HasColumnName("login_provider");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("text")
+                        .HasColumnName("provider_key");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("text")
+                        .HasColumnName("provider_display_name");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("user_logins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("text")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("user_roles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("text")
+                        .HasColumnName("login_provider");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("text")
+                        .HasColumnName("value");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("user_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("Brobot.Models.ApplicationUserModel", b =>
+                {
+                    b.HasOne("Brobot.Models.DiscordUserModel", "DiscordUser")
+                        .WithMany()
+                        .HasForeignKey("DiscordUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DiscordUser");
+                });
+
+            modelBuilder.Entity("Brobot.Models.ChannelDiscordUserModel", b =>
+                {
+                    b.HasOne("Brobot.Models.ChannelModel", "Channel")
+                        .WithMany("ChannelUsers")
+                        .HasForeignKey("ChannelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Brobot.Models.DiscordUserModel", "DiscordUser")
+                        .WithMany("ChannelUsers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Channel");
+
+                    b.Navigation("DiscordUser");
                 });
 
             modelBuilder.Entity("Brobot.Models.ChannelModel", b =>
@@ -589,25 +798,6 @@ namespace Brobot.Migrations
                     b.Navigation("Guild");
                 });
 
-            modelBuilder.Entity("Brobot.Models.ChannelUserModel", b =>
-                {
-                    b.HasOne("Brobot.Models.ChannelModel", "Channel")
-                        .WithMany("ChannelUsers")
-                        .HasForeignKey("ChannelId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Brobot.Models.UserModel", "User")
-                        .WithMany("ChannelUsers")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Channel");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Brobot.Models.DailyMessageCountModel", b =>
                 {
                     b.HasOne("Brobot.Models.ChannelModel", "Channel")
@@ -616,15 +806,60 @@ namespace Brobot.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Brobot.Models.UserModel", "User")
+                    b.HasOne("Brobot.Models.DiscordUserModel", "DiscordUser")
                         .WithMany("DailyCounts")
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("DiscordUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Channel");
 
-                    b.Navigation("User");
+                    b.Navigation("DiscordUser");
+                });
+
+            modelBuilder.Entity("Brobot.Models.DiscordUserMessageCountModel", b =>
+                {
+                    b.HasOne("Brobot.Models.DiscordUserModel", null)
+                        .WithMany()
+                        .HasForeignKey("DiscordUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Brobot.Models.StatPeriodModel", "StatPeriod")
+                        .WithMany("UserMessageCounts")
+                        .HasForeignKey("StatPeriodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StatPeriod");
+                });
+
+            modelBuilder.Entity("Brobot.Models.DiscordUserModel", b =>
+                {
+                    b.HasOne("Brobot.Models.ChannelModel", "PrimaryChannel")
+                        .WithMany("Users")
+                        .HasForeignKey("PrimaryChannelId");
+
+                    b.Navigation("PrimaryChannel");
+                });
+
+            modelBuilder.Entity("Brobot.Models.GuildDiscordUserModel", b =>
+                {
+                    b.HasOne("Brobot.Models.DiscordUserModel", "DiscordUser")
+                        .WithMany("GuildUsers")
+                        .HasForeignKey("DiscordUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Brobot.Models.GuildModel", "Guild")
+                        .WithMany("GuildUsers")
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DiscordUser");
+
+                    b.Navigation("Guild");
                 });
 
             modelBuilder.Entity("Brobot.Models.GuildModel", b =>
@@ -636,25 +871,6 @@ namespace Brobot.Migrations
                     b.Navigation("PrimaryChannel");
                 });
 
-            modelBuilder.Entity("Brobot.Models.GuildUserModel", b =>
-                {
-                    b.HasOne("Brobot.Models.GuildModel", "Guild")
-                        .WithMany("GuildUsers")
-                        .HasForeignKey("GuildId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Brobot.Models.UserModel", "User")
-                        .WithMany("GuildUsers")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Guild");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Brobot.Models.HotOpModel", b =>
                 {
                     b.HasOne("Brobot.Models.ChannelModel", "Channel")
@@ -663,7 +879,7 @@ namespace Brobot.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Brobot.Models.UserModel", "User")
+                    b.HasOne("Brobot.Models.DiscordUserModel", "DiscordUser")
                         .WithMany("HotOps")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -671,26 +887,26 @@ namespace Brobot.Migrations
 
                     b.Navigation("Channel");
 
-                    b.Navigation("User");
+                    b.Navigation("DiscordUser");
                 });
 
             modelBuilder.Entity("Brobot.Models.HotOpSessionModel", b =>
                 {
+                    b.HasOne("Brobot.Models.DiscordUserModel", "DiscordUser")
+                        .WithMany("HotOpSessions")
+                        .HasForeignKey("DiscordUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Brobot.Models.HotOpModel", "HotOp")
                         .WithMany("HotOpSessions")
                         .HasForeignKey("HotOpId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Brobot.Models.UserModel", "User")
-                        .WithMany("HotOpSessions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("DiscordUser");
 
                     b.Navigation("HotOp");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Brobot.Models.ScheduledMessageModel", b =>
@@ -701,7 +917,7 @@ namespace Brobot.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Brobot.Models.UserModel", "CreatedBy")
+                    b.HasOne("Brobot.Models.DiscordUserModel", "CreatedBy")
                         .WithMany("ScheduledMessages")
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -712,36 +928,36 @@ namespace Brobot.Migrations
                     b.Navigation("CreatedBy");
                 });
 
-            modelBuilder.Entity("Brobot.Models.SecretSantaGroupUserModel", b =>
+            modelBuilder.Entity("Brobot.Models.SecretSantaGroupDiscordUserModel", b =>
                 {
+                    b.HasOne("Brobot.Models.DiscordUserModel", "DiscordUser")
+                        .WithMany("SecretSantaGroupUsers")
+                        .HasForeignKey("DiscordUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Brobot.Models.SecretSantaGroupModel", "SecretSantaGroup")
                         .WithMany("SecretSantaGroupUsers")
                         .HasForeignKey("SecretSantaGroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Brobot.Models.UserModel", "User")
-                        .WithMany("SecretSantaGroupUsers")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("DiscordUser");
 
                     b.Navigation("SecretSantaGroup");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Brobot.Models.SecretSantaPairModel", b =>
                 {
-                    b.HasOne("Brobot.Models.UserModel", "GiverUser")
+                    b.HasOne("Brobot.Models.DiscordUserModel", "GiverDiscordUser")
                         .WithMany("Givers")
-                        .HasForeignKey("GiverUserId")
+                        .HasForeignKey("GiverDiscordUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Brobot.Models.UserModel", "RecipientUser")
+                    b.HasOne("Brobot.Models.DiscordUserModel", "RecipientDiscordUser")
                         .WithMany("Recipients")
-                        .HasForeignKey("RecipientUserId")
+                        .HasForeignKey("RecipientDiscordUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -751,9 +967,9 @@ namespace Brobot.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GiverUser");
+                    b.Navigation("GiverDiscordUser");
 
-                    b.Navigation("RecipientUser");
+                    b.Navigation("RecipientDiscordUser");
 
                     b.Navigation("SecretSantaGroup");
                 });
@@ -769,38 +985,6 @@ namespace Brobot.Migrations
                     b.Navigation("Channel");
                 });
 
-            modelBuilder.Entity("Brobot.Models.UserMessageCountModel", b =>
-                {
-                    b.HasOne("Brobot.Models.StatPeriodModel", "StatPeriod")
-                        .WithMany("UserMessageCounts")
-                        .HasForeignKey("StatPeriodId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Brobot.Models.UserModel", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StatPeriod");
-                });
-
-            modelBuilder.Entity("Brobot.Models.UserModel", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdentityUser")
-                        .WithMany()
-                        .HasForeignKey("IdentityUserId");
-
-                    b.HasOne("Brobot.Models.ChannelModel", "PrimaryChannel")
-                        .WithMany("Users")
-                        .HasForeignKey("PrimaryChannelId");
-
-                    b.Navigation("IdentityUser");
-
-                    b.Navigation("PrimaryChannel");
-                });
-
             modelBuilder.Entity("Brobot.Models.WordCountModel", b =>
                 {
                     b.HasOne("Brobot.Models.StatPeriodModel", "StatPeriod")
@@ -810,6 +994,57 @@ namespace Brobot.Migrations
                         .IsRequired();
 
                     b.Navigation("StatPeriod");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("Brobot.Models.ApplicationUserModel", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("Brobot.Models.ApplicationUserModel", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Brobot.Models.ApplicationUserModel", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("Brobot.Models.ApplicationUserModel", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Brobot.Models.ChannelModel", b =>
@@ -825,6 +1060,27 @@ namespace Brobot.Migrations
                     b.Navigation("StatPeriods");
 
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("Brobot.Models.DiscordUserModel", b =>
+                {
+                    b.Navigation("ChannelUsers");
+
+                    b.Navigation("DailyCounts");
+
+                    b.Navigation("Givers");
+
+                    b.Navigation("GuildUsers");
+
+                    b.Navigation("HotOpSessions");
+
+                    b.Navigation("HotOps");
+
+                    b.Navigation("Recipients");
+
+                    b.Navigation("ScheduledMessages");
+
+                    b.Navigation("SecretSantaGroupUsers");
                 });
 
             modelBuilder.Entity("Brobot.Models.GuildModel", b =>
@@ -851,27 +1107,6 @@ namespace Brobot.Migrations
                     b.Navigation("UserMessageCounts");
 
                     b.Navigation("WordCounts");
-                });
-
-            modelBuilder.Entity("Brobot.Models.UserModel", b =>
-                {
-                    b.Navigation("ChannelUsers");
-
-                    b.Navigation("DailyCounts");
-
-                    b.Navigation("Givers");
-
-                    b.Navigation("GuildUsers");
-
-                    b.Navigation("HotOpSessions");
-
-                    b.Navigation("HotOps");
-
-                    b.Navigation("Recipients");
-
-                    b.Navigation("ScheduledMessages");
-
-                    b.Navigation("SecretSantaGroupUsers");
                 });
 #pragma warning restore 612, 618
         }

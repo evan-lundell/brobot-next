@@ -20,7 +20,7 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
         await MessageCountService.AddToDailyCount(userId, channelId, countDate);
 
         var counts = await Context.DailyMessageCounts
-            .Where(dmc => dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate)
+            .Where(dmc => dmc.DiscordUserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate)
             .ToListAsync();
         Assert.That(counts.Count, Is.EqualTo(1));
         Assert.That(counts[0].MessageCount, Is.EqualTo(11));
@@ -38,7 +38,7 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
         await MessageCountService.AddToDailyCount(userId, channelId, countDate);
 
         var counts = await Context.DailyMessageCounts
-            .Where(dmc => dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate)
+            .Where(dmc => dmc.DiscordUserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate)
             .ToListAsync();
         Assert.That(counts.Count, Is.EqualTo(1));
         Assert.That(counts[0].MessageCount, Is.EqualTo(1));
@@ -53,7 +53,7 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
         await MessageCountService.AddToDailyCount(userId, channelId);
 
         var counts = await Context.DailyMessageCounts
-            .Where(dmc => dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate == DateOnly.FromDateTime(DateTime.Now))
+            .Where(dmc => dmc.DiscordUserId == userId && dmc.ChannelId == channelId && dmc.CountDate == DateOnly.FromDateTime(DateTime.Now))
             .ToListAsync();
         Assert.That(counts.Count, Is.EqualTo(0));
     }
@@ -69,7 +69,7 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
         await MessageCountService.AddToDailyCount(userId, channelId);
         
         var counts = await Context.DailyMessageCounts
-            .Where(dmc => dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate == today)
+            .Where(dmc => dmc.DiscordUserId == userId && dmc.ChannelId == channelId && dmc.CountDate == today)
             .ToListAsync();
         Assert.That(counts.Count, Is.EqualTo(1));
         

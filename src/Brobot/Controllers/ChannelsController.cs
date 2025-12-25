@@ -16,7 +16,7 @@ public class ChannelsController(IUnitOfWork uow) : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<ChannelResponse>>> GetChannels()
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         var channels = await uow.Channels.FindByUser(discordUser.Id);
         return Ok(channels.Select(c => c.ToChannelResponse()));
     }

@@ -13,12 +13,12 @@ public class PresenceUpdatedTests : SyncServiceTestsBase
 {
     protected override void SetupDatabase()
     {
-        UserModel user = new()
+        DiscordUserModel discordUser = new()
         {
             Id = 1UL,
             Username = "user"
         };
-        Context.Users.Add(user);
+        Context.DiscordUsers.Add(discordUser);
         Context.SaveChanges();
     }
 
@@ -34,7 +34,7 @@ public class PresenceUpdatedTests : SyncServiceTestsBase
         await SyncService.PresenceUpdated(userMock.Object, formerPresenceMock.Object, currentPresenceMock.Object);
         
         Context.ChangeTracker.Clear();
-        var userModel = await Context.Users.FindAsync(userId);
+        var userModel = await Context.DiscordUsers.FindAsync(userId);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(userModel, Is.Not.Null);
@@ -55,7 +55,7 @@ public class PresenceUpdatedTests : SyncServiceTestsBase
         await SyncService.PresenceUpdated(userMock.Object, formerPresenceMock.Object, currentPresenceMock.Object); 
         
         Context.ChangeTracker.Clear();
-        var userModel = await Context.Users.FindAsync(userId);
+        var userModel = await Context.DiscordUsers.FindAsync(userId);
         Assert.That(userModel, Is.Null);
     }
     
@@ -73,7 +73,7 @@ public class PresenceUpdatedTests : SyncServiceTestsBase
         await SyncService.PresenceUpdated(userMock.Object, formerPresenceMock.Object, currentPresenceMock.Object);
         
         Context.ChangeTracker.Clear();
-        var userModel = await Context.Users.FindAsync(userId);
+        var userModel = await Context.DiscordUsers.FindAsync(userId);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(userModel, Is.Not.Null);
@@ -97,7 +97,7 @@ public class PresenceUpdatedTests : SyncServiceTestsBase
         await SyncService.PresenceUpdated(userMock.Object, formerPresenceMock.Object, currentPresenceMock.Object);
         
         Context.ChangeTracker.Clear();
-        var userModel = await Context.Users.FindAsync(userId);
+        var userModel = await Context.DiscordUsers.FindAsync(userId);
         Assert.That(userModel, Is.Null);
     }
     

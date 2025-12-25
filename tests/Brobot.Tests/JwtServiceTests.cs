@@ -41,15 +41,14 @@ public class JwtServiceTests
         identityUserMock.SetupGet(u => u.Id).Returns(identityUserId);
         identityUserMock.SetupGet(u => u.Email).Returns("test1@test.com");
         
-        UserModel discordUser = new()
+        DiscordUserModel discordDiscordUser = new()
         {
             Id = 1UL,
             Archived = false,
-            Username = "Discord User1",
-            IdentityUserId = identityUserId
+            Username = "Discord User1"
         };
 
-        var token = _jwtService.CreateJwt(identityUserMock.Object, discordUser, "user");
+        var token = _jwtService.CreateJwt(identityUserMock.Object, discordDiscordUser, "user");
 
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(token);

@@ -33,7 +33,7 @@ public abstract class SecretSantaServiceTestsBase
             Name = "Test Group 1"
         });
 
-        List<SecretSantaGroupUserModel> group1Users = new();
+        List<SecretSantaGroupDiscordUserModel> group1Users = new();
         for (ulong i = 1; i <= 6; i++)
         {
             group1Users.Add(CreateSecretSantaGroupUserModel(i, group1.Entity));
@@ -43,7 +43,7 @@ public abstract class SecretSantaServiceTestsBase
             CreateSecretSantaPairModel(group1.Entity, group1Users[i], group1Users[(i + 1) % group1Users.Count], DateTime.UtcNow.AddYears(-1).Year);
         }
 
-        List<SecretSantaGroupUserModel> group2Users = new();
+        List<SecretSantaGroupDiscordUserModel> group2Users = new();
         var group2 = Context.SecretSantaGroups.Add(new SecretSantaGroupModel
         {
             Id = 2,
@@ -76,13 +76,13 @@ public abstract class SecretSantaServiceTestsBase
         _serviceProvider.Dispose();
     }
     
-    private SecretSantaGroupUserModel CreateSecretSantaGroupUserModel(ulong userId, SecretSantaGroupModel secretSantaGroup)
+    private SecretSantaGroupDiscordUserModel CreateSecretSantaGroupUserModel(ulong userId, SecretSantaGroupModel secretSantaGroup)
     {
-        var groupUser = new SecretSantaGroupUserModel
+        var groupUser = new SecretSantaGroupDiscordUserModel
         {
-            UserId = userId,
+            DiscordUserId = userId,
             SecretSantaGroupId = secretSantaGroup.Id,
-            User = new UserModel
+            DiscordUser = new DiscordUserModel
             {
                 Id = userId,
                 Username = $"User {userId}"
@@ -95,18 +95,18 @@ public abstract class SecretSantaServiceTestsBase
 
     private void CreateSecretSantaPairModel(
         SecretSantaGroupModel group,
-        SecretSantaGroupUserModel giver,
-        SecretSantaGroupUserModel recipient,
+        SecretSantaGroupDiscordUserModel giver,
+        SecretSantaGroupDiscordUserModel recipient,
         int year)
     {
         var pair = new SecretSantaPairModel
         {
             SecretSantaGroup = group,
             SecretSantaGroupId = group.Id,
-            GiverUser = giver.User,
-            GiverUserId = giver.User.Id,
-            RecipientUser = recipient.User,
-            RecipientUserId = recipient.User.Id,
+            GiverDiscordUser = giver.DiscordUser,
+            GiverDiscordUserId = giver.DiscordUser.Id,
+            RecipientDiscordUser = recipient.DiscordUser,
+            RecipientDiscordUserId = recipient.DiscordUser.Id,
             Year = year
         };
         group.SecretSantaPairs.Add(pair);

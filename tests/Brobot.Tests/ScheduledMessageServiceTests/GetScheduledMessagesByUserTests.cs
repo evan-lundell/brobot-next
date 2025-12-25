@@ -10,7 +10,7 @@ public class GetScheduledMessagesByUserTests : ScheduledMessageServiceTestBase
     [TestCase(4UL, 0)]
     public async Task ReturnsCorrectNumberOfMessages(ulong userId, int expectedCount)
     {
-        var user = await Context.Users.FindAsync(userId);
+        var user = await Context.DiscordUsers.FindAsync(userId);
         if (user == null)
         {
             throw new Exception("User not found");
@@ -24,7 +24,7 @@ public class GetScheduledMessagesByUserTests : ScheduledMessageServiceTestBase
     [Test]
     public async Task WhenScheduledBeforeIsSpecified_ReturnsCorrectMessages()
     {
-        var user = await Context.Users.FindAsync(2UL);
+        var user = await Context.DiscordUsers.FindAsync(2UL);
         if (user == null)
         {
             throw new Exception("User not found");
@@ -39,7 +39,7 @@ public class GetScheduledMessagesByUserTests : ScheduledMessageServiceTestBase
     [Test]
     public async Task WhenScheduledAfterIsSpecified_ReturnsCorrectMessages()
     {
-        var user = await Context.Users.FindAsync(1UL);
+        var user = await Context.DiscordUsers.FindAsync(1UL);
         if (user == null)
         {
             throw new Exception("User not found");
@@ -55,7 +55,7 @@ public class GetScheduledMessagesByUserTests : ScheduledMessageServiceTestBase
     [Test]
     public async Task WhenLimitIsSet_ReturnsCorrectNumberOfMessages()
     {
-        var user = await Context.Users.FindAsync(1UL);
+        var user = await Context.DiscordUsers.FindAsync(1UL);
         if (user == null)
         {
             throw new Exception("User not found");
@@ -70,7 +70,7 @@ public class GetScheduledMessagesByUserTests : ScheduledMessageServiceTestBase
     [Test]
     public async Task WhenSkipIsSet_ReturnsCorrectMessages()
     {
-        var user = await Context.Users.FindAsync(1UL);
+        var user = await Context.DiscordUsers.FindAsync(1UL);
         if (user == null)
         {
             throw new Exception("User not found");

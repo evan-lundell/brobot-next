@@ -1,16 +1,14 @@
-using System.Security.Claims;
-using System.Web;
-using Brobot.Repositories;
-using Brobot.Services;
+using System.Security.Cryptography;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using Brobot.Mappers;
 using Brobot.Configuration;
+using Brobot.Models;
+using Brobot.Repositories;
+using Brobot.Services;
 using Microsoft.Extensions.Options;
 
 namespace Brobot.Controllers;
@@ -18,96 +16,16 @@ namespace Brobot.Controllers;
 [ApiController]
 [Route("[controller]")]
 public class AuthController(
-    UserManager<IdentityUser> userManager,
-    IJwtService jwtService,
+    UserManager<ApplicationUserModel> userManager,
+    IOptions<DiscordOptions> discordOptions,
     IUnitOfWork uow,
     DiscordOauthService discordOauthService,
-    IOptions<JwtOptions> jwtOptions,
-    IOptions<DiscordOptions> discordOptions,
+    IJwtService jwtService,
     ILogger<AuthController> logger)
     : ControllerBase
 {
     private const string RefreshTokenCookieKey = "refreshCookie";
-
-    [HttpPost("register")]
-    public async Task<ActionResult<RegisterResponse>> Register(RegisterRequest request)
-    {
-        if (request.Password != request.ConfirmPassword)
-        {
-            logger.LogWarning("Passwords do not match for {EmailAddress}.", request.EmailAddress);
-            return BadRequest("Passwords don't match");
-        }
-        var user = new IdentityUser
-        {
-            Email = request.EmailAddress,
-            UserName = request.EmailAddress
-        };
-        var result = await userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded)
-        {
-            logger.LogError("User creation failed: {Error}", result.Errors.First().Description);
-            return BadRequest(new RegisterResponse
-            {
-                Succeeded = false,
-                Errors = result.Errors.Select(e => e.Description)
-            });
-        }
-
-        await userManager.AddToRoleAsync(user, "User");
-        return Ok(new RegisterResponse
-        {
-            Succeeded = result.Succeeded,
-            Errors = result.Errors.Select(e => e.Description)
-        });
-    }
-
-    [HttpPost("login")]
-    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
-    {
-        var user = await userManager.FindByEmailAsync(request.Email);
-        if (user == null)
-        {
-            logger.LogWarning("User {Email} not found.", request.Email);
-            return BadRequest(new LoginResponse
-            {
-                Succeeded = false,
-                Errors = ["Invalid credentials"]
-            });
-        }
-
-        var result = await userManager.CheckPasswordAsync(user, request.Password);
-        if (!result)
-        {
-            logger.LogError("Login failed for {Email}.", request.Email);
-            return BadRequest(new LoginResponse
-            {
-                Succeeded = false,
-                Errors = ["Invalid credentials"]
-            });
-        }
-
-        var roles = await userManager.GetRolesAsync(user);
-
-        var discordUser = await uow.Users.GetFromIdentityUserId(user.Id);
-        var jwt = jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault());
-        // ReSharper disable once InvertIf
-        if (!string.IsNullOrWhiteSpace(user.SecurityStamp))
-        {
-            var options = new CookieOptions
-            {
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.Now.AddMinutes(jwtOptions.Value.Expiry)
-            };
-            HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, user.SecurityStamp, options);
-        }
-
-        return Ok(new LoginResponse
-        {
-            Succeeded = true,
-            Token = jwt
-        });
-    }
+    private const string OAuthStateCookieKey = "oauth_state";
 
     [HttpPost("logout")]
     public IActionResult Logout()
@@ -116,133 +34,205 @@ public class AuthController(
         return Ok();
     }
 
+    [HttpPost("discord-login")]
+    public async Task<ActionResult<LoginResponse>> DiscordLogin(DiscordLoginRequest request)
+    {
+        try
+        {
+            // Validate the state parameter to prevent CSRF attacks
+            if (!HttpContext.Request.Cookies.TryGetValue(OAuthStateCookieKey, out var storedState) ||
+                string.IsNullOrEmpty(storedState) ||
+                storedState != request.State)
+            {
+                logger.LogWarning("OAuth state mismatch - possible CSRF attack");
+                return Ok(new LoginResponse
+                {
+                    Succeeded = false,
+                    Errors = ["Invalid authentication state. Please try again."]
+                });
+            }
+            
+            // Clear the state cookie after validation
+            HttpContext.Response.Cookies.Delete(OAuthStateCookieKey);
+            
+            // Exchange the authorization code for an access token
+            var accessToken = await discordOauthService.GetToken(request.AuthorizationCode, request.RedirectUri);
+            
+            // Get the Discord user ID from the access token
+            var discordUserId = await discordOauthService.GetDiscordUserId(accessToken);
+            
+            // Check if this Discord user exists in our database
+            var discordUser = await uow.Users.GetById(discordUserId);
+            if (discordUser == null)
+            {
+                logger.LogWarning("Discord user {DiscordUserId} attempted to login but does not exist in database", discordUserId);
+                return Ok(new LoginResponse
+                {
+                    Succeeded = false,
+                    Errors = ["You are not authorized to access this application. Please contact an administrator."]
+                });
+            }
+
+            // Check if an ApplicationUser already exists for this Discord user
+            var existingUser = await userManager.FindByNameAsync(discordUserId.ToString());
+            ApplicationUserModel applicationUser;
+            
+            if (existingUser == null)
+            {
+                // Create a new ApplicationUser linked to this Discord user
+                applicationUser = new ApplicationUserModel
+                {
+                    UserName = discordUserId.ToString(),
+                    DiscordUserId = discordUserId,
+                    DiscordUser = discordUser
+                };
+
+                var createResult = await userManager.CreateAsync(applicationUser);
+                if (!createResult.Succeeded)
+                {
+                    logger.LogError("Failed to create ApplicationUser for Discord user {DiscordUserId}: {Errors}", 
+                        discordUserId, 
+                        string.Join(", ", createResult.Errors.Select(e => e.Description)));
+                    return Ok(new LoginResponse
+                    {
+                        Succeeded = false,
+                        Errors = ["Failed to create user account. Please try again."]
+                    });
+                }
+                
+                logger.LogInformation("Created new ApplicationUser for Discord user {DiscordUserId}", discordUserId);
+            }
+            else
+            {
+                applicationUser = existingUser;
+            }
+
+            // Generate JWT token
+            var token = jwtService.CreateJwt(applicationUser, discordUser);
+            
+            // Set refresh token cookie (longer expiry than JWT)
+            if (!string.IsNullOrWhiteSpace(applicationUser.SecurityStamp))
+            {
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                };
+                HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, applicationUser.SecurityStamp, cookieOptions);
+            }
+
+            logger.LogInformation("Discord user {DiscordUserId} logged in successfully", discordUserId);
+            return Ok(new LoginResponse
+            {
+                Succeeded = true,
+                Token = token
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during Discord login");
+            return Ok(new LoginResponse
+            {
+                Succeeded = false,
+                Errors = ["An error occurred during login. Please try again."]
+            });
+        }
+    }
+
     [HttpPost("refresh-token")]
     public async Task<ActionResult<LoginResponse>> RefreshToken()
     {
-        var cookie = HttpContext.Request.Cookies[RefreshTokenCookieKey];
-        if (cookie == null)
+        try
         {
+            // Get the refresh token from the cookie
+            if (!HttpContext.Request.Cookies.TryGetValue(RefreshTokenCookieKey, out var refreshToken) ||
+                string.IsNullOrEmpty(refreshToken))
+            {
+                logger.LogDebug("No refresh token cookie found");
+                return Ok(new LoginResponse { Succeeded = false });
+            }
+
+            // Find the user by their SecurityStamp (refresh token)
+            var applicationUser = await userManager.Users
+                .Include(u => u.DiscordUser)
+                .FirstOrDefaultAsync(u => u.SecurityStamp == refreshToken);
+
+            if (applicationUser == null)
+            {
+                logger.LogWarning("Invalid refresh token - no user found");
+                HttpContext.Response.Cookies.Delete(RefreshTokenCookieKey);
+                return Ok(new LoginResponse { Succeeded = false });
+            }
+
+            var discordUser = applicationUser.DiscordUser;
+
+            // Generate a new JWT token
+            var token = jwtService.CreateJwt(applicationUser, discordUser);
+
+            // Rotate the refresh token for security (generate new SecurityStamp)
+            await userManager.UpdateSecurityStampAsync(applicationUser);
+            var newSecurityStamp = await userManager.GetSecurityStampAsync(applicationUser);
+
+            // Set the new refresh token cookie
+            if (!string.IsNullOrWhiteSpace(newSecurityStamp))
+            {
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(7) // Refresh tokens last longer than JWTs
+                };
+                HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, newSecurityStamp, cookieOptions);
+            }
+
+            logger.LogInformation("Token refreshed for user {UserId}", applicationUser.Id);
             return Ok(new LoginResponse
             {
-                Succeeded = false
+                Succeeded = true,
+                Token = token
             });
         }
-
-        var user = userManager.Users.FirstOrDefault(user => user.SecurityStamp == cookie);
-        if (user == null)
+        catch (Exception ex)
         {
-            return Ok(new LoginResponse
-            {
-                Succeeded = false
-            });
+            logger.LogError(ex, "Error during token refresh");
+            return Ok(new LoginResponse { Succeeded = false });
         }
-
-        var roles = await userManager.GetRolesAsync(user);
-        var discordUser = await uow.Users.GetFromIdentityUserId(user.Id);
-        var jwtToken = jwtService.CreateJwt(user, discordUser, roles.FirstOrDefault());
-        return Ok(new LoginResponse
-        {
-            Succeeded = true,
-            Token = jwtToken
-        });
-
     }
 
     [HttpGet("discord-auth")]
-    [Authorize]
     public ActionResult DiscordAuth()
     {
+        var scheme = HttpContext.Request.Scheme;
+        var host = HttpContext.Request.Host.ToUriComponent();
+        var redirectUri = $"{scheme}://{host}/discord-cb";
+        
+        // Generate a cryptographically secure random state value
+        var stateBytes = RandomNumberGenerator.GetBytes(32);
+        var state = Convert.ToBase64String(stateBytes);
+        
+        // Store the state in an HttpOnly cookie for validation on callback
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax, // Lax required for OAuth redirect flow
+            Expires = DateTime.UtcNow.AddMinutes(10) // Short expiry for security
+        };
+        HttpContext.Response.Cookies.Append(OAuthStateCookieKey, state, cookieOptions);
+        
         var queryString = new Dictionary<string, string?>
         {
             { "response_type", "code" },
             { "client_id", discordOptions.Value.ClientId },
             { "scope", "identify" },
-            { "callback_url", HttpUtility.UrlEncode($"{HttpContext.Request.Host.ToUriComponent()}/discord-cb") }
+            { "redirect_uri", redirectUri },
+            { "state", state }
         };
 
         var uri = new UriBuilder(QueryHelpers.AddQueryString(discordOptions.Value.AuthorizationEndpoint, queryString));
         return Ok(new { url = uri.ToString() });
-    }
-
-    [HttpPost("sync-discord-user")]
-    [Authorize]
-    public async Task<ActionResult> SyncDiscordUser(SyncDiscordUserRequest syncDiscordUserRequest)
-    {
-        var nameIdentifierClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
-        if (nameIdentifierClaim == null || string.IsNullOrWhiteSpace(nameIdentifierClaim.Value))
-        {
-            logger.LogWarning("Cannot find user by name identifier claim.");
-            return BadRequest("Unknown user");
-        }
-
-        var token = await discordOauthService.GetToken(syncDiscordUserRequest.AuthorizationCode);
-        var id = await discordOauthService.GetDiscordUserId(token);
-        var user = await uow.Users.GetById(id);
-        if (user == null)
-        {
-            logger.LogWarning("Cannot find user from Discord OAuth service.");
-            return BadRequest("Unknown user");
-        }
-
-        user.IdentityUserId = nameIdentifierClaim.Value;
-        await uow.CompleteAsync();
-        return Ok();
-    }
-
-    [HttpPost("change-password")]
-    [Authorize]
-    public async Task<IActionResult> ChangePassword(ChangePasswordRequest changePasswordRequest)
-    {
-        if (!ModelState.IsValid)
-        {
-            logger.LogWarning("Invalid password change request");
-            return BadRequest("Invalid password");
-        }
-        
-        var identityUser = await userManager.GetUserAsync(HttpContext.User);
-        if (identityUser == null)
-        {
-            logger.LogWarning("Cannot find user by identity user.");
-            return Unauthorized();
-        }
-
-        var result = await userManager.ChangePasswordAsync(identityUser, changePasswordRequest.CurrentPassword,
-            changePasswordRequest.NewPassword);
-        if (!result.Succeeded)
-        {
-            logger.LogWarning("User {UserId} failed to change password. {Error}", identityUser.Id,  result.Errors.FirstOrDefault()?.Description ?? "Password update failed");
-            return BadRequest(result.Errors.FirstOrDefault()?.Description ?? "Password update failed");
-        }
-        
-        if (!string.IsNullOrWhiteSpace(identityUser.SecurityStamp))
-        {
-            var options = new CookieOptions
-            {
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.Now.AddMinutes(jwtOptions.Value.Expiry)
-            };
-            HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, identityUser.SecurityStamp, options);
-        }
-
-        return Ok();
-    }
-
-    [HttpGet("users")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<IdentityUserResponse>>> GetIdentityUsers()
-    {
-        var identityUsers = await userManager.Users.ToListAsync();
-        var identityUserResponses = identityUsers.Select(iu => iu.ToIdentityUserResponse()).ToList();
-        var discordUsers = await uow.Users
-            .GetUsersFromIdentityUserIds(identityUsers.Select(iu => iu.Id));
-        foreach (var identityUserResponse in identityUserResponses)
-        {
-            identityUserResponse.IsDiscordAuthenticated =
-                // ReSharper disable once PossibleMultipleEnumeration
-                discordUsers.Any(du => du.IdentityUserId == identityUserResponse.Id);
-        }
-        
-        return Ok(identityUserResponses);
     }
 }

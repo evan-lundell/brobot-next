@@ -9,13 +9,13 @@ public class HotOpMappingExtensionsTests
     [Test]
     public void ToHotOpResponse_MapsModelToResponse()
     {
-        var user = new UserModel { Id = 1, Username = "user" };
+        var user = new DiscordUserModel { Id = 1, Username = "user" };
         var guild = new GuildModel { Id = 1, Name = "guild" };
         var channel = new ChannelModel { Id = 2, Name = "general", Guild = guild };
         var model = new HotOpModel
         {
             Id = 42,
-            User = user,
+            DiscordUser = user,
             Channel = channel,
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddHours(1)

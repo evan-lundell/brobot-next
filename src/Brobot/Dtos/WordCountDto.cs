@@ -2,7 +2,6 @@ namespace Brobot.Dtos;
 
 public record WordCountDto
 {
-    public ulong ChannelId { get; set; }
-    public required string Word { get; set; }
+    public required string Word { get; init; }
     public int Count { get; set; }
 }

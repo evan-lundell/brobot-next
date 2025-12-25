@@ -20,34 +20,34 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         
         var (currentDate, startDate) = GetDates(numOfDays, userModel.Timezone);
         var counts = await uow.DailyMessageCounts.Find(dmc =>
-            dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate >= startDate && dmc.CountDate <= currentDate);
+            dmc.DiscordUserId == userId && dmc.ChannelId == channelId && dmc.CountDate >= startDate && dmc.CountDate <= currentDate);
         
         logger.LogInformation("Finished getting daily message count for channel {ChannelId} for user {UserId}", channelId, userId);
         return GetDailyMessageCountResponses(counts, userModel, startDate, currentDate);
     }
 
-    public async Task<IEnumerable<DailyMessageCountResponse>> GetUsersTotalDailyMessageCounts(UserModel userModel, int numOfDays)
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetUsersTotalDailyMessageCounts(DiscordUserModel discordUserModel, int numOfDays)
     {
-        logger.LogInformation("Getting daily message count for user {UserId}", userModel.Id);
-        if (string.IsNullOrWhiteSpace(userModel.Timezone))
+        logger.LogInformation("Getting daily message count for user {UserId}", discordUserModel.Id);
+        if (string.IsNullOrWhiteSpace(discordUserModel.Timezone))
         {
-            logger.LogWarning("User {UserId} not found or has no time zone", userModel.Id);
+            logger.LogWarning("User {UserId} not found or has no time zone", discordUserModel.Id);
             return [];
         }
 
-        var (currentDate, startDate) = GetDates(numOfDays, userModel.Timezone);
+        var (currentDate, startDate) = GetDates(numOfDays, discordUserModel.Timezone);
         var counts = await uow.DailyMessageCounts.Find(dmc =>
-            dmc.UserId == userModel.Id && dmc.CountDate >= startDate && dmc.CountDate <= currentDate);
+            dmc.DiscordUserId == discordUserModel.Id && dmc.CountDate >= startDate && dmc.CountDate <= currentDate);
         
-        logger.LogInformation("Finished getting daily message count for user {UserId}", userModel.Id);
-        return GetDailyMessageCountResponses(counts, userModel, startDate, currentDate);
+        logger.LogInformation("Finished getting daily message count for user {UserId}", discordUserModel.Id);
+        return GetDailyMessageCountResponses(counts, discordUserModel, startDate, currentDate);
     }
 
     public async Task AddToDailyCount(ulong userId, ulong channelId, DateOnly? countDate = null)
     {
         try
         {
-            UserModel? user = null;
+            DiscordUserModel? user = null;
             if (countDate == null)
             {
                 user = await uow.Users.GetById(userId);
@@ -61,7 +61,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
             }
 
             var dailyMessageCount = (await uow.DailyMessageCounts
-                    .Find(dmc => dmc.UserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate))
+                    .Find(dmc => dmc.DiscordUserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate))
                 .FirstOrDefault();
 
             if (dailyMessageCount == null)
@@ -76,8 +76,8 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
 
                 await uow.DailyMessageCounts.Add(new DailyMessageCountModel
                 {
-                    User = user,
-                    UserId = userId,
+                    DiscordUser = user,
+                    DiscordUserId = userId,
                     Channel = channel,
                     ChannelId = channelId,
                     CountDate = countDate.Value,
@@ -97,82 +97,82 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         }
     }
 
-    public async Task<IEnumerable<DailyMessageCountResponse>> GetUsersTopDays(UserModel userModel, int numOfDays)
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetUsersTopDays(DiscordUserModel discordUserModel, int numOfDays)
     {
-        logger.LogInformation("Getting top days for user {UserId}", userModel.Id);
-        if (string.IsNullOrWhiteSpace(userModel.Timezone))
+        logger.LogInformation("Getting top days for user {UserId}", discordUserModel.Id);
+        if (string.IsNullOrWhiteSpace(discordUserModel.Timezone))
         {
-            logger.LogWarning("User {UserId} has no time zone", userModel.Id);
+            logger.LogWarning("User {UserId} has no time zone", discordUserModel.Id);
             return [];
         }
 
-        var counts = await uow.DailyMessageCounts.GetUsersTopDays(userModel.Id, numOfDays);
-        logger.LogInformation("Finished getting top days for user {UserId}", userModel.Id);
+        var counts = await uow.DailyMessageCounts.GetUsersTopDays(discordUserModel.Id, numOfDays);
+        logger.LogInformation("Finished getting top days for user {UserId}", discordUserModel.Id);
         return counts.Select(c => new DailyMessageCountResponse
         {
-            User = userModel.ToUserResponse(),
+            User = discordUserModel.ToUserResponse(),
             CountDate = c.CountDate,
             MessageCount = c.MessageCount
         });
     }
 
-    public async Task<IEnumerable<DailyMessageCountResponse>> GetUsersTopDaysByChannel(UserModel userModel, ulong channelId, int numOfDays)
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetUsersTopDaysByChannel(DiscordUserModel discordUserModel, ulong channelId, int numOfDays)
     {
-        logger.LogInformation("Getting top days for user {UserId} in channel {ChannelId}", userModel.Id, channelId);
-        if (string.IsNullOrWhiteSpace(userModel.Timezone))
+        logger.LogInformation("Getting top days for user {UserId} in channel {ChannelId}", discordUserModel.Id, channelId);
+        if (string.IsNullOrWhiteSpace(discordUserModel.Timezone))
         {
             return [];
         }
 
-        var counts = await uow.DailyMessageCounts.GetUsersTopDaysInChannel(userModel.Id, channelId, numOfDays);
-        logger.LogInformation("Finished getting top days for user {UserId} in channel {ChannelId}", userModel.Id, channelId);
+        var counts = await uow.DailyMessageCounts.GetUsersTopDaysInChannel(discordUserModel.Id, channelId, numOfDays);
+        logger.LogInformation("Finished getting top days for user {UserId} in channel {ChannelId}", discordUserModel.Id, channelId);
         return counts.Select(c => new DailyMessageCountResponse
         {
-            User = userModel.ToUserResponse(),
+            User = discordUserModel.ToUserResponse(),
             CountDate = c.CountDate,
             MessageCount = c.MessageCount
         });
     }
     
-    public async Task<IEnumerable<DailyMessageCountResponse>> GetTopToday(UserModel userModel)
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetTopToday(DiscordUserModel discordUserModel)
     {
-        logger.LogInformation("Getting top messages today for user {UserId}", userModel.Id);
-        if (string.IsNullOrWhiteSpace(userModel.Timezone))
+        logger.LogInformation("Getting top messages today for user {UserId}", discordUserModel.Id);
+        if (string.IsNullOrWhiteSpace(discordUserModel.Timezone))
         {
-            logger.LogWarning("User {UserId} has no time zone", userModel.Id);
+            logger.LogWarning("User {UserId} has no time zone", discordUserModel.Id);
             return [];
         }
         
         var now = DateTimeOffset.UtcNow;
-        var userNow = now.AdjustToUsersTimezone(userModel.Timezone);
+        var userNow = now.AdjustToUsersTimezone(discordUserModel.Timezone);
         var counts = await uow.DailyMessageCounts.GetTopForDate(DateOnly.FromDateTime(userNow.DateTime));
-        logger.LogInformation("Finished getting top messages today for user {UserId}", userModel.Id);
+        logger.LogInformation("Finished getting top messages today for user {UserId}", discordUserModel.Id);
         return counts.Select(c => new DailyMessageCountResponse
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
-            User = c.User.ToUserResponse()
+            User = c.DiscordUser.ToUserResponse()
         });
     }
 
-    public async Task<IEnumerable<DailyMessageCountResponse>> GetTopTodayByChannel(UserModel userModel, ulong channelId)
+    public async Task<IEnumerable<DailyMessageCountResponse>> GetTopTodayByChannel(DiscordUserModel discordUserModel, ulong channelId)
     {
-        logger.LogInformation("Getting top messages today for user {UserId} and channel {ChannelId}", userModel.Id, channelId);
-        if (string.IsNullOrWhiteSpace(userModel.Timezone))
+        logger.LogInformation("Getting top messages today for user {UserId} and channel {ChannelId}", discordUserModel.Id, channelId);
+        if (string.IsNullOrWhiteSpace(discordUserModel.Timezone))
         {
-            logger.LogWarning("User {UserId} has no time zone", userModel.Id);
+            logger.LogWarning("User {UserId} has no time zone", discordUserModel.Id);
             return [];
         }
         
         var now = DateTimeOffset.UtcNow;
-        var userNow = now.AdjustToUsersTimezone(userModel.Timezone);
+        var userNow = now.AdjustToUsersTimezone(discordUserModel.Timezone);
         var counts = await uow.DailyMessageCounts.GetTopForDateByChannel(DateOnly.FromDateTime(userNow.DateTime), channelId);
-        logger.LogInformation("Finished getting top messages today for user {UserId} and channel {ChannelId}", userModel.Id, channelId);
+        logger.LogInformation("Finished getting top messages today for user {UserId} and channel {ChannelId}", discordUserModel.Id, channelId);
         return counts.Select(c => new DailyMessageCountResponse
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
-            User = c.User.ToUserResponse()
+            User = c.DiscordUser.ToUserResponse()
         });
     }
 
@@ -187,7 +187,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
 
         var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);
         var counts = await uow.DailyMessageCounts.GetTotalDailyMessageCounts(startDate, currentDate);
-        var fakeUser = new UserModel
+        var fakeUser = new DiscordUserModel
         {
             Username = ""
         };
@@ -206,7 +206,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
 
         var (currentDate, startDate) = GetDates(numOfDays, usersTimezone);
         var counts = await uow.DailyMessageCounts.GetTotalDailyMessageCountsByChannel(startDate, currentDate, channelId);
-        var fakeUser = new UserModel
+        var fakeUser = new DiscordUserModel
         {
             Username = ""
         };
@@ -257,9 +257,9 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         return (currentDate, startDate);
     }
 
-    private List<DailyMessageCountResponse> GetDailyMessageCountResponses(IEnumerable<DailyMessageCountModel> counts, UserModel userModel, DateOnly startDate, DateOnly currentDate)
+    private List<DailyMessageCountResponse> GetDailyMessageCountResponses(IEnumerable<DailyMessageCountModel> counts, DiscordUserModel discordUserModel, DateOnly startDate, DateOnly currentDate)
     {
-        var userResponse = userModel.ToUserResponse();
+        var userResponse = discordUserModel.ToUserResponse();
         var countsResponse = counts
             .GroupBy(c => c.CountDate)
             .Select(x => new DailyMessageCountResponse

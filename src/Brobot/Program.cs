@@ -1,5 +1,6 @@
 using Brobot.Configuration;
 using Brobot.HostedServices;
+using Brobot.Middleware;
 using Microsoft.OpenApi;
 using Serilog;
 
@@ -86,8 +87,8 @@ public static class Program
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<DiscordUserMiddleware>();
         app.MapRazorPages();
-        app.UseDiscordUser();
         app.MapControllers();
         app.MapFallbackToFile("index.html");
     }

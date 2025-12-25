@@ -40,7 +40,7 @@ public class HotOpWorker(
         var channel = await client.GetChannelAsync(hotOp.ChannelId);
         if (channel is ISocketMessageChannel textChannel)
         {
-            await textChannel.SendMessageAsync($"Operation Hot {hotOp.User.Username} has begun!");
+            await textChannel.SendMessageAsync($"Operation Hot {hotOp.DiscordUser.Username} has begun!");
         }
     }
 
@@ -57,7 +57,7 @@ public class HotOpWorker(
         if (channel is ISocketMessageChannel textChannel)
         {
             var scoreboardEmbed = hotOpService.CreateScoreboardEmbed(hotOp);
-            await textChannel.SendMessageAsync(text: $"Operation Hot {hotOp.User.Username} has ended!", embed: scoreboardEmbed);
+            await textChannel.SendMessageAsync(text: $"Operation Hot {hotOp.DiscordUser.Username} has ended!", embed: scoreboardEmbed);
         }
     }
 }

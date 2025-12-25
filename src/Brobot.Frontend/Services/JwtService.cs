@@ -4,25 +4,29 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Brobot.Frontend.Providers;
-using Microsoft.AspNetCore.Components;
 
 namespace Brobot.Frontend.Services;
 
-public class JwtService(IServiceProvider services, NavigationManager navigationManager)
+public class JwtService(IServiceProvider services)
 {
     public async Task RefreshJwtToken()
     {
-        var api = services.GetRequiredService<ApiService>();
-        var loginResponse = await api.RefreshToken();
-        if (loginResponse is { Succeeded: true } && !string.IsNullOrWhiteSpace(loginResponse.Token))
+        try
         {
-            using var scope = services.CreateScope();
-            var loginStateService = scope.ServiceProvider.GetRequiredService<JwtAuthenticationStateProvider>();
-            loginStateService.Login(loginResponse.Token);
+            var api = services.GetRequiredService<ApiService>();
+            var loginResponse = await api.RefreshToken();
+            if (loginResponse is { Succeeded: true } && !string.IsNullOrWhiteSpace(loginResponse.Token))
+            {
+                using var scope = services.CreateScope();
+                var loginStateService = scope.ServiceProvider.GetRequiredService<JwtAuthenticationStateProvider>();
+                loginStateService.Login(loginResponse.Token);
+            }
+            // If refresh fails, user stays logged out - they can click login when ready
         }
-        else
+        catch (Exception ex)
         {
-            navigationManager.NavigateTo("/");
+            Console.WriteLine($"Token refresh failed: {ex.Message}");
+            // Silently fail - user will need to re-authenticate
         }
     }
 

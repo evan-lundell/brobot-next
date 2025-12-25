@@ -2,12 +2,14 @@ using System.Text;
 using Brobot.Contexts;
 using Brobot.HostedServices;
 using Brobot.Configuration;
+using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Services;
 using Brobot.TaskQueue;
 using Brobot.Workers;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -37,30 +39,17 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddUserManagement(this IServiceCollection services, IConfiguration config)
     {
         var jwtOptions = config.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
-        services.AddDbContext<UsersDbContext>(db =>
-        {
-            db.UseNpgsql(config.GetConnectionString("Default"), npgsql =>
-            {
-                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "auth");
-            });
-        });
 
-        services.AddIdentityCore<IdentityUser>(options =>
-            {
-                options.User.RequireUniqueEmail = true;
-                options.Password.RequireDigit = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireNonAlphanumeric = true;
-                options.Password.RequiredLength = 8;
-                options.SignIn.RequireConfirmedEmail = false;
-            })
-            .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<UsersDbContext>()
+        services.AddIdentity<ApplicationUserModel, IdentityRole>()
+            .AddEntityFrameworkStores<BrobotDbContext>()
             .AddDefaultTokenProviders();
 
         services.AddSingleton<IJwtService, JwtService>();
-        services.AddAuthentication()
+        services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters

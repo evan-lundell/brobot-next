@@ -10,7 +10,7 @@ public class CreateScheduledMessageTests : ScheduledMessageServiceTestBase
     [TestCase(2UL)]
     public async Task WhenMessageIsValid_MessageIsScheduled(ulong userId)
     {
-        var user = await Context.Users.FindAsync(userId);
+        var user = await Context.DiscordUsers.FindAsync(userId);
         if (user == null)
         {
             throw new Exception("User not found");
@@ -42,7 +42,7 @@ public class CreateScheduledMessageTests : ScheduledMessageServiceTestBase
     [Test]
     public async Task WhenMessageIsScheduledInPast_ThrowsError()
     {
-        var user = await Context.Users.FindAsync(1UL);
+        var user = await Context.DiscordUsers.FindAsync(1UL);
         if (user == null)
         {
             throw new Exception("User not found");
@@ -56,7 +56,7 @@ public class CreateScheduledMessageTests : ScheduledMessageServiceTestBase
     [Test]
     public async Task WhenChannelDoesNotExist_ThrowsError()
     {
-        var user = await Context.Users.FindAsync(1UL);
+        var user = await Context.DiscordUsers.FindAsync(1UL);
         if (user == null)
         {
             throw new Exception("User not found");

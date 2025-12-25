@@ -14,9 +14,6 @@ public class MigrationsHostedService(
         {
             logger.LogInformation("Starting migrations");
             using var scope = serviceProvider.CreateScope();
-            var usersDb = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
-            await usersDb.Database.MigrateAsync(cancellationToken);
-
             var brobotDb = scope.ServiceProvider.GetRequiredService<BrobotDbContext>();
             await brobotDb.Database.MigrateAsync(cancellationToken);
             logger.LogInformation("Migrations finished");
