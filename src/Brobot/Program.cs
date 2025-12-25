@@ -70,10 +70,14 @@ public static class Program
     private static void ConfigureMiddleware(WebApplication app)
     {
         // Must be first to correctly handle X-Forwarded-* headers from reverse proxy
-        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        var forwardedHeadersOptions = new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-        });
+        };
+        // Trust all proxies in Docker network (nginx-proxy won't be on localhost)
+        forwardedHeadersOptions.KnownIPNetworks.Clear();
+        forwardedHeadersOptions.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedHeadersOptions);
         
         if (app.Environment.IsDevelopment())
         {
