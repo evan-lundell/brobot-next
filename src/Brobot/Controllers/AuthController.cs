@@ -6,9 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Brobot.Configuration;
+using Brobot.Mappers;
 using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Services;
+using Brobot.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 
 namespace Brobot.Controllers;
@@ -82,7 +85,7 @@ public class AuthController(
                 // Create a new ApplicationUser linked to this Discord user
                 applicationUser = new ApplicationUserModel
                 {
-                    UserName = discordUserId.ToString(),
+                    UserName = discordUser.Username,
                     DiscordUserId = discordUserId,
                     DiscordUser = discordUser
                 };
@@ -99,6 +102,7 @@ public class AuthController(
                         Errors = ["Failed to create user account. Please try again."]
                     });
                 }
+                await userManager.AddToRoleAsync(applicationUser, Constants.UserRoleName);
                 
                 logger.LogInformation("Created new ApplicationUser for Discord user {DiscordUserId}", discordUserId);
             }
@@ -107,8 +111,20 @@ public class AuthController(
                 applicationUser = existingUser;
             }
 
+            var roleName = (await userManager.GetRolesAsync(applicationUser)).FirstOrDefault();
+
+            if (string.IsNullOrEmpty(roleName))
+            {
+                logger.LogWarning("ApplicationUser {UserId} has no roles assigned", applicationUser.Id);
+                return Ok(new LoginResponse
+                {
+                    Succeeded = false,
+                    Errors = ["You do not have any roles assigned. Please contact an administrator."]
+                });
+            }
+            
             // Generate JWT token
-            var token = jwtService.CreateJwt(applicationUser, discordUser);
+            var token = jwtService.CreateJwt(applicationUser, discordUser, roleName);
             
             // Set refresh token cookie (longer expiry than JWT)
             if (!string.IsNullOrWhiteSpace(applicationUser.SecurityStamp))
@@ -167,9 +183,20 @@ public class AuthController(
             }
 
             var discordUser = applicationUser.DiscordUser;
-
+            var roleName = (await userManager.GetRolesAsync(applicationUser)).FirstOrDefault();
+            
+            if (string.IsNullOrEmpty(roleName))
+            {
+                logger.LogWarning("ApplicationUser {UserId} has no roles assigned", applicationUser.Id);
+                return Ok(new LoginResponse
+                {
+                    Succeeded = false,
+                    Errors = ["You do not have any roles assigned. Please contact an administrator."]
+                });
+            }
+            
             // Generate a new JWT token
-            var token = jwtService.CreateJwt(applicationUser, discordUser);
+            var token = jwtService.CreateJwt(applicationUser, discordUser, roleName);
 
             // Rotate the refresh token for security (generate new SecurityStamp)
             await userManager.UpdateSecurityStampAsync(applicationUser);
@@ -234,5 +261,13 @@ public class AuthController(
 
         var uri = new UriBuilder(QueryHelpers.AddQueryString(discordOptions.Value.AuthorizationEndpoint, queryString));
         return Ok(new { url = uri.ToString() });
+    }
+
+    [HttpGet("application-users")]
+    [Authorize(Roles = Constants.AdminRoleName)]
+    public async Task<ActionResult<ApplicationUserResponse>> GetApplicationUsers()
+    {
+        var applicationUsers = await userManager.Users.ToListAsync();
+        return Ok(applicationUsers.Select(au => au.ToApplicationUserResponse()));
     }
 }
