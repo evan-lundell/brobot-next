@@ -1,6 +1,7 @@
 using Brobot.Configuration;
 using Brobot.HostedServices;
 using Brobot.Middleware;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
 using Serilog;
 
@@ -68,6 +69,12 @@ public static class Program
 
     private static void ConfigureMiddleware(WebApplication app)
     {
+        // Must be first to correctly handle X-Forwarded-* headers from reverse proxy
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
+        
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
