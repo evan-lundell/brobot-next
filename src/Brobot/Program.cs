@@ -87,7 +87,6 @@ public static class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapRazorPages();
-        app.UseDiscordUser();
         app.MapControllers();
         app.MapFallbackToFile("index.html");
     }

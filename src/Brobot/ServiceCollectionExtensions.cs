@@ -2,6 +2,7 @@ using System.Text;
 using Brobot.Contexts;
 using Brobot.HostedServices;
 using Brobot.Configuration;
+using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Services;
 using Brobot.TaskQueue;
@@ -37,26 +38,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddUserManagement(this IServiceCollection services, IConfiguration config)
     {
         var jwtOptions = config.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
-        services.AddDbContext<UsersDbContext>(db =>
-        {
-            db.UseNpgsql(config.GetConnectionString("Default"), npgsql =>
-            {
-                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "auth");
-            });
-        });
 
-        services.AddIdentityCore<IdentityUser>(options =>
-            {
-                options.User.RequireUniqueEmail = true;
-                options.Password.RequireDigit = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireNonAlphanumeric = true;
-                options.Password.RequiredLength = 8;
-                options.SignIn.RequireConfirmedEmail = false;
-            })
-            .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<UsersDbContext>()
+        services.AddIdentity<ApplicationUserModel, IdentityRole>()
+            .AddEntityFrameworkStores<BrobotDbContext>()
             .AddDefaultTokenProviders();
 
         services.AddSingleton<IJwtService, JwtService>();

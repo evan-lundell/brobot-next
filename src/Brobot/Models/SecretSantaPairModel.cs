@@ -9,9 +9,9 @@ public class SecretSantaPairModel
 
     public int Year { get; set; }
 
-    public ulong GiverUserId { get; set; }
-    public virtual required UserModel GiverUser { get; set; }
+    public ulong GiverDiscordUserId { get; set; }
+    public virtual required DiscordUserModel GiverDiscordUser { get; set; }
 
-    public ulong RecipientUserId { get; set; }
-    public virtual required UserModel RecipientUser { get; set; }
+    public ulong RecipientDiscordUserId { get; set; }
+    public virtual required DiscordUserModel RecipientDiscordUser { get; set; }
 }

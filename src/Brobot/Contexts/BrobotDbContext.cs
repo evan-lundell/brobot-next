@@ -1,13 +1,15 @@
 using Brobot.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Contexts;
 
-public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbContext(options)
+public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : IdentityDbContext<ApplicationUserModel>(options)
 {
     public DbSet<GuildModel> Guilds => Set<GuildModel>();
     public DbSet<ChannelModel> Channels => Set<ChannelModel>();
-    public DbSet<UserModel> Users => Set<UserModel>();
+    public DbSet<DiscordUserModel> DiscordUsers => Set<DiscordUserModel>();
     public DbSet<ScheduledMessageModel> ScheduledMessages => Set<ScheduledMessageModel>();
     public DbSet<HotOpModel> HotOps => Set<HotOpModel>();
     public DbSet<DailyMessageCountModel> DailyMessageCounts => Set<DailyMessageCountModel>();
@@ -19,434 +21,529 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : DbCont
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.Entity<GuildModel>()
-            .ToTable(name: "guild", schema: "brobot")
-            .HasKey(g => g.Id);
-        builder.Entity<GuildModel>()
-            .Property(g => g.Id)
-            .HasColumnName("id");
-        builder.Entity<GuildModel>()
-            .Property(g => g.Name)
-            .HasColumnName("name")
-            .IsRequired()
-            .HasMaxLength(255);
-        builder.Entity<GuildModel>()
-            .Property(g => g.Archived)
-            .HasColumnName("archived")
-            .HasDefaultValue(false)
-            .IsRequired();
-        builder.Entity<GuildModel>()
-            .Property(g => g.PrimaryChannelId)
-            .HasColumnName("primary_channel_id");
-        builder.Entity<GuildModel>()
-            .HasOne(g => g.PrimaryChannel)
-            .WithOne()
-            .HasForeignKey<GuildModel>(g => g.PrimaryChannelId);
-
-        builder.Entity<ChannelModel>()
-            .ToTable(name: "channel", schema: "brobot")
-            .HasKey(c => c.Id);
-        builder.Entity<ChannelModel>()
-            .Property(c => c.Id)
-            .HasColumnName("id");
-        builder.Entity<ChannelModel>()
-            .Property(c => c.Name)
-            .HasColumnName("name")
-            .IsRequired()
-            .HasMaxLength(255);
-        builder.Entity<ChannelModel>()
-            .Property(c => c.Archived)
-            .HasColumnName("archived")
-            .HasDefaultValue(false)
-            .IsRequired();
-        builder.Entity<ChannelModel>()
-            .Property(c => c.MonthlyWordCloud)
-            .HasColumnName("monthly_word_cloud")
-            .IsRequired()
-            .HasDefaultValue(false);
-        builder.Entity<ChannelModel>()
-            .Property(c => c.GuildId)
-            .HasColumnName("guild_id")
-            .IsRequired();
-        builder.Entity<ChannelModel>()
-            .HasOne(c => c.Guild)
-            .WithMany(g => g.Channels)
-            .HasForeignKey(c => c.GuildId);
-        builder.Entity<ChannelModel>()
-            .Property(c => c.Timezone)
-            .IsRequired()
-            .HasMaxLength(255)
-            .HasColumnName("timezone")
-            .HasDefaultValue("america/chicago");
-
-        builder.Entity<UserModel>()
-            .ToTable(name: "discord_user", schema: "brobot")
-            .HasKey(u => u.Id);
-        builder.Entity<UserModel>()
-            .Property(u => u.Id)
-            .HasColumnName("id");
-        builder.Entity<UserModel>()
-            .Property(u => u.Username)
-            .HasColumnName("username")
-            .IsRequired()
-            .HasMaxLength(255);
-        builder.Entity<UserModel>()
-            .Property(u => u.Birthdate)
-            .HasColumnName("birthdate")
-            .IsRequired(false);
-        builder.Entity<UserModel>()
-            .Property(u => u.Timezone)
-            .HasColumnName("timezone")
-            .IsRequired(false)
-            .HasMaxLength(255);
-        builder.Entity<UserModel>()
-            .Property(u => u.Archived)
-            .HasColumnName("archived")
-            .HasDefaultValue(false)
-            .IsRequired();
-        builder.Entity<UserModel>()
-            .Property(u => u.PrimaryChannelId)
-            .HasColumnName("primary_channel_id")
-            .IsRequired(false)
-            .HasDefaultValue(null);
-        builder.Entity<UserModel>()
-            .Property(u => u.LastOnline)
-            .HasColumnName("last_online")
-            .IsRequired(false);
-        builder.Entity<UserModel>()
-            .HasOne(u => u.PrimaryChannel)
-            .WithMany(c => c.Users)
-            .HasForeignKey(u => u.PrimaryChannelId);
-        builder.Entity<UserModel>()
-            .Property(u => u.IdentityUserId)
-            .HasColumnName("identity_user_id")
-            .HasMaxLength(100)
-            .IsRequired(false);
-        builder.Entity<UserModel>()
-            .HasIndex(u => u.IdentityUserId)
-            .IsUnique();
-        builder.Entity<UserModel>()
-            .HasOne(u => u.IdentityUser)
-            .WithMany()
-            .HasForeignKey(u => u.IdentityUserId);
-
-        builder.Entity<GuildUserModel>()
-            .ToTable(name: "guild_user", schema: "brobot")
-            .HasKey(gu => new { gu.GuildId, gu.UserId });
-        builder.Entity<GuildUserModel>()
-            .Property(gu => gu.GuildId)
-            .HasColumnName("guild_id");
-        builder.Entity<GuildUserModel>()
-            .Property(gu => gu.UserId)
-            .HasColumnName("user_id");
-        builder.Entity<GuildUserModel>()
-            .HasOne(gu => gu.Guild)
-            .WithMany(g => g.GuildUsers)
-            .HasForeignKey(gu => gu.GuildId);
-        builder.Entity<GuildUserModel>()
-            .HasOne(gu => gu.User)
-            .WithMany(u => u.GuildUsers)
-            .HasForeignKey(gu => gu.UserId);
-
-        builder.Entity<ChannelUserModel>()
-            .ToTable(name: "channel_user", schema: "brobot")
-            .HasKey(cu => new { cu.ChannelId, cu.UserId });
-        builder.Entity<ChannelUserModel>()
-            .Property(cu => cu.ChannelId)
-            .HasColumnName("channel_id");
-        builder.Entity<ChannelUserModel>()
-            .Property(cu => cu.UserId)
-            .HasColumnName("user_id");
-        builder.Entity<ChannelUserModel>()
-            .HasOne(cu => cu.Channel)
-            .WithMany(g => g.ChannelUsers)
-            .HasForeignKey(cu => cu.ChannelId);
-        builder.Entity<ChannelUserModel>()
-            .HasOne(cu => cu.User)
-            .WithMany(u => u.ChannelUsers)
-            .HasForeignKey(cu => cu.UserId);
-
-        builder.Entity<ScheduledMessageModel>()
-            .ToTable(name: "scheduled_message", schema: "brobot")
-            .HasKey(sm => sm.Id);
-        builder.Entity<ScheduledMessageModel>()
-            .Property(sm => sm.Id)
-            .HasColumnName("id");
-        builder.Entity<ScheduledMessageModel>()
-            .Property(sm => sm.ChannelId)
-            .HasColumnName("channel_id")
-            .IsRequired();
-        builder.Entity<ScheduledMessageModel>()
-            .Property(sm => sm.CreatedById)
-            .HasColumnName("created_by_id")
-            .IsRequired();
-        builder.Entity<ScheduledMessageModel>()
-            .Property(sm => sm.MessageText)
-            .HasColumnName("message_text")
-            .HasMaxLength(1000)
-            .IsRequired();
-        builder.Entity<ScheduledMessageModel>()
-            .Property(sm => sm.SendDate)
-            .HasColumnName("send_date")
-            .IsRequired(false);
-        builder.Entity<ScheduledMessageModel>()
-            .Property(sm => sm.SentDate)
-            .HasColumnName("sent_date")
-            .IsRequired(false);
-        builder.Entity<ScheduledMessageModel>()
-            .HasOne(sm => sm.Channel)
-            .WithMany(c => c.ScheduledMessages)
-            .HasForeignKey(sm => sm.ChannelId);
-        builder.Entity<ScheduledMessageModel>()
-            .HasOne(sm => sm.CreatedBy)
-            .WithMany(u => u.ScheduledMessages)
-            .HasForeignKey(sm => sm.CreatedById);
-
-        builder.Entity<HotOpModel>()
-            .ToTable(name: "hot_op", schema: "brobot")
-            .HasKey(ho => ho.Id);
-        builder.Entity<HotOpModel>()
-            .Property(ho => ho.Id)
-            .HasColumnName("id");
-        builder.Entity<HotOpModel>()
-            .Property(ho => ho.ChannelId)
-            .HasColumnName("channel_id")
-            .IsRequired();
-        builder.Entity<HotOpModel>()
-            .Property(ho => ho.UserId)
-            .HasColumnName("user_id")
-            .IsRequired();
-        builder.Entity<HotOpModel>()
-            .Property(ho => ho.StartDate)
-            .HasColumnName("start_date")
-            .IsRequired();
-        builder.Entity<HotOpModel>()
-            .Property(ho => ho.EndDate)
-            .HasColumnName("end_date")
-            .IsRequired();
-        builder.Entity<HotOpModel>()
-            .HasOne(ho => ho.Channel)
-            .WithMany(c => c.HotOps)
-            .HasForeignKey(ho => ho.ChannelId);
-        builder.Entity<HotOpModel>()
-            .HasOne(ho => ho.User)
-            .WithMany(u => u.HotOps)
-            .HasForeignKey(ho => ho.UserId);
-
-        builder.Entity<HotOpSessionModel>()
-            .ToTable(name: "hot_op_session", schema: "brobot")
-            .HasKey(hos => hos.Id);
-        builder.Entity<HotOpSessionModel>()
-            .Property(hos => hos.Id)
-            .HasColumnName("id");
-        builder.Entity<HotOpSessionModel>()
-            .Property(hos => hos.UserId)
-            .HasColumnName("user_id")
-            .IsRequired();
-        builder.Entity<HotOpSessionModel>()
-            .Property(hos => hos.StartDateTime)
-            .HasColumnName("start_date_time")
-            .IsRequired();
-        builder.Entity<HotOpSessionModel>()
-            .Property(hos => hos.EndDateTime)
-            .HasColumnName("end_date_time")
-            .IsRequired(false);
-        builder.Entity<HotOpSessionModel>()
-            .Property(hos => hos.HotOpId)
-            .HasColumnName("hot_op_id")
-            .IsRequired();
-        builder.Entity<HotOpSessionModel>()
-            .HasOne(hos => hos.User)
-            .WithMany(hos => hos.HotOpSessions)
-            .HasForeignKey(ho => ho.UserId);
-        builder.Entity<HotOpSessionModel>()
-            .HasOne(hos => hos.HotOp)
-            .WithMany(ho => ho.HotOpSessions)
-            .HasForeignKey(hos => hos.HotOpId);
-
-        builder.Entity<DailyMessageCountModel>()
-            .ToTable(name: "daily_message_count", schema: "brobot")
-            .HasKey(dc => new { dc.UserId, dc.ChannelId, dc.CountDate });
-        builder.Entity<DailyMessageCountModel>()
-            .Property(dc => dc.CountDate)
-            .HasColumnName("count_date");
-        builder.Entity<DailyMessageCountModel>()
-            .Property(dc => dc.UserId)
-            .HasColumnName("user_id");
-        builder.Entity<DailyMessageCountModel>()
-            .Property(dc => dc.MessageCount)
-            .HasColumnName("message_count")
-            .HasDefaultValue(0);
-        builder.Entity<DailyMessageCountModel>()
-            .Property(dc => dc.ChannelId)
-            .HasColumnName("channel_id");
-        builder.Entity<DailyMessageCountModel>()
-            .HasOne(dc => dc.User)
-            .WithMany(u => u.DailyCounts)
-            .HasForeignKey(dc => dc.UserId);
-        builder.Entity<DailyMessageCountModel>()
-            .HasOne(dc => dc.Channel)
-            .WithMany(c => c.DailyMessageCounts)
-            .HasForeignKey(dc => dc.ChannelId);
+        base.OnModelCreating(builder);
         
-        builder.Entity<SecretSantaGroupModel>()
-            .ToTable(name: "secret_santa_group", schema: "brobot")
-            .HasKey(ssg => ssg.Id);
-        builder.Entity<SecretSantaGroupModel>()
-            .Property(ssg => ssg.Id)
-            .HasColumnName("id")
-            .IsRequired();
-        builder.Entity<SecretSantaGroupModel>()
-            .Property(ssg => ssg.Name)
-            .HasColumnName("name")
-            .IsRequired()
-            .HasMaxLength(50);
+        builder.Entity<GuildModel>(entity =>
+        {
+            entity.ToTable(name: "guilds", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .IsRequired()
+                .HasMaxLength(255);
+            entity.Property(e => e.Archived)
+                .HasColumnName("archived")
+                .HasDefaultValue(false)
+                .IsRequired();
+            entity.Property(e => e.PrimaryChannelId)
+                .HasColumnName("primary_channel_id");
+            
+            entity.HasOne(e => e.PrimaryChannel)
+                .WithOne()
+                .HasForeignKey<GuildModel>(e => e.PrimaryChannelId);
+        });
 
-        builder.Entity<SecretSantaGroupUserModel>()
-            .ToTable(name: "secret_santa_group_user", schema: "brobot")
-            .HasKey(ssgu => new { ssgu.UserId, ssgu.SecretSantaGroupId });
-        builder.Entity<SecretSantaGroupUserModel>()
-            .Property(ssgu => ssgu.SecretSantaGroupId)
-            .HasColumnName("secret_santa_group_id");
-        builder.Entity<SecretSantaGroupUserModel>()
-            .Property(ssgu => ssgu.UserId)
-            .HasColumnName("user_id");
-        builder.Entity<SecretSantaGroupUserModel>()
-            .HasOne(ssgu => ssgu.SecretSantaGroup)
-            .WithMany(ssg => ssg.SecretSantaGroupUsers)
-            .HasForeignKey(ssg => ssg.SecretSantaGroupId);
-        builder.Entity<SecretSantaGroupUserModel>()
-            .HasOne(ssgu => ssgu.User)
-            .WithMany(u => u.SecretSantaGroupUsers)
-            .HasForeignKey(ssgu => ssgu.UserId);
+        builder.Entity<ChannelModel>(entity =>
+        {
+            entity.ToTable(name: "channels", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .IsRequired()
+                .HasMaxLength(255);
+            entity.Property(e => e.Archived)
+                .HasColumnName("archived")
+                .HasDefaultValue(false)
+                .IsRequired();
+            entity.Property(e => e.MonthlyWordCloud)
+                .HasColumnName("monthly_word_cloud")
+                .IsRequired()
+                .HasDefaultValue(false);
+            entity.Property(e => e.GuildId)
+                .HasColumnName("guild_id")
+                .IsRequired();
+            entity.Property(e => e.Timezone)
+                .HasColumnName("timezone")
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasDefaultValue("america/chicago");
+            
+            entity.HasOne(e => e.Guild)
+                .WithMany(g => g.Channels)
+                .HasForeignKey(e => e.GuildId);
+        });
 
-        builder.Entity<SecretSantaPairModel>()
-            .ToTable(name: "secret_santa_pair", schema: "brobot")
-            .HasKey(ssp => ssp.Id);
-        builder.Entity<SecretSantaPairModel>()
-            .Property(ssp => ssp.Id)
-            .HasColumnName("id");
-        builder.Entity<SecretSantaPairModel>()
-            .Property(ssp => ssp.SecretSantaGroupId)
-            .HasColumnName("secret_santa_group_id")
-            .IsRequired();
-        builder.Entity<SecretSantaPairModel>()
-            .Property(ssp => ssp.Year)
-            .HasColumnName("year")
-            .IsRequired();
-        builder.Entity<SecretSantaPairModel>()
-            .Property(ssp => ssp.GiverUserId)
-            .HasColumnName("giver_user_id")
-            .IsRequired();
-        builder.Entity<SecretSantaPairModel>()
-            .Property(ssp => ssp.RecipientUserId)
-            .HasColumnName("recipient_user_id")
-            .IsRequired();
-        builder.Entity<SecretSantaPairModel>()
-            .HasOne(ssp => ssp.SecretSantaGroup)
-            .WithMany(ssg => ssg.SecretSantaPairs)
-            .HasForeignKey(ssp => ssp.SecretSantaGroupId);
-        builder.Entity<SecretSantaPairModel>()
-            .HasOne(ssp => ssp.GiverUser)
-            .WithMany(u => u.Givers)
-            .HasForeignKey(ssp => ssp.GiverUserId);
-        builder.Entity<SecretSantaPairModel>()
-            .HasOne(ssp => ssp.RecipientUser)
-            .WithMany(u => u.Recipients)
-            .HasForeignKey(ssp => ssp.RecipientUserId);
+        builder.Entity<DiscordUserModel>(entity =>
+        {
+            entity.ToTable(name: "discord_users", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.Username)
+                .HasColumnName("username")
+                .IsRequired()
+                .HasMaxLength(255);
+            entity.Property(e => e.Birthdate)
+                .HasColumnName("birthdate")
+                .IsRequired(false);
+            entity.Property(e => e.Timezone)
+                .HasColumnName("timezone")
+                .IsRequired(false)
+                .HasMaxLength(255);
+            entity.Property(e => e.Archived)
+                .HasColumnName("archived")
+                .HasDefaultValue(false)
+                .IsRequired();
+            entity.Property(e => e.PrimaryChannelId)
+                .HasColumnName("primary_channel_id")
+                .IsRequired(false)
+                .HasDefaultValue(null);
+            entity.Property(e => e.LastOnline)
+                .HasColumnName("last_online")
+                .IsRequired(false);
+            
+            entity.HasOne(e => e.PrimaryChannel)
+                .WithMany(c => c.Users)
+                .HasForeignKey(e => e.PrimaryChannelId);
+        });
 
-        builder.Entity<StopWordModel>()
-            .ToTable(name: "stop_word", schema: "brobot")
-            .HasKey(sw => sw.Id);
-        builder.Entity<StopWordModel>()
-            .Property(sw => sw.Id)
-            .HasColumnName("id");
-        builder.Entity<StopWordModel>()
-            .Property(sw => sw.Word)
-            .HasColumnName("word")
-            .HasMaxLength(255)
-            .IsRequired();
-        builder.Entity<StopWordModel>()
-            .HasIndex(sw => sw.Word)
-            .IsUnique();
+        builder.Entity<GuildDiscordUserModel>(entity =>
+        {
+            entity.ToTable(name: "guild_discord_users", schema: "brobot");
+            entity.HasKey(e => new { e.GuildId, UserId = e.DiscordUserId });
+            
+            entity.Property(e => e.GuildId)
+                .HasColumnName("guild_id");
+            entity.Property(e => e.DiscordUserId)
+                .HasColumnName("discord_user_id");
+            
+            entity.HasOne(e => e.Guild)
+                .WithMany(g => g.GuildUsers)
+                .HasForeignKey(e => e.GuildId);
+            entity.HasOne(e => e.DiscordUser)
+                .WithMany(u => u.GuildUsers)
+                .HasForeignKey(e => e.DiscordUserId);
+        });
+
+        builder.Entity<ChannelDiscordUserModel>(entity =>
+        {
+            entity.ToTable(name: "channel_discord_users", schema: "brobot");
+            entity.HasKey(e => new { e.ChannelId, e.UserId });
+            
+            entity.Property(e => e.ChannelId)
+                .HasColumnName("channel_id");
+            entity.Property(e => e.UserId)
+                .HasColumnName("discord_user_id");
+            
+            entity.HasOne(e => e.Channel)
+                .WithMany(c => c.ChannelUsers)
+                .HasForeignKey(e => e.ChannelId);
+            entity.HasOne(e => e.DiscordUser)
+                .WithMany(u => u.ChannelUsers)
+                .HasForeignKey(e => e.UserId);
+        });
+
+        builder.Entity<ScheduledMessageModel>(entity =>
+        {
+            entity.ToTable(name: "scheduled_messages", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.ChannelId)
+                .HasColumnName("channel_id")
+                .IsRequired();
+            entity.Property(e => e.CreatedById)
+                .HasColumnName("created_by_id")
+                .IsRequired();
+            entity.Property(e => e.MessageText)
+                .HasColumnName("message_text")
+                .HasMaxLength(1000)
+                .IsRequired();
+            entity.Property(e => e.SendDate)
+                .HasColumnName("send_date")
+                .IsRequired(false);
+            entity.Property(e => e.SentDate)
+                .HasColumnName("sent_date")
+                .IsRequired(false);
+            
+            entity.HasOne(e => e.Channel)
+                .WithMany(c => c.ScheduledMessages)
+                .HasForeignKey(e => e.ChannelId);
+            entity.HasOne(e => e.CreatedBy)
+                .WithMany(u => u.ScheduledMessages)
+                .HasForeignKey(e => e.CreatedById);
+        });
+
+        builder.Entity<HotOpModel>(entity =>
+        {
+            entity.ToTable(name: "hot_ops", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.ChannelId)
+                .HasColumnName("channel_id")
+                .IsRequired();
+            entity.Property(e => e.UserId)
+                .HasColumnName("discord_user_id")
+                .IsRequired();
+            entity.Property(e => e.StartDate)
+                .HasColumnName("start_date")
+                .IsRequired();
+            entity.Property(e => e.EndDate)
+                .HasColumnName("end_date")
+                .IsRequired();
+            
+            entity.HasOne(e => e.Channel)
+                .WithMany(c => c.HotOps)
+                .HasForeignKey(e => e.ChannelId);
+            entity.HasOne(e => e.DiscordUser)
+                .WithMany(u => u.HotOps)
+                .HasForeignKey(e => e.UserId);
+        });
+
+        builder.Entity<HotOpSessionModel>(entity =>
+        {
+            entity.ToTable(name: "hot_op_sessions", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.DiscordUserId)
+                .HasColumnName("discord_user_id")
+                .IsRequired();
+            entity.Property(e => e.StartDateTime)
+                .HasColumnName("start_date_time")
+                .IsRequired();
+            entity.Property(e => e.EndDateTime)
+                .HasColumnName("end_date_time")
+                .IsRequired(false);
+            entity.Property(e => e.HotOpId)
+                .HasColumnName("hot_op_id")
+                .IsRequired();
+            
+            entity.HasOne(e => e.DiscordUser)
+                .WithMany(u => u.HotOpSessions)
+                .HasForeignKey(e => e.DiscordUserId);
+            entity.HasOne(e => e.HotOp)
+                .WithMany(h => h.HotOpSessions)
+                .HasForeignKey(e => e.HotOpId);
+        });
+
+        builder.Entity<DailyMessageCountModel>(entity =>
+        {
+            entity.ToTable(name: "daily_message_counts", schema: "brobot");
+            entity.HasKey(e => new { e.DiscordUserId, e.ChannelId, e.CountDate });
+            
+            entity.Property(e => e.CountDate)
+                .HasColumnName("count_date");
+            entity.Property(e => e.DiscordUserId)
+                .HasColumnName("discord_user_id");
+            entity.Property(e => e.MessageCount)
+                .HasColumnName("message_count")
+                .HasDefaultValue(0);
+            entity.Property(e => e.ChannelId)
+                .HasColumnName("channel_id");
+            
+            entity.HasOne(e => e.DiscordUser)
+                .WithMany(u => u.DailyCounts)
+                .HasForeignKey(e => e.DiscordUserId);
+            entity.HasOne(e => e.Channel)
+                .WithMany(c => c.DailyMessageCounts)
+                .HasForeignKey(e => e.ChannelId);
+        });
+
+        builder.Entity<SecretSantaGroupModel>(entity =>
+        {
+            entity.ToTable(name: "secret_santa_groups", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .IsRequired();
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .IsRequired()
+                .HasMaxLength(50);
+        });
+
+        builder.Entity<SecretSantaGroupDiscordUserModel>(entity =>
+        {
+            entity.ToTable(name: "secret_santa_group_users", schema: "brobot");
+            entity.HasKey(e => new { e.DiscordUserId, e.SecretSantaGroupId });
+            
+            entity.Property(e => e.SecretSantaGroupId)
+                .HasColumnName("secret_santa_group_id");
+            entity.Property(e => e.DiscordUserId)
+                .HasColumnName("discord_user_id");
+            
+            entity.HasOne(e => e.SecretSantaGroup)
+                .WithMany(g => g.SecretSantaGroupUsers)
+                .HasForeignKey(e => e.SecretSantaGroupId);
+            entity.HasOne(e => e.DiscordUser)
+                .WithMany(u => u.SecretSantaGroupUsers)
+                .HasForeignKey(e => e.DiscordUserId);
+        });
+
+        builder.Entity<SecretSantaPairModel>(entity =>
+        {
+            entity.ToTable(name: "secret_santa_pairs", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.SecretSantaGroupId)
+                .HasColumnName("secret_santa_group_id")
+                .IsRequired();
+            entity.Property(e => e.Year)
+                .HasColumnName("year")
+                .IsRequired();
+            entity.Property(e => e.GiverDiscordUserId)
+                .HasColumnName("giver_discord_user_id")
+                .IsRequired();
+            entity.Property(e => e.RecipientDiscordUserId)
+                .HasColumnName("recipient_discord_user_id")
+                .IsRequired();
+            
+            entity.HasOne(e => e.SecretSantaGroup)
+                .WithMany(g => g.SecretSantaPairs)
+                .HasForeignKey(e => e.SecretSantaGroupId);
+            entity.HasOne(e => e.GiverDiscordUser)
+                .WithMany(u => u.Givers)
+                .HasForeignKey(e => e.GiverDiscordUserId);
+            entity.HasOne(e => e.RecipientDiscordUser)
+                .WithMany(u => u.Recipients)
+                .HasForeignKey(e => e.RecipientDiscordUserId);
+        });
+
+        builder.Entity<StopWordModel>(entity =>
+        {
+            entity.ToTable(name: "stop_words", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.Word)
+                .HasColumnName("word")
+                .HasMaxLength(255)
+                .IsRequired();
+            
+            entity.HasIndex(e => e.Word)
+                .IsUnique();
+        });
+
+        builder.Entity<VersionModel>(entity =>
+        {
+            entity.ToTable(name: "versions", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.VersionNumber)
+                .HasColumnName("version_number")
+                .IsRequired()
+                .HasMaxLength(20);
+            entity.Property(e => e.VersionDate)
+                .HasColumnName("version_date")
+                .IsRequired()
+                .HasDefaultValueSql("NOW()");
+        });
+
+        builder.Entity<StatPeriodModel>(entity =>
+        {
+            entity.ToTable(name: "stat_periods", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.ChannelId)
+                .HasColumnName("channel_id");
+            entity.Property(e => e.StartDate)
+                .HasColumnName("start_date");
+            entity.Property(e => e.EndDate)
+                .HasColumnName("end_date");
+            
+            entity.HasOne(e => e.Channel)
+                .WithMany(c => c.StatPeriods)
+                .HasForeignKey(e => e.ChannelId);
+        });
+
+        builder.Entity<WordCountModel>(entity =>
+        {
+            entity.ToTable(name: "word_counts", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.Word)
+                .HasColumnName("word")
+                .HasMaxLength(255);
+            entity.Property(e => e.Count)
+                .HasColumnName("count");
+            
+            entity.HasOne(e => e.StatPeriod)
+                .WithMany(s => s.WordCounts)
+                .HasForeignKey(e => e.StatPeriodId);
+        });
+
+        builder.Entity<DiscordUserMessageCountModel>(entity =>
+        {
+            entity.ToTable(name: "user_message_counts", schema: "brobot");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.DiscordUserId)
+                .HasColumnName("discord_user_id");
+            entity.Property(e => e.Count)
+                .HasColumnName("count");
+            entity.Property(e => e.StatPeriodId)
+                .HasColumnName("stat_period_id");
+            
+            entity.HasOne(e => e.StatPeriod)
+                .WithMany(s => s.UserMessageCounts)
+                .HasForeignKey(e => e.StatPeriodId);
+            entity.HasOne<DiscordUserModel>()
+                .WithMany()
+                .HasForeignKey(e => e.DiscordUserId);
+        });
         
-        builder.Entity<VersionModel>()
-            .ToTable(name: "version", schema: "brobot")
-            .HasKey(v => v.Id);
-        builder.Entity<VersionModel>()
-            .Property(v => v.Id)
-            .HasColumnName("id");
-        builder.Entity<VersionModel>()
-            .Property(v => v.VersionNumber)
-            .HasColumnName("version_number")
-            .IsRequired()
-            .HasMaxLength(20);
-        builder.Entity<VersionModel>()
-            .Property(v => v.VersionDate)
-            .HasColumnName("version_date")
-            .IsRequired()
-            .HasDefaultValueSql("NOW()");
-        
-        builder.Entity<StatPeriodModel>()
-            .ToTable(name: "stat_period", schema: "brobot")
-            .HasKey(sp => sp.Id);
-        builder.Entity<StatPeriodModel>()
-            .Property(sp => sp.Id)
-            .HasColumnName("id");
-        builder.Entity<StatPeriodModel>()
-            .Property(sp => sp.ChannelId)
-            .HasColumnName("channel_id");
-        builder.Entity<StatPeriodModel>()
-            .Property(sp => sp.StartDate)
-            .HasColumnName("start_date");
-        builder.Entity<StatPeriodModel>()
-            .Property(sp => sp.EndDate)
-            .HasColumnName("end_date");
-        builder.Entity<StatPeriodModel>()
-            .HasOne(ssp => ssp.Channel)
-            .WithMany(ch => ch.StatPeriods)
-            .HasForeignKey(ssp => ssp.ChannelId);
-        
-        builder.Entity<WordCountModel>()
-            .ToTable(name: "word_count", schema: "brobot")
-            .HasKey(wc => wc.Id);
-        builder.Entity<WordCountModel>()
-            .Property(wc => wc.Id)
-            .HasColumnName("id");
-        builder.Entity<WordCountModel>()
-            .Property(wc => wc.Word)
-            .HasColumnName("word")
-            .HasMaxLength(255);
-        builder.Entity<WordCountModel>()
-            .Property(wc => wc.Count)
-            .HasColumnName("count");
-        builder.Entity<WordCountModel>()
-            .HasOne(wc => wc.StatPeriod)
-            .WithMany(sp => sp.WordCounts)
-            .HasForeignKey(wc => wc.StatPeriodId);
+        // Configure UserModel columns to use snake_case
+        builder.Entity<ApplicationUserModel>(entity =>
+        {
+            entity.ToTable("users");
+            
+            // IdentityUser properties
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.UserName)
+                .HasColumnName("user_name");
+            entity.Property(e => e.NormalizedUserName)
+                .HasColumnName("normalized_user_name");
+            entity.Property(e => e.Email)
+                .HasColumnName("email");
+            entity.Property(e => e.NormalizedEmail)
+                .HasColumnName("normalized_email");
+            entity.Property(e => e.EmailConfirmed)
+                .HasColumnName("email_confirmed");
+            entity.Property(e => e.PasswordHash)
+                .HasColumnName("password_hash");
+            entity.Property(e => e.SecurityStamp)
+                .HasColumnName("security_stamp");
+            entity.Property(e => e.ConcurrencyStamp)
+                .HasColumnName("concurrency_stamp");
+            entity.Property(e => e.PhoneNumber)
+                .HasColumnName("phone_number");
+            entity.Property(e => e.PhoneNumberConfirmed)
+                .HasColumnName("phone_number_confirmed");
+            entity.Property(e => e.TwoFactorEnabled)
+                .HasColumnName("two_factor_enabled");
+            entity.Property(e => e.LockoutEnd)
+                .HasColumnName("lockout_end");
+            entity.Property(e => e.LockoutEnabled)
+                .HasColumnName("lockout_enabled");
+            entity.Property(e => e.AccessFailedCount)
+                .HasColumnName("access_failed_count");
+            entity.Property(e => e.DiscordUserId)
+                .HasColumnName("discord_user_id");
+            
+            entity.HasOne(e => e.DiscordUser)
+                .WithMany()
+                .HasForeignKey(e => e.DiscordUserId);
+        });
 
-        builder.Entity<UserMessageCountModel>()
-            .ToTable(name: "user_message_count", schema: "brobot")
-            .HasKey(umc => umc.Id);
-        builder.Entity<UserMessageCountModel>()
-            .Property(umc => umc.Id)
-            .HasColumnName("id");
-        builder.Entity<UserMessageCountModel>()
-            .Property(umc => umc.UserId)
-            .HasColumnName("user_id");
-        builder.Entity<UserMessageCountModel>()
-            .Property(umc => umc.Count)
-            .HasColumnName("count");
-        builder.Entity<UserMessageCountModel>()
-            .Property(umc => umc.StatPeriodId)
-            .HasColumnName("stat_period_id");
-        builder.Entity<UserMessageCountModel>()
-            .HasOne(umc => umc.StatPeriod)
-            .WithMany(sp => sp.UserMessageCounts)
-            .HasForeignKey(umc => umc.StatPeriodId);
-        builder.Entity<UserMessageCountModel>()
-            .HasOne<UserModel>()
-            .WithMany()
-            .HasForeignKey(umc => umc.UserId);
+        // Configure IdentityRole columns to use snake_case
+        builder.Entity<IdentityRole>(entity =>
+        {
+            entity.ToTable("roles");
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasColumnName("name");
+            entity.Property(e => e.NormalizedName)
+                .HasColumnName("normalized_name");
+            entity.Property(e => e.ConcurrencyStamp)
+                .HasColumnName("concurrency_stamp");
+        });
+
+        // Configure IdentityUserRole columns to use snake_case
+        builder.Entity<IdentityUserRole<string>>(entity =>
+        {
+            entity.ToTable("user_roles");
+            
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id");
+            entity.Property(e => e.RoleId)
+                .HasColumnName("role_id");
+        });
+
+        // Configure IdentityUserClaim columns to use snake_case
+        builder.Entity<IdentityUserClaim<string>>(entity =>
+        {
+            entity.ToTable("user_claims");
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id");
+            entity.Property(e => e.ClaimType)
+                .HasColumnName("claim_type");
+            entity.Property(e => e.ClaimValue)
+                .HasColumnName("claim_value");
+        });
+
+        // Configure IdentityUserLogin columns to use snake_case
+        builder.Entity<IdentityUserLogin<string>>(entity =>
+        {
+            entity.ToTable("user_logins");
+            
+            entity.Property(e => e.LoginProvider)
+                .HasColumnName("login_provider");
+            entity.Property(e => e.ProviderKey)
+                .HasColumnName("provider_key");
+            entity.Property(e => e.ProviderDisplayName)
+                .HasColumnName("provider_display_name");
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id");
+        });
+
+        // Configure IdentityUserToken columns to use snake_case
+        builder.Entity<IdentityUserToken<string>>(entity =>
+        {
+            entity.ToTable("user_tokens");
+            
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id");
+            entity.Property(e => e.LoginProvider)
+                .HasColumnName("login_provider");
+            entity.Property(e => e.Name)
+                .HasColumnName("name");
+            entity.Property(e => e.Value)
+                .HasColumnName("value");
+        });
+
+        // Configure IdentityRoleClaim columns to use snake_case
+        builder.Entity<IdentityRoleClaim<string>>(entity =>
+        {
+            entity.ToTable("role_claims");
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+            entity.Property(e => e.RoleId)
+                .HasColumnName("role_id");
+            entity.Property(e => e.ClaimType)
+                .HasColumnName("claim_type");
+            entity.Property(e => e.ClaimValue)
+                .HasColumnName("claim_value");
+        });
     }
 }

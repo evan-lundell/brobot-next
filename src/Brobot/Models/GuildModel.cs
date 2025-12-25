@@ -12,11 +12,11 @@ public class GuildModel
     public ChannelModel? PrimaryChannel { get; set; }
     
     public virtual ICollection<ChannelModel> Channels { get; set; }
-    public virtual ICollection<GuildUserModel> GuildUsers { get; set; }
+    public virtual ICollection<GuildDiscordUserModel> GuildUsers { get; set; }
 
     public GuildModel()
     {
         Channels = new HashSet<ChannelModel>();
-        GuildUsers = new HashSet<GuildUserModel>();
+        GuildUsers = new HashSet<GuildDiscordUserModel>();
     }
 }

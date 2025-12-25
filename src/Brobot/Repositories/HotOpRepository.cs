@@ -14,12 +14,12 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
         var activeHotOps = await Context.HotOps
             .AsNoTracking()
             .AsSplitQuery()
-            .Include(ho => ho.User)
+            .Include(ho => ho.DiscordUser)
             .Include(ho => ho.HotOpSessions)
-            .ThenInclude(hos => hos.User)
+            .ThenInclude(hos => hos.DiscordUser)
             .Include(ho => ho.Channel)
             .ThenInclude(c => c.ChannelUsers)
-            .ThenInclude(cu => cu.User)
+            .ThenInclude(cu => cu.DiscordUser)
             .Where(ho => ho.ChannelId == channelId && ho.StartDate <= utcNow && ho.EndDate > utcNow)
             .ToListAsync();
 
@@ -32,7 +32,7 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
         IQueryable<HotOpModel> query = Context.HotOps
             .AsSplitQuery()
             .Include(ho => ho.Channel)
-            .Include(ho => ho.User)
+            .Include(ho => ho.DiscordUser)
             .Where(ho => ho.Channel.ChannelUsers.Any(cu => cu.UserId == userId));
 
         switch (type)
@@ -59,12 +59,12 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
     {
         return await Context.HotOps
             .AsSplitQuery()
-            .Include(ho => ho.User)
+            .Include(ho => ho.DiscordUser)
             .Include(ho => ho.HotOpSessions)
-            .ThenInclude(hos => hos.User)
+            .ThenInclude(hos => hos.DiscordUser)
             .Include(ho => ho.Channel)
             .ThenInclude(c => c.ChannelUsers)
-            .ThenInclude(cu => cu.User)
+            .ThenInclude(cu => cu.DiscordUser)
             .Where(expression)
             .ToListAsync();
     }
@@ -72,11 +72,11 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
     public override Task<HotOpModel?> GetById(int id)
         => Context.HotOps
             .AsSplitQuery()
-            .Include(ho => ho.User)
+            .Include(ho => ho.DiscordUser)
             .Include(ho => ho.HotOpSessions)
-            .ThenInclude(hos => hos.User)
+            .ThenInclude(hos => hos.DiscordUser)
             .Include(ho => ho.Channel)
             .ThenInclude(c => c.ChannelUsers)
-            .ThenInclude(cu => cu.User)
+            .ThenInclude(cu => cu.DiscordUser)
             .SingleOrDefaultAsync(ho => ho.Id == id);
 }

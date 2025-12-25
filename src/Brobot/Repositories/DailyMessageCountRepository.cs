@@ -10,8 +10,8 @@ public class DailyMessageCountRepository(BrobotDbContext context)
     public async Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDays(ulong userId, int numOfDays)
     {
         return await Context.DailyMessageCounts
-            .Where(dmc => dmc.UserId == userId)
-            .GroupBy(d => new { d.UserId, d.CountDate })
+            .Where(dmc => dmc.DiscordUserId == userId)
+            .GroupBy(d => new { UserId = d.DiscordUserId, d.CountDate })
             .Select(g => new
             {
                 g.Key.UserId,
@@ -20,13 +20,13 @@ public class DailyMessageCountRepository(BrobotDbContext context)
             })
             .OrderByDescending(r => r.MessageCount)
             .Take(numOfDays)
-            .Join(Context.Users,
+            .Join(Context.DiscordUsers,
                 dmc => dmc.UserId,
                 user => user.Id,
                 (dmc, user) => new DailyMessageCountModel
                 {
-                    User = user,
-                    UserId = dmc.UserId,
+                    DiscordUser = user,
+                    DiscordUserId = dmc.UserId,
                     CountDate = dmc.CountDate,
                     ChannelId = 0,
                     Channel = new ChannelModel
@@ -51,8 +51,8 @@ public class DailyMessageCountRepository(BrobotDbContext context)
     public async Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDaysInChannel(ulong userId, ulong channelId, int numOfDays)
     {
         return await Context.DailyMessageCounts
-            .Where(dmc => dmc.UserId == userId && dmc.ChannelId == channelId)
-            .GroupBy(d => new { d.UserId, d.ChannelId, d.CountDate })
+            .Where(dmc => dmc.DiscordUserId == userId && dmc.ChannelId == channelId)
+            .GroupBy(d => new { UserId = d.DiscordUserId, d.ChannelId, d.CountDate })
             .Select(g => new
             {
                 g.Key.UserId,
@@ -62,13 +62,13 @@ public class DailyMessageCountRepository(BrobotDbContext context)
             })
             .OrderByDescending(r => r.MessageCount)
             .Take(numOfDays)
-            .Join(Context.Users,
+            .Join(Context.DiscordUsers,
                 dmc => dmc.UserId,
                 user => user.Id,
                 (dmc, user) => new DailyMessageCountModel
                 {
-                    User = user,
-                    UserId = dmc.UserId,
+                    DiscordUser = user,
+                    DiscordUserId = dmc.UserId,
                     CountDate = dmc.CountDate,
                     ChannelId = dmc.ChannelId,
                     Channel = new ChannelModel
@@ -93,7 +93,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
     {
         var result = await Context.DailyMessageCounts
             .Where(d => d.CountDate == date)
-            .GroupBy(d => new { d.UserId, d.CountDate })
+            .GroupBy(d => new { UserId = d.DiscordUserId, d.CountDate })
             .Select(g => new
             {
                 g.Key.UserId,
@@ -101,13 +101,13 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                 MessageCount = g.Sum(d => d.MessageCount)
             })
             .OrderByDescending(d => d.MessageCount)
-            .Join(Context.Users,
+            .Join(Context.DiscordUsers,
                 dmc => dmc.UserId,
                 user => user.Id,
                 (dmc, user) => new DailyMessageCountModel
                 {
-                    User = user,
-                    UserId = dmc.UserId,
+                    DiscordUser = user,
+                    DiscordUserId = dmc.UserId,
                     CountDate = dmc.CountDate,
                     ChannelId = 0,
                     Channel = new ChannelModel
@@ -133,7 +133,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
     {
         var result = await Context.DailyMessageCounts
             .Where(d => d.CountDate == date && d.ChannelId == channelId)
-            .GroupBy(d => new { d.UserId, d.ChannelId, d.CountDate })
+            .GroupBy(d => new { UserId = d.DiscordUserId, d.ChannelId, d.CountDate })
             .Select(g => new
             {
                 g.Key.UserId,
@@ -142,13 +142,13 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                 MessageCount = g.Sum(d => d.MessageCount)
             })
             .OrderByDescending(d => d.MessageCount)
-            .Join(Context.Users,
+            .Join(Context.DiscordUsers,
                 dmc => dmc.UserId,
                 user => user.Id,
                 (dmc, user) => new DailyMessageCountModel
                 {
-                    User = user,
-                    UserId = dmc.UserId,
+                    DiscordUser = user,
+                    DiscordUserId = dmc.UserId,
                     CountDate = dmc.CountDate,
                     ChannelId = dmc.ChannelId,
                     Channel = new ChannelModel
@@ -173,7 +173,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
     {
         return await Context.DailyMessageCounts
             .Where(dmc => dmc.CountDate >= startDate && dmc.CountDate <= endDate)
-            .GroupBy(d => new { d.UserId, d.CountDate })
+            .GroupBy(d => new { UserId = d.DiscordUserId, d.CountDate })
             .Select(g => new
             { 
                 g.Key.UserId,
@@ -181,13 +181,13 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                 MessageCount = g.Sum(d => d.MessageCount)
             })
             .OrderByDescending(d => d.CountDate)
-            .Join(Context.Users,
+            .Join(Context.DiscordUsers,
                 dmc => dmc.UserId,
                 user => user.Id,
                 (dmc, user) => new DailyMessageCountModel
                 {
-                    User = user,
-                    UserId = dmc.UserId,
+                    DiscordUser = user,
+                    DiscordUserId = dmc.UserId,
                     CountDate = dmc.CountDate,
                     ChannelId = 0,
                     Channel = new ChannelModel
@@ -211,7 +211,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
     {
         return await Context.DailyMessageCounts
             .Where(dmc => dmc.CountDate >= startDate && dmc.CountDate <= endDate && dmc.ChannelId == channelId)
-            .GroupBy(d => new { d.UserId, d.ChannelId, d.CountDate })
+            .GroupBy(d => new { UserId = d.DiscordUserId, d.ChannelId, d.CountDate })
             .Select(g => new
             { 
                 g.Key.UserId,
@@ -220,13 +220,13 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                 MessageCount = g.Sum(d => d.MessageCount)
             })
             .OrderByDescending(d => d.CountDate)
-            .Join(Context.Users,
+            .Join(Context.DiscordUsers,
                 dmc => dmc.UserId,
                 user => user.Id,
                 (dmc, user) => new DailyMessageCountModel
                 {
-                    User = user,
-                    UserId = dmc.UserId,
+                    DiscordUser = user,
+                    DiscordUserId = dmc.UserId,
                     CountDate = dmc.CountDate,
                     ChannelId = dmc.ChannelId,
                     Channel = new ChannelModel
@@ -252,8 +252,8 @@ public class DailyMessageCountRepository(BrobotDbContext context)
             .GroupBy(dmc => new { dmc.CountDate })
             .Select(g => new DailyMessageCountModel
             {
-                UserId = 0,
-                User = new UserModel
+                DiscordUserId = 0,
+                DiscordUser = new DiscordUserModel
                 {
                     Id = 0,
                     Username = "Global"
@@ -286,8 +286,8 @@ public class DailyMessageCountRepository(BrobotDbContext context)
             .GroupBy(dmc => new { dmc.ChannelId, dmc.CountDate })
             .Select(g => new DailyMessageCountModel
             {
-                UserId = 0,
-                User = new UserModel
+                DiscordUserId = 0,
+                DiscordUser = new DiscordUserModel
                 {
                     Id = 0,
                     Username = "Global"

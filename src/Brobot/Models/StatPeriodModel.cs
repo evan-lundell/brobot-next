@@ -11,5 +11,5 @@ public class StatPeriodModel
     public DateOnly EndDate { get; set; }
     
     public virtual ICollection<WordCountModel> WordCounts { get; set; } = new HashSet<WordCountModel>();
-    public virtual ICollection<UserMessageCountModel> UserMessageCounts { get; set; } = new HashSet<UserMessageCountModel>();
+    public virtual ICollection<DiscordUserMessageCountModel> UserMessageCounts { get; set; } = new HashSet<DiscordUserMessageCountModel>();
 }

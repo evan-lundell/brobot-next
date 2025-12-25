@@ -23,7 +23,7 @@ public class HotOpsController(
     [HttpGet]
     public async Task<ActionResult<IEnumerable<HotOpResponse>>> GetHotOps([FromQuery] HotOpQueryType type = HotOpQueryType.All)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         var now = DateTimeOffset.UtcNow;
         var hotOps = (type switch
         {
@@ -48,7 +48,7 @@ public class HotOpsController(
     [HttpPost]
     public async Task<ActionResult<HotOpResponse>> CreateHotOp(HotOpRequest hotOpRequest)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
         {
             logger.LogWarning("Start date must be before end date");
@@ -78,7 +78,7 @@ public class HotOpsController(
         var hotOpModel = new HotOpModel
         {
             UserId = discordUser.Id,
-            User = discordUser,
+            DiscordUser = discordUser,
             Channel = channel,
             ChannelId = channel.Id,
             StartDate = startDateAdjusted,
@@ -100,7 +100,7 @@ public class HotOpsController(
     [HttpPut("{id:int}")]
     public async Task<ActionResult<HotOpResponse>> UpdateHotOp(int id, HotOpRequest hotOpRequest)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         var hotOpModel = await uow.HotOps.GetById(id);
         if (hotOpModel == null)
         {
@@ -151,7 +151,7 @@ public class HotOpsController(
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteHotOp(int id)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         var hotOpModel = await uow.HotOps.GetById(id);
         if (hotOpModel == null)
         {

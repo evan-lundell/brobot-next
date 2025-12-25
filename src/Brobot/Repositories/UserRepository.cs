@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brobot.Repositories;
 
-public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel, ulong>(context), IUserRepository
+public class UserRepository(BrobotDbContext context) : RepositoryBase<DiscordUserModel, ulong>(context), IUserRepository
 {
-    public override async Task Add(UserModel entity)
+    public override async Task Add(DiscordUserModel entity)
     {
         var existingUser = await GetById(entity.Id);
         if (existingUser is { Archived: true })
@@ -23,14 +23,14 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel,
         await base.Add(entity);
     }
 
-    public override void Remove(UserModel entity)
+    public override void Remove(DiscordUserModel entity)
     {
         entity.Archived = true;
         entity.GuildUsers.Clear();
         entity.ChannelUsers.Clear();
     }
 
-    public override void RemoveRange(IEnumerable<UserModel> entities)
+    public override void RemoveRange(IEnumerable<DiscordUserModel> entities)
     {
         foreach (var user in entities)
         {
@@ -38,9 +38,9 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel,
         }
     }
 
-    public async Task<IEnumerable<UserModel>> GetAllWithGuildsAndChannels()
+    public async Task<IEnumerable<DiscordUserModel>> GetAllWithGuildsAndChannels()
     {
-        return await Context.Users
+        return await Context.DiscordUsers
             .AsSplitQuery()
             .Include(u => u.GuildUsers)
             .ThenInclude(gu => gu.Guild)
@@ -51,9 +51,9 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel,
             .ToListAsync();
     }
 
-    public Task<UserModel?> GetByIdWithIncludes(ulong id)
+    public Task<DiscordUserModel?> GetByIdWithIncludes(ulong id)
     {
-        return Context.Users
+        return Context.DiscordUsers
             .AsSplitQuery()
             .Include(u => u.GuildUsers)
             .ThenInclude(gu => gu.Guild)
@@ -62,20 +62,5 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<UserModel,
             .Include(u => u.ScheduledMessages)
             .AsSplitQuery()
             .SingleOrDefaultAsync(u => u.Id == id);
-    }
-
-    public async Task<UserModel?> GetFromIdentityUserId(string identityUserId)
-    {
-        var user = await Context.Users
-            .SingleOrDefaultAsync(u => u.IdentityUserId == identityUserId);
-        return user;
-    }
-
-    public async Task<IEnumerable<UserModel>> GetUsersFromIdentityUserIds(IEnumerable<string> identityUserIds)
-    {
-        return await Context.Users
-            .Where(u => identityUserIds.Contains(u.IdentityUserId))
-            .AsNoTracking()
-            .ToListAsync();
     }
 }

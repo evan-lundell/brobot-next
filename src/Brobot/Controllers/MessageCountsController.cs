@@ -15,7 +15,7 @@ public class MessageCountsController(IMessageCountService messageCountService) :
     [HttpGet("daily")]
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetDailyMessageCounts([FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             return Ok(Array.Empty<DailyMessageCountResponse>());
@@ -31,7 +31,7 @@ public class MessageCountsController(IMessageCountService messageCountService) :
     [HttpGet("top-days")]
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetUsersTopDays([FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             return Ok(Array.Empty<DailyMessageCountResponse>());
@@ -46,7 +46,7 @@ public class MessageCountsController(IMessageCountService messageCountService) :
     [HttpGet("top-today")]
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetTopToday([FromQuery] ulong? channelId)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             return Ok(Array.Empty<DailyMessageCountResponse>());
@@ -62,7 +62,7 @@ public class MessageCountsController(IMessageCountService messageCountService) :
     public async Task<ActionResult<IEnumerable<DailyMessageCountResponse>>> GetTotalDailyMessageCounts(
         [FromQuery] int numOfDays = 10, [FromQuery] ulong? channelId = null)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         var counts = channelId == null
             ? await messageCountService.GetTotalDailyMessageCounts(numOfDays, discordUser.Timezone)
             : await messageCountService.GetTotalDailyMessageCountsByChannel(numOfDays, channelId.Value,

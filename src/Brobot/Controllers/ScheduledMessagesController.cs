@@ -26,7 +26,7 @@ public class ScheduledMessagesController(
         [FromQuery] DateTime? scheduledBefore = null,
         [FromQuery] DateTime? scheduledAfter = null)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (limit > MaxLimit)
         {
             logger.LogWarning("{Limit} exceeds the maximum limit of {MaxLimit}.", limit, MaxLimit);
@@ -40,7 +40,7 @@ public class ScheduledMessagesController(
     public async Task<ActionResult<ScheduledMessageResponse>> CreateScheduledMessage(
         ScheduledMessageRequest scheduledMessage)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (scheduledMessage.ChannelId == null)
         {
             logger.LogWarning("{Property} is required.", nameof(scheduledMessage.ChannelId));
@@ -66,7 +66,7 @@ public class ScheduledMessagesController(
     public async Task<ActionResult<ScheduledMessageResponse>> UpdateScheduledMessage(int id,
         ScheduledMessageRequest scheduledMessageRequest)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (!await scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id))
         {
             logger.LogWarning("User {UserId} is not authorized to update scheduled message {ScheduledMessageId}.", discordUser.Id, id);
@@ -82,7 +82,7 @@ public class ScheduledMessagesController(
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteScheduledMessage(int id)
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (!await scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id))
         {
             logger.LogWarning("User {UserId} is not authorized to delete scheduled message {ScheduledMessageId}.", discordUser.Id, id);

@@ -43,8 +43,8 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
                         {
                             HotOp = hotOp,
                             HotOpId = hotOp.Id,
-                            User = users[u],
-                            UserId = u,
+                            DiscordUser = users[u],
+                            DiscordUserId = u,
                             StartDateTime = now
                         });
                     await uow.HotOpSessions.AddRange(sessions);
@@ -57,7 +57,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
                         await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
                     foreach (var existingSession in existingSessions)
                     {
-                        if (connectedUsers.Any(cu => cu == existingSession.UserId))
+                        if (connectedUsers.Any(cu => cu == existingSession.DiscordUserId))
                         {
                             existingSession.EndDateTime = now;
                         }
@@ -81,8 +81,8 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
                     {
                         HotOp = hotOp,
                         HotOpId = hotOp.Id,
-                        User = users[userId],
-                        UserId = userId,
+                        DiscordUser = users[userId],
+                        DiscordUserId = userId,
                         StartDateTime = now
                     });
                     logger.LogInformation("Finished creating session for user");
@@ -98,7 +98,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
 
                     logger.LogInformation("Setting endtime for user");
                     var session = (await uow.HotOpSessions.Find(hos =>
-                            hos.HotOpId == hotOp.Id && hos.UserId == userId && hos.EndDateTime == null))
+                            hos.HotOpId == hotOp.Id && hos.DiscordUserId == userId && hos.EndDateTime == null))
                         .FirstOrDefault();
                     if (session != null)
                     {
@@ -126,7 +126,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
         var scores = hotOp.Channel.ChannelUsers.Select(cu => new ScoreboardItemDto
         {
             UserId = cu.UserId,
-            Username = cu.User.Username,
+            Username = cu.DiscordUser.Username,
             Score = 0
         })
             .Where(s => s.UserId != hotOp.UserId)
@@ -134,18 +134,18 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
 
         foreach (var session in hotOp.HotOpSessions)
         {
-            if (!scores.ContainsKey(session.UserId))
+            if (!scores.ContainsKey(session.DiscordUserId))
             {
                 continue;
             }
 
             if (session.EndDateTime.HasValue)
             {
-                scores[session.UserId].Score += (int)(Math.Round((session.EndDateTime.Value - session.StartDateTime).TotalMinutes, 0) * MinuteMultiplier);
+                scores[session.DiscordUserId].Score += (int)(Math.Round((session.EndDateTime.Value - session.StartDateTime).TotalMinutes, 0) * MinuteMultiplier);
             }
             else
             {
-                scores[session.UserId].Score += (int)(Math.Round((DateTime.UtcNow - session.StartDateTime).TotalMinutes, 0) * MinuteMultiplier);
+                scores[session.DiscordUserId].Score += (int)(Math.Round((DateTime.UtcNow - session.StartDateTime).TotalMinutes, 0) * MinuteMultiplier);
             }
         }
 
@@ -153,7 +153,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
         {
             HotOpId = hotOp.Id,
             Scores = scores.Values.OrderByDescending(s => s.Score),
-            OwnerUsername = hotOp.User.Username
+            OwnerUsername = hotOp.DiscordUser.Username
         };
 
         logger.LogInformation("Retrieved HotOp scoreboard");

@@ -1,4 +1,3 @@
-using Brobot.Middlewares;
 using Brobot.Workers;
 using TimeZoneConverter;
 
@@ -39,11 +38,6 @@ public static class Extensions
         services.AddSingleton<ICronWorkerConfig<T>>(config);
         services.AddHostedService<T>();
         return services;
-    }
-
-    public static IApplicationBuilder UseDiscordUser(this IApplicationBuilder builder)
-    {
-        return builder.UseMiddleware<DiscordUserMiddleware>();
     }
 
     public static DateTimeOffset AdjustToUtc(this DateTimeOffset dateTimeOffset, string timezoneName)

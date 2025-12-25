@@ -21,7 +21,7 @@ public class UsersController(
     [Authorize]
     public ActionResult<UserResponse> GetUser()
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         return Ok(discordUser.ToUserResponse());
     }
 
@@ -29,7 +29,7 @@ public class UsersController(
     [Authorize]
     public ActionResult<UserSettingsResponse> GetUserSettings()
     {
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         var settings = new UserSettingsResponse
         {
             Birthdate = discordUser.Birthdate,
@@ -50,7 +50,7 @@ public class UsersController(
             return Unauthorized();
         }
 
-        var discordUser = HttpContext.Features.GetRequiredFeature<UserModel>();
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         discordUser.Birthdate = userSettingsRequest.BirthDate;
         discordUser.Timezone = userSettingsRequest.Timezone;
         discordUser.PrimaryChannelId = userSettingsRequest.PrimaryChannelId;
@@ -66,7 +66,7 @@ public class UsersController(
 
     [HttpGet("all")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<UserModel>>> GetAllUsers()
+    public async Task<ActionResult<IEnumerable<DiscordUserModel>>> GetAllUsers()
     {
         var users = await uow.Users.GetAll();
         return Ok(users.Select(u => u.ToUserResponse()));

@@ -10,6 +10,6 @@ public class ScheduledMessageModel
     public virtual required ChannelModel Channel { get; set; }
     public ulong ChannelId { get; set; }
 
-    public virtual required UserModel CreatedBy { get; set; }
+    public virtual required DiscordUserModel CreatedBy { get; set; }
     public ulong CreatedById { get; set; }
 }

@@ -2,10 +2,8 @@ using Brobot.Models;
 
 namespace Brobot.Repositories;
 
-public interface IUserRepository : IRepository<UserModel, ulong>
+public interface IUserRepository : IRepository<DiscordUserModel, ulong>
 {
-    Task<IEnumerable<UserModel>> GetAllWithGuildsAndChannels();
-    Task<UserModel?> GetByIdWithIncludes(ulong id);
-    Task<UserModel?> GetFromIdentityUserId(string identityUserId);
-    Task<IEnumerable<UserModel>> GetUsersFromIdentityUserIds(IEnumerable<string> identityUserIds);
+    Task<IEnumerable<DiscordUserModel>> GetAllWithGuildsAndChannels();
+    Task<DiscordUserModel?> GetByIdWithIncludes(ulong id);
 }

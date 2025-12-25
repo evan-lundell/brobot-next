@@ -1,10 +1,10 @@
 namespace Brobot.Models;
 
-public class ChannelUserModel
+public class ChannelDiscordUserModel
 {
     public virtual required ChannelModel Channel { get; set; }
     public ulong ChannelId { get; set; }
 
-    public virtual required UserModel User { get; set; }
+    public virtual required DiscordUserModel DiscordUser { get; set; }
     public ulong UserId { get; set; }
 }

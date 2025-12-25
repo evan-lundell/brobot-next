@@ -13,20 +13,20 @@ public class ChannelModel
     public ulong GuildId { get; set; }
     public virtual required GuildModel Guild { get; set; }
 
-    public virtual ICollection<ChannelUserModel> ChannelUsers { get; set; }
+    public virtual ICollection<ChannelDiscordUserModel> ChannelUsers { get; set; }
     public virtual ICollection<ScheduledMessageModel> ScheduledMessages { get; set; }
     public virtual ICollection<HotOpModel> HotOps { get; set; }
     public virtual ICollection<DailyMessageCountModel> DailyMessageCounts { get; set; }
     public virtual ICollection<StatPeriodModel> StatPeriods { get; set; }
 
     // This is a collection of users where the given channel is their primary channel
-    public virtual ICollection<UserModel> Users { get; set; }
+    public virtual ICollection<DiscordUserModel> Users { get; set; }
     public ChannelModel()
     {
-        ChannelUsers = new HashSet<ChannelUserModel>();
+        ChannelUsers = new HashSet<ChannelDiscordUserModel>();
         ScheduledMessages = new HashSet<ScheduledMessageModel>();
         HotOps = new HashSet<HotOpModel>();
-        Users = new HashSet<UserModel>();
+        Users = new HashSet<DiscordUserModel>();
         DailyMessageCounts = new HashSet<DailyMessageCountModel>();
         StatPeriods = new HashSet<StatPeriodModel>();
     }

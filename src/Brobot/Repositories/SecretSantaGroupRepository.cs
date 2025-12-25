@@ -11,7 +11,7 @@ public class SecretSantaGroupRepository(BrobotDbContext context)
     {
         var secretSantaGroupModels = await Context.SecretSantaGroups
             .Include(ssg => ssg.SecretSantaGroupUsers)
-            .ThenInclude(ssgu => ssgu.User)
+            .ThenInclude(ssgu => ssgu.DiscordUser)
             .ToListAsync();
         return secretSantaGroupModels;
     }
@@ -19,13 +19,13 @@ public class SecretSantaGroupRepository(BrobotDbContext context)
     public override Task<SecretSantaGroupModel?> GetById(int id) =>
         Context.SecretSantaGroups
             .Include(ssg => ssg.SecretSantaGroupUsers)
-            .ThenInclude(ssgu => ssgu.User)
+            .ThenInclude(ssgu => ssgu.DiscordUser)
             .SingleOrDefaultAsync(ssg => ssg.Id == id);
 
     public override Task<SecretSantaGroupModel?> GetByIdNoTracking(int id) =>
         Context.SecretSantaGroups
             .Include(ssg => ssg.SecretSantaGroupUsers)
-            .ThenInclude(ssgu => ssgu.User)
+            .ThenInclude(ssgu => ssgu.DiscordUser)
             .SingleOrDefaultAsync(ssg => ssg.Id == id);
 
     public async Task<IEnumerable<SecretSantaPairModel>> GetPairs(int secretSantaGroupId, int year)

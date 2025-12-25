@@ -2,8 +2,8 @@ namespace Brobot.Models;
 
 public class DailyMessageCountModel
 {
-    public virtual required UserModel User { get; set; }
-    public ulong UserId { get; set; }
+    public virtual required DiscordUserModel DiscordUser { get; set; }
+    public ulong DiscordUserId { get; set; }
     
     public virtual required ChannelModel Channel { get; set; }
     public ulong ChannelId { get; set; }
