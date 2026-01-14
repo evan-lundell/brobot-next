@@ -127,8 +127,8 @@ public class ApiService(HttpClient client)
     public Task SendMessage(SendMessageRequest sendMessageRequest)
         => client.PostAsJsonAsync("Messages/send", sendMessageRequest);
 
-    public async Task<IdentityUserResponse[]> GetIdentityUsers()
-        => await client.GetFromJsonAsync<IdentityUserResponse[]>("Auth/users") ?? [];
+    public async Task<ApplicationUserResponse[]> GetApplicationUsers()
+        => await client.GetFromJsonAsync<ApplicationUserResponse[]>("Auth/application-users") ?? [];
 
     public async Task<UserResponse[]> GetUsers()
         => await client.GetFromJsonAsync<UserResponse[]>("Users/all") ?? [];

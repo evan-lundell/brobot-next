@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Brobot.Configuration;
 using Brobot.Models;
 using Brobot.Services;
+using Brobot.Shared;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -35,20 +36,22 @@ public class JwtServiceTests
     [Test]
     public void CreateJwt_ValidInput_ReturnsValidToken()
     {
-        var identityUserId = new Guid().ToString();
-        var identityUserMock = new Mock<IdentityUser>();
-        identityUserMock.SetupGet(u => u.UserName).Returns("Identity User1");
-        identityUserMock.SetupGet(u => u.Id).Returns(identityUserId);
-        identityUserMock.SetupGet(u => u.Email).Returns("test1@test.com");
-        
-        DiscordUserModel discordDiscordUser = new()
+        var applicationUserId = new Guid().ToString();
+        var discordUserId = 1UL;
+        var discordUsername = "Discord User1";
+        DiscordUserModel discordUser = new()
         {
-            Id = 1UL,
+            Id = discordUserId,
             Archived = false,
-            Username = "Discord User1"
+            Username = discordUsername
         };
+        
+        var applicationUserMock = new Mock<ApplicationUserModel>();
+        applicationUserMock.SetupGet(u => u.UserName).Returns(discordUsername);
+        applicationUserMock.SetupGet(u => u.Id).Returns(applicationUserId);
+        applicationUserMock.SetupGet(u => u.Email).Returns("test1@test.com");
 
-        var token = _jwtService.CreateJwt(identityUserMock.Object, discordDiscordUser, "user");
+        var token = _jwtService.CreateJwt(applicationUserMock.Object, discordUser, [Constants.UserRoleName]);
 
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(token);
@@ -63,8 +66,9 @@ public class JwtServiceTests
             Assert.That(jwtToken.Issuer, Is.EqualTo(Issuer));
             Assert.That(jwtToken.Audiences.First(), Is.EqualTo(Audience));
             Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.Name).Value, Is.EqualTo("Discord User1"));
-            Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value, Is.EqualTo(identityUserId));
+            Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value, Is.EqualTo(applicationUserId));
             Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value, Is.EqualTo("test1@test.com"));
+            Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.Role).Value, Is.EqualTo(Constants.UserRoleName));
         });
     }
 } 

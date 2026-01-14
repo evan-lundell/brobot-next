@@ -38,8 +38,7 @@ public class JwtService(IServiceProvider services)
         {
             throw new Exception("Invalid JWT");
         }
-
-        Console.WriteLine(segments[1]);
+        
         var dataSegment = Encoding.UTF8.GetString(FromUrlBase64(segments[1]));
         var data = JsonSerializer.Deserialize<JsonObject>(dataSegment);
 
@@ -48,16 +47,14 @@ public class JwtService(IServiceProvider services)
             throw new Exception("Unable to deserialize jwt");
         }
 
-        var claims = new Claim[data.Count];
-        int index = 0;
+        var claims = new List<Claim>();
         foreach (var entry in data)
         {
             if (entry.Value == null)
             {
                 continue;
             }
-            claims[index] = JwtNodeToClaim(entry.Key, entry.Value);
-            index++;
+            claims.AddRange(JwtNodeToClaims(entry.Key, entry.Value));
         }
 
         var claimIdentity = new ClaimsIdentity(claims, "jwt");
@@ -66,18 +63,36 @@ public class JwtService(IServiceProvider services)
         return principal;
     }
 
-    private Claim JwtNodeToClaim(string key, JsonNode node)
+    private IEnumerable<Claim> JwtNodeToClaims(string key, JsonNode node)
     {
+        // Handle arrays (e.g., multiple roles)
+        if (node is JsonArray jsonArray)
+        {
+            foreach (var item in jsonArray)
+            {
+                if (item != null)
+                {
+                    foreach (var claim in JwtNodeToClaims(key, item))
+                    {
+                        yield return claim;
+                    }
+                }
+            }
+            yield break;
+        }
+
         var jsonValue = node.AsValue();
 
         if (jsonValue.TryGetValue<string>(out var str))
         {
-            return new Claim(key, str, ClaimValueTypes.String);
+            yield return new Claim(key, str, ClaimValueTypes.String);
+            yield break;
         }
 
         if (jsonValue.TryGetValue<double>(out var num))
         {
-            return new Claim(key, num.ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Double);
+            yield return new Claim(key, num.ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Double);
+            yield break;
         }
 
         throw new Exception("Unsupported JWT claim type");
