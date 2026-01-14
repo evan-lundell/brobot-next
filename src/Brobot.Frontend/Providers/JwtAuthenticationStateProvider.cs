@@ -15,7 +15,6 @@ public class JwtAuthenticationStateProvider(JwtService jwtService, IServiceScope
     public string? DisplayName => _user?.DisplayName;
     public bool IsLoggedIn => _user != null;
     public string? Token => _user?.Jwt;
-    private bool IsDiscordAuthenticated => _user != null && !string.IsNullOrWhiteSpace(_user.Principal.FindFirst(ClaimTypes.DiscordId)?.Value);
 
 
     public void Login(string jwt)
@@ -41,7 +40,7 @@ public class JwtAuthenticationStateProvider(JwtService jwtService, IServiceScope
 
     private AuthenticationState GetState()
     {
-        if (IsLoggedIn && IsDiscordAuthenticated)
+        if (IsLoggedIn)
         {
             return new AuthenticationState(_user!.Principal);
         }

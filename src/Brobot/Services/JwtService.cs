@@ -11,7 +11,7 @@ namespace Brobot.Services;
 
 public class JwtService(IOptions<JwtOptions> options, ILogger<JwtService> logger) : IJwtService
 {
-    public string CreateJwt(ApplicationUserModel user, DiscordUserModel discordUser, string role)
+    public string CreateJwt(ApplicationUserModel user, DiscordUserModel discordUser, IEnumerable<string> roles)
     {
         using var scope = logger.BeginScope(new Dictionary<string, object>
         {
@@ -30,9 +30,14 @@ public class JwtService(IOptions<JwtOptions> options, ILogger<JwtService> logger
             new (ClaimTypes.Email, user.Email ?? ""),
             new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new (JwtRegisteredClaimNames.Sub, user.Id),
-            new (Shared.Claims.ClaimTypes.DiscordId, discordUser.Id.ToString()),
-            new (ClaimTypes.Role, role)
+            new (Shared.Claims.ClaimTypes.DiscordId, discordUser.Id.ToString())
         };
+        
+        // Add a claim for each role
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
         
         var token = new JwtSecurityToken(
             issuer: options.Value.ValidIssuer,

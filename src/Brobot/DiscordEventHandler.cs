@@ -186,16 +186,10 @@ public class DiscordEventHandler : IDisposable
 
         _ = Task.Run(async () =>
         {
-            List<Task> tasks = [];
-            if (_config["DOTNET_ENVIRONMENT"] == "Development")
-            {
-                tasks.Add(_commands.RegisterCommandsToGuildAsync(421404457599762433));
-            }
-            else
-            {
-                tasks.Add(_commands.RegisterCommandsGloballyAsync());
-            }
-
+            List<Task> tasks =
+            [
+                _commands.RegisterCommandsGloballyAsync()
+            ];
             if (!bool.TryParse(_config["NoSync"], out bool noSync) || !noSync)
             {
                 tasks.Add(_syncService.SyncOnStartup());

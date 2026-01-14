@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Brobot.Configuration;
 using Brobot.Mappers;
 using Brobot.Models;
-using Brobot.Repositories;
 using Brobot.Services;
 using Brobot.Shared;
 using Microsoft.AspNetCore.Authorization;
@@ -21,9 +20,9 @@ namespace Brobot.Controllers;
 public class AuthController(
     UserManager<ApplicationUserModel> userManager,
     IOptions<DiscordOptions> discordOptions,
-    IUnitOfWork uow,
     DiscordOauthService discordOauthService,
     IJwtService jwtService,
+    IAuthService authService,
     ILogger<AuthController> logger)
     : ControllerBase
 {
@@ -64,70 +63,22 @@ public class AuthController(
             // Get the Discord user ID from the access token
             var discordUserId = await discordOauthService.GetDiscordUserId(accessToken);
             
-            // Check if this Discord user exists in our database
-            var discordUser = await uow.Users.GetById(discordUserId);
-            if (discordUser == null)
+            // Get or create the application user
+            var authResult = await authService.GetOrCreateApplicationUserAsync(discordUserId);
+            if (!authResult.Succeeded)
             {
-                logger.LogWarning("Discord user {DiscordUserId} attempted to login but does not exist in database", discordUserId);
                 return Ok(new LoginResponse
                 {
                     Succeeded = false,
-                    Errors = ["You are not authorized to access this application. Please contact an administrator."]
-                });
-            }
-
-            // Check if an ApplicationUser already exists for this Discord user
-            var existingUser = await userManager.FindByNameAsync(discordUserId.ToString());
-            ApplicationUserModel applicationUser;
-            
-            if (existingUser == null)
-            {
-                // Create a new ApplicationUser linked to this Discord user
-                applicationUser = new ApplicationUserModel
-                {
-                    UserName = discordUser.Username,
-                    DiscordUserId = discordUserId,
-                    DiscordUser = discordUser
-                };
-
-                var createResult = await userManager.CreateAsync(applicationUser);
-                if (!createResult.Succeeded)
-                {
-                    logger.LogError("Failed to create ApplicationUser for Discord user {DiscordUserId}: {Errors}", 
-                        discordUserId, 
-                        string.Join(", ", createResult.Errors.Select(e => e.Description)));
-                    return Ok(new LoginResponse
-                    {
-                        Succeeded = false,
-                        Errors = ["Failed to create user account. Please try again."]
-                    });
-                }
-                await userManager.AddToRoleAsync(applicationUser, Constants.UserRoleName);
-                
-                logger.LogInformation("Created new ApplicationUser for Discord user {DiscordUserId}", discordUserId);
-            }
-            else
-            {
-                applicationUser = existingUser;
-            }
-
-            var roleName = (await userManager.GetRolesAsync(applicationUser)).FirstOrDefault();
-
-            if (string.IsNullOrEmpty(roleName))
-            {
-                logger.LogWarning("ApplicationUser {UserId} has no roles assigned", applicationUser.Id);
-                return Ok(new LoginResponse
-                {
-                    Succeeded = false,
-                    Errors = ["You do not have any roles assigned. Please contact an administrator."]
+                    Errors = [authResult.ErrorMessage!]
                 });
             }
             
             // Generate JWT token
-            var token = jwtService.CreateJwt(applicationUser, discordUser, roleName);
+            var token = jwtService.CreateJwt(authResult.User!, authResult.DiscordUser!, authResult.Roles!);
             
             // Set refresh token cookie (longer expiry than JWT)
-            if (!string.IsNullOrWhiteSpace(applicationUser.SecurityStamp))
+            if (!string.IsNullOrWhiteSpace(authResult.User!.SecurityStamp))
             {
                 var cookieOptions = new CookieOptions
                 {
@@ -136,7 +87,7 @@ public class AuthController(
                     SameSite = SameSiteMode.Strict,
                     Expires = DateTime.UtcNow.AddDays(7)
                 };
-                HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, applicationUser.SecurityStamp, cookieOptions);
+                HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, authResult.User.SecurityStamp, cookieOptions);
             }
 
             logger.LogInformation("Discord user {DiscordUserId} logged in successfully", discordUserId);
@@ -183,9 +134,9 @@ public class AuthController(
             }
 
             var discordUser = applicationUser.DiscordUser;
-            var roleName = (await userManager.GetRolesAsync(applicationUser)).FirstOrDefault();
+            var roles = await userManager.GetRolesAsync(applicationUser);
             
-            if (string.IsNullOrEmpty(roleName))
+            if (roles.Count == 0)
             {
                 logger.LogWarning("ApplicationUser {UserId} has no roles assigned", applicationUser.Id);
                 return Ok(new LoginResponse
@@ -196,7 +147,7 @@ public class AuthController(
             }
             
             // Generate a new JWT token
-            var token = jwtService.CreateJwt(applicationUser, discordUser, roleName);
+            var token = jwtService.CreateJwt(applicationUser, discordUser, roles);
 
             // Rotate the refresh token for security (generate new SecurityStamp)
             await userManager.UpdateSecurityStampAsync(applicationUser);
@@ -265,7 +216,7 @@ public class AuthController(
 
     [HttpGet("application-users")]
     [Authorize(Roles = Constants.AdminRoleName)]
-    public async Task<ActionResult<ApplicationUserResponse>> GetApplicationUsers()
+    public async Task<ActionResult<IEnumerable<ApplicationUserResponse>>> GetApplicationUsers()
     {
         var applicationUsers = await userManager.Users.ToListAsync();
         return Ok(applicationUsers.Select(au => au.ToApplicationUserResponse()));

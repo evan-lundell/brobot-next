@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
             .AddDefaultTokenProviders();
 
         services.AddSingleton<IJwtService, JwtService>();
+        services.AddScoped<IAuthService, AuthService>();
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
