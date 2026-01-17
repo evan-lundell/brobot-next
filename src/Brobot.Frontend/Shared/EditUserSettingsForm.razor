@@ -29,9 +29,6 @@ else
     
     private bool _pageLoading = true;
     
-    [Parameter]
-    public ulong? DiscordUserId { get; set; }
-    
     protected override async Task OnInitializedAsync()
     {
         _channels = await Api.GetChannels();

@@ -91,6 +91,8 @@
             await ApiService.SaveUserSettingsById(_selectedUser.Id, request);
             ToastService.ShowSuccess($"Settings saved for {_selectedUser.Username}!");
             
+            _userResponses = await ApiService.GetDiscordUsers();
+            
             if (_editModal != null)
             {
                 await _editModal.HideModal();
