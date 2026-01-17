@@ -9,6 +9,9 @@
         <thead>
         <tr>
             <th>Username</th>
+            <th>Timezone</th>
+            <th>Birthday</th>
+            <th>Last Online</th>
             <th></th>
         </tr>
         </thead>
@@ -17,6 +20,9 @@
         {
             <tr>
                 <td>@(user.Username)</td>
+                <td>@(user.Timezone ?? "—")</td>
+                <td>@(user.Birthdate?.ToString("MMM d") ?? "—")</td>
+                <td>@(user.LastOnline?.ToString("g") ?? "—")</td>
                 <td>
                     <button class="btn btn-primary btn-sm" @onclick="() => OpenEditModal(user)">
                         Edit
