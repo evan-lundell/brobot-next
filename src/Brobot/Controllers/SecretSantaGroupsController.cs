@@ -47,9 +47,9 @@ public class SecretSantaGroupsController(ISecretSantaService secretSantaService,
     }
 
     [HttpPost("{secretSantaGroupId}/members")]
-    public async Task<ActionResult<SecretSantaGroupResponse>> AddUserToGroup(int secretSantaGroupId, UserResponse user)
+    public async Task<ActionResult<SecretSantaGroupResponse>> AddUserToGroup(int secretSantaGroupId, DiscordUserResponse discordUser)
     {
-        var secretSantaGroupResponse = await secretSantaService.AddUserToGroup(secretSantaGroupId, user);
+        var secretSantaGroupResponse = await secretSantaService.AddUserToGroup(secretSantaGroupId, discordUser);
         return Ok(secretSantaGroupResponse);
     }
 

@@ -9,9 +9,9 @@ public class SecretSantaService(HttpClient httpClient)
     : ApiServiceBase<SecretSantaGroupRequest, SecretSantaGroupResponse, int>("api/SecretSantaGroups",
         "SecretSantaGroup", httpClient), ISecretSantaService
 {
-    public async Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, UserResponse user)
+    public async Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, DiscordUserResponse discordUser)
     {
-        var response = await HttpClient.PostAsJsonAsync($"{BaseUrl}/{secretSantaGroupId}/members", user);
+        var response = await HttpClient.PostAsJsonAsync($"{BaseUrl}/{secretSantaGroupId}/members", discordUser);
         if (response.IsSuccessStatusCode)
         {
             return await response.Content.ReadFromJsonAsync<SecretSantaGroupResponse>()

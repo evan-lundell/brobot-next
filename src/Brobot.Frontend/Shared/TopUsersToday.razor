@@ -37,7 +37,7 @@ else
                     <ol>
                         @foreach (var messageCount in _topUsersToday)
                         {
-                            <li>@messageCount.User.Username - @messageCount.MessageCount</li>
+                            <li>@messageCount.DiscordUser.Username - @messageCount.MessageCount</li>
                         }
                     </ol>
                 }

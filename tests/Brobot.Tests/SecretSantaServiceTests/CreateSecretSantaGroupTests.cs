@@ -12,7 +12,7 @@ public class CreateSecretSantaGroupTests : SecretSantaServiceTestsBase
         SecretSantaGroupRequest secretSantaGroup = new()
         {
             Name = "Test Group 3",
-            Users = new List<UserResponse>
+            Users = new List<DiscordUserResponse>
             {
                 new()
                 {
@@ -40,7 +40,7 @@ public class CreateSecretSantaGroupTests : SecretSantaServiceTestsBase
         SecretSantaGroupRequest secretSantaGroup = new()
         {
             Name = "Test Group 3",
-            Users = new List<UserResponse>
+            Users = new List<DiscordUserResponse>
             {
                 new()
                 {

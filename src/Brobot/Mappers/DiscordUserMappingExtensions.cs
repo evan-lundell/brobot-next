@@ -3,11 +3,11 @@ using Brobot.Shared.Responses;
 
 namespace Brobot.Mappers;
 
-public static class UserMappingExtensions
+public static class DiscordUserMappingExtensions
 {
-    public static UserResponse ToUserResponse(this DiscordUserModel model)
+    public static DiscordUserResponse ToUserResponse(this DiscordUserModel model)
     {
-        return new UserResponse
+        return new DiscordUserResponse
         {
             Id = model.Id,
             Username = model.Username,

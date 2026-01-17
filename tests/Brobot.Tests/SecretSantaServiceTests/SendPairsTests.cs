@@ -15,12 +15,12 @@ public class SendPairsTests : SecretSantaServiceTestsBase
         {
             new()
             {
-                Giver = new UserResponse
+                Giver = new DiscordUserResponse
                 {
                     Id = giverUserId,
                     Username = "Giver"
                 },
-                Recipient = new UserResponse
+                Recipient = new DiscordUserResponse
                 {
                     Id = 2UL,
                     Username = recipientUsername,

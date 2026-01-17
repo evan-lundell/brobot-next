@@ -11,7 +11,7 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
     [Test]
     public async Task AddsUserToGroup()
     {
-        var user = new UserResponse
+        var user = new DiscordUserResponse
         {
             Id = 7,
             Username = "User 7"
@@ -30,7 +30,7 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
     [Test]
     public void ThrowsExceptionWhenGroupDoesNotExist()
     {
-        var user = new UserResponse
+        var user = new DiscordUserResponse
         {
             Id = 7,
             Username = "User 7"
@@ -45,7 +45,7 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
     [Test]
     public void ThrowsExceptionWhenUserAlreadyInGroup()
     {
-        var user = new UserResponse
+        var user = new DiscordUserResponse
         {
             Id = 1,
             Username = "User 1"
@@ -60,7 +60,7 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
     [Test]
     public void ThrowsExceptionWhenUserDoesNotExist()
     {
-        var user = new UserResponse
+        var user = new DiscordUserResponse
         {
             Id = 15,
             Username = "User 15"

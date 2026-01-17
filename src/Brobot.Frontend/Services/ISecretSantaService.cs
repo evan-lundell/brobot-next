@@ -5,7 +5,7 @@ namespace Brobot.Frontend.Services;
 
 public interface ISecretSantaService : IApiService<SecretSantaGroupRequest, SecretSantaGroupResponse, int>
 {
-    Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, UserResponse user);
+    Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, DiscordUserResponse discordUser);
     Task RemoveUserFromGroup(int secretSantaGroupId, ulong userId);
     Task GeneratePairs(int secretSantaGroupId);
 }

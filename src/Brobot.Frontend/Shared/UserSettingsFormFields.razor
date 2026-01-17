@@ -1,0 +1,39 @@
+@* Shared user settings form fields component *@
+
+<div class="row my-3">
+    <div class="form-group @ColumnClass">
+        <label class="form-label">Timezone</label>
+        <TimezoneSelect @bind-Value="Settings.Timezone" />
+    </div>
+</div>
+<div class="row my-3">
+    <div class="form-group @ColumnClass">
+        <label class="form-label">Primary Channel Id</label>
+        <InputSelect class="form-select" @bind-Value="Settings.PrimaryChannelId">
+            <option value="">Select a channel...</option>
+            @foreach (var channel in Channels)
+            {
+                <option value="@channel.Id">@channel.Name</option>
+            }
+        </InputSelect>
+    </div>
+</div>
+<div class="row my-3">
+    <div class="form-group @ColumnClass">
+        <label class="form-label">Birthday</label>
+        <InputDate class="form-control" @bind-Value="Settings.Birthdate"/>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public required UserSettingsResponse Settings { get; set; }
+    
+    [Parameter]
+    public ChannelResponse[] Channels { get; set; } = [];
+    
+    [Parameter]
+    public bool FullWidth { get; set; }
+    
+    private string ColumnClass => FullWidth ? "col-12" : "col-lg-6";
+}

@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Brobot.Frontend.Services;
 using Microsoft.AspNetCore.Components.Authorization;
-using ClaimTypes = Brobot.Shared.Claims.ClaimTypes;
 
 namespace Brobot.Frontend.Providers;
 

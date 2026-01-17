@@ -110,7 +110,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         logger.LogInformation("Finished getting top days for user {UserId}", discordUserModel.Id);
         return counts.Select(c => new DailyMessageCountResponse
         {
-            User = discordUserModel.ToUserResponse(),
+            DiscordUser = discordUserModel.ToUserResponse(),
             CountDate = c.CountDate,
             MessageCount = c.MessageCount
         });
@@ -128,7 +128,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         logger.LogInformation("Finished getting top days for user {UserId} in channel {ChannelId}", discordUserModel.Id, channelId);
         return counts.Select(c => new DailyMessageCountResponse
         {
-            User = discordUserModel.ToUserResponse(),
+            DiscordUser = discordUserModel.ToUserResponse(),
             CountDate = c.CountDate,
             MessageCount = c.MessageCount
         });
@@ -151,7 +151,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
-            User = c.DiscordUser.ToUserResponse()
+            DiscordUser = c.DiscordUser.ToUserResponse()
         });
     }
 
@@ -172,7 +172,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         {
             CountDate = c.CountDate,
             MessageCount = c.MessageCount,
-            User = c.DiscordUser.ToUserResponse()
+            DiscordUser = c.DiscordUser.ToUserResponse()
         });
     }
 
@@ -218,7 +218,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
     {
         logger.LogInformation("Getting total top days");
         var counts = await uow.DailyMessageCounts.GetTotalTopDays(numOfDays);
-        var fakeUser = new UserResponse
+        var fakeUser = new DiscordUserResponse
         {
             Username = ""
         };
@@ -227,7 +227,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         {
             CountDate = dmc.CountDate,
             MessageCount = dmc.MessageCount,
-            User = fakeUser
+            DiscordUser = fakeUser
         });
     }
     
@@ -235,7 +235,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
     {
         logger.LogInformation("Getting total top days for channel {ChannelId}", channelId);
         var counts = await uow.DailyMessageCounts.GetTotalTopDaysByChannel(channelId, numOfDays);
-        var fakeUser = new UserResponse
+        var fakeUser = new DiscordUserResponse
         {
             Username = ""
         };
@@ -244,7 +244,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         {
             CountDate = dmc.CountDate,
             MessageCount = dmc.MessageCount,
-            User = fakeUser
+            DiscordUser = fakeUser
         });
     }
 
@@ -266,7 +266,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
             {
                 CountDate = x.First().CountDate,
                 MessageCount = x.Sum(mc => mc.MessageCount),
-                User = userResponse
+                DiscordUser = userResponse
             })
             .ToDictionary(c => c.CountDate);
             
@@ -282,7 +282,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
             {
                 countsWithEmptyDays.Add(new DailyMessageCountResponse
                 {
-                    User = userResponse,
+                    DiscordUser = userResponse,
                     CountDate = nextDate,
                     MessageCount = 0
                 });
