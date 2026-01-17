@@ -1,4 +1,5 @@
 @inject ApiService ApiService
+@inject IToastService ToastService
 @inherits LoadableComponentBase
 
 <h3>Users</h3>
@@ -7,9 +8,10 @@
     <table class="table">
         <thead>
         <tr>
-            <th>User</th>
-            <th>Discord</th>
-            <th></th>
+            <th>Username</th>
+            <th>Timezone</th>
+            <th>Birthday</th>
+            <th>Last Online</th>
             <th></th>
         </tr>
         </thead>
@@ -17,9 +19,15 @@
         @foreach (var user in _userResponses ?? [])
         {
             <tr>
-                <td>@(user.Username ?? user.Id)</td>
-                <td><a href="#">Edit</a></td>
-                <td><a href="#">Delete</a></td>
+                <td>@(user.Username)</td>
+                <td>@(user.Timezone ?? "—")</td>
+                <td>@(user.Birthdate?.ToString("MMM d") ?? "—")</td>
+                <td>@(user.LastOnline?.ToString("g") ?? "—")</td>
+                <td>
+                    <button class="btn btn-primary btn-sm" @onclick="() => OpenEditModal(user)">
+                        Edit
+                    </button>
+                </td>
             </tr>
 
         }
@@ -27,12 +35,78 @@
     </table>
 </div>
 
+<FormModal @ref="_editModal"
+           Id="editUserModal"
+           Title="@($"Edit User: {_selectedUser?.Username}")"
+           Model="_editSettings"
+           OnValidSubmit="OnEditSubmit"
+           OnModalClosed="OnModalClosed">
+    <ModalBody>
+        <UserSettingsFormFields Settings="_editSettings" Channels="_channels" FullWidth="true" />
+    </ModalBody>
+</FormModal>
+
 @code {
-    private ApplicationUserResponse[]? _userResponses;
+    private DiscordUserResponse[]? _userResponses;
+    private ChannelResponse[] _channels = [];
+    private DiscordUserResponse? _selectedUser;
+    private UserSettingsResponse _editSettings = new();
+    private FormModal? _editModal;
 
     protected override async Task OnInitializedAsync()
     {
-        _userResponses = await ApiService.GetApplicationUsers();
+        var usersTask = ApiService.GetDiscordUsers();
+        var channelsTask = ApiService.GetChannels();
+        
+        await Task.WhenAll(usersTask, channelsTask);
+        
+        _userResponses = usersTask.Result;
+        _channels = channelsTask.Result;
         await UpdateLoaded(true);
+    }
+
+    private async Task OpenEditModal(DiscordUserResponse user)
+    {
+        _selectedUser = user;
+        _editSettings = await ApiService.GetUserSettingsById(user.Id);
+        StateHasChanged();
+        if (_editModal != null)
+        {
+            await _editModal.ShowModal();
+        }
+    }
+
+    private async Task OnEditSubmit(EditContext context)
+    {
+        if (_selectedUser == null) return;
+
+        try
+        {
+            var request = new UserSettingsRequest
+            {
+                BirthDate = _editSettings.Birthdate,
+                Timezone = _editSettings.Timezone,
+                PrimaryChannelId = _editSettings.PrimaryChannelId
+            };
+            await ApiService.SaveUserSettingsById(_selectedUser.Id, request);
+            ToastService.ShowSuccess($"Settings saved for {_selectedUser.Username}!");
+            
+            _userResponses = await ApiService.GetDiscordUsers();
+            
+            if (_editModal != null)
+            {
+                await _editModal.HideModal();
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+    }
+
+    private void OnModalClosed()
+    {
+        _selectedUser = null;
+        _editSettings = new UserSettingsResponse();
     }
 }

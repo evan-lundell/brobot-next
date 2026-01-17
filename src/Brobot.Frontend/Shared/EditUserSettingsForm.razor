@@ -1,0 +1,83 @@
+@inject ApiService Api
+@inject IToastService ToastService
+
+@if (_pageLoading)
+{
+    <em>Loading...</em>
+}
+else
+{
+    <EditForm EditContext="@_editContext" class="my-3" OnValidSubmit="OnValidSubmit">
+        <UserSettingsFormFields Settings="_userSettings" Channels="_channels" />
+        <div class="row my-3">
+            <div class="col-lg-2 offset-lg-2">
+                <button type="button" disabled="@(!_isModified)" class="btn btn-danger form-control" @onclick="Reset">Reset</button>
+            </div>
+            <div class="col-lg-2">
+                <button disabled="@(!_isModified)" class="btn btn-primary form-control">Save</button>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private bool _isModified;
+    private ChannelResponse[] _channels = [];
+    private UserSettingsResponse _userSettings = new();
+    private readonly UserSettingsResponse _originalSettings = new();
+    private EditContext? _editContext;
+    
+    private bool _pageLoading = true;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        _channels = await Api.GetChannels();
+        _userSettings = await Api.GetUserSettings();
+
+        _editContext = new EditContext(_userSettings);
+        _editContext.OnFieldChanged += async (_, _) =>
+        {
+            _isModified = true;
+            await InvokeAsync(StateHasChanged);
+        };
+        CopySettings(_userSettings, _originalSettings);
+        _pageLoading = false;
+    }
+
+    private async Task OnValidSubmit()
+    {
+        try
+        {
+            var userSettingsRequest = new UserSettingsRequest
+            {
+                BirthDate = _userSettings.Birthdate,
+                Timezone = _userSettings.Timezone,
+                PrimaryChannelId = _userSettings.PrimaryChannelId
+            };
+            var updatedSettings = await Api.SaveUserSettings(userSettingsRequest);
+            _userSettings = updatedSettings;
+            CopySettings(_userSettings, _originalSettings);
+            _editContext?.MarkAsUnmodified();
+            _isModified = false;
+            ToastService.ShowSuccess("Settings saved!");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+    }
+
+    private void CopySettings(UserSettingsResponse from, UserSettingsResponse to)
+    {
+        to.Birthdate = from.Birthdate;
+        to.PrimaryChannelId = from.PrimaryChannelId;
+        to.Timezone = from.Timezone;
+    }
+
+    private void Reset()
+    {
+        CopySettings(_originalSettings, _userSettings);
+        _editContext?.MarkAsUnmodified();
+        _isModified = false;
+    }
+}

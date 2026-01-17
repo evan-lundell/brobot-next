@@ -4,7 +4,7 @@ using Brobot.Mappers;
 namespace Brobot.Tests.MapperTests;
 
 [TestFixture]
-public class UserMappingExtensionsTests
+public class DiscordUserMappingExtensionsTests
 {
     [Test]
     public void ToUserResponse_MapsModelToResponse()

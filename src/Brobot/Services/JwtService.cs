@@ -3,7 +3,6 @@ using System.Security.Claims;
 using System.Text;
 using Brobot.Models;
 using Brobot.Configuration;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 

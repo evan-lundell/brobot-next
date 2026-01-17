@@ -24,7 +24,7 @@ public class HotOpMappingExtensionsTests
         var response = model.ToHotOpResponse();
 
         Assert.That(response.Id, Is.EqualTo(42));
-        Assert.That(response.User.Id, Is.EqualTo(1));
+        Assert.That(response.DiscordUser.Id, Is.EqualTo(1));
         Assert.That(response.Channel.Id, Is.EqualTo(2));
         Assert.That(response.StartDate, Is.EqualTo(model.StartDate));
         Assert.That(response.EndDate, Is.EqualTo(model.EndDate));

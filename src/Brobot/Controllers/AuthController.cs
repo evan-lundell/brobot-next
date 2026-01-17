@@ -6,11 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Brobot.Configuration;
-using Brobot.Mappers;
 using Brobot.Models;
 using Brobot.Services;
-using Brobot.Shared;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 
 namespace Brobot.Controllers;
@@ -212,13 +209,5 @@ public class AuthController(
 
         var uri = new UriBuilder(QueryHelpers.AddQueryString(discordOptions.Value.AuthorizationEndpoint, queryString));
         return Ok(new { url = uri.ToString() });
-    }
-
-    [HttpGet("application-users")]
-    [Authorize(Roles = Constants.AdminRoleName)]
-    public async Task<ActionResult<IEnumerable<ApplicationUserResponse>>> GetApplicationUsers()
-    {
-        var applicationUsers = await userManager.Users.ToListAsync();
-        return Ok(applicationUsers.Select(au => au.ToApplicationUserResponse()));
     }
 }

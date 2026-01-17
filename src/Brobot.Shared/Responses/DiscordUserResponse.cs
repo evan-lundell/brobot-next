@@ -1,6 +1,6 @@
 namespace Brobot.Shared.Responses;
 
-public record UserResponse
+public record DiscordUserResponse
 {
     public ulong Id { get; init; }
     public required string Username { get; init; }

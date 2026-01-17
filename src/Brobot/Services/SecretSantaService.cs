@@ -60,19 +60,19 @@ public class SecretSantaService(
         return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 
-    public async Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, UserResponse user)
+    public async Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, DiscordUserResponse discordUser)
     {
-        logger.LogInformation("Adding user {UserId} to secret santa group {SecretSantaGroupId}", user.Id, secretSantaGroupId);
+        logger.LogInformation("Adding user {UserId} to secret santa group {SecretSantaGroupId}", discordUser.Id, secretSantaGroupId);
         var secretSantaGroupModel = await uow.SecretSantaGroups.GetById(secretSantaGroupId);
         if (secretSantaGroupModel == null)
         {
             throw new ModelNotFoundException<SecretSantaGroupModel, int>(secretSantaGroupId);
         }
 
-        var userModel = await uow.Users.GetById(user.Id);
+        var userModel = await uow.Users.GetById(discordUser.Id);
         if (userModel == null)
         {
-            throw new InvalidOperationException($"User with id {user.Id} does not exist");
+            throw new InvalidOperationException($"User with id {discordUser.Id} does not exist");
         }
 
         var secretSantaGroupUserModel = new SecretSantaGroupDiscordUserModel
@@ -83,7 +83,7 @@ public class SecretSantaService(
         secretSantaGroupModel.SecretSantaGroupUsers.Add(secretSantaGroupUserModel);
         await uow.CompleteAsync();
         
-        logger.LogInformation("Finished adding user {UserId} to secret santa group {SecretSantaGroupId}", user.Id, secretSantaGroupId);
+        logger.LogInformation("Finished adding user {UserId} to secret santa group {SecretSantaGroupId}", discordUser.Id, secretSantaGroupId);
         return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 

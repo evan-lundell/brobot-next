@@ -4,7 +4,6 @@ using Brobot.Configuration;
 using Brobot.Models;
 using Brobot.Services;
 using Brobot.Shared;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;

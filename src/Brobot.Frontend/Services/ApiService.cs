@@ -127,10 +127,16 @@ public class ApiService(HttpClient client)
     public Task SendMessage(SendMessageRequest sendMessageRequest)
         => client.PostAsJsonAsync("Messages/send", sendMessageRequest);
 
-    public async Task<ApplicationUserResponse[]> GetApplicationUsers()
-        => await client.GetFromJsonAsync<ApplicationUserResponse[]>("Auth/application-users") ?? [];
+    public async Task<DiscordUserResponse[]> GetDiscordUsers()
+        => await client.GetFromJsonAsync<DiscordUserResponse[]>("Users/all") ?? [];
 
-    public async Task<UserResponse[]> GetUsers()
-        => await client.GetFromJsonAsync<UserResponse[]>("Users/all") ?? [];
-    
+    public async Task<UserSettingsResponse> GetUserSettingsById(ulong userId)
+        => await client.GetFromJsonAsync<UserSettingsResponse>($"Users/{userId}/settings") ?? new UserSettingsResponse();
+
+    public async Task<UserSettingsResponse> SaveUserSettingsById(ulong userId, UserSettingsRequest userSettingsRequest)
+    {
+        var response = await client.PatchAsJsonAsync($"Users/{userId}/settings", userSettingsRequest);
+        var userSettingsResponse = await response.Content.ReadFromJsonAsync<UserSettingsResponse>();
+        return userSettingsResponse ?? new UserSettingsResponse();
+    }
 }
