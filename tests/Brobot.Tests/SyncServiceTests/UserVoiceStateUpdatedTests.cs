@@ -2,6 +2,7 @@ using Brobot.Configuration;
 using Brobot.Services;
 using Brobot.Shared;
 using Discord;
+using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -64,11 +65,20 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
     {
         const ulong connectedUser1Id = 123UL;
         const ulong connectedUser2Id = 456UL;
+        const ulong connectedUser3Id = 789UL;
         const ulong ownerId = 999UL;
         // Mock VoiceChannel
         Mock<IVoiceChannel> voiceChannelMock = new();
+        Mock<IGuildUser> guildUser1Mock = new();
+        guildUser1Mock.SetupGet(gu => gu.Id).Returns(connectedUser1Id);
+        guildUser1Mock.SetupGet(gu => gu.VoiceChannel).Returns(voiceChannelMock.Object);
+        Mock<IGuildUser> guildUser2Mock = new();
+        guildUser2Mock.SetupGet(gu => gu.Id).Returns(connectedUser2Id);
+        guildUser2Mock.SetupGet(gu => gu.VoiceChannel).Returns(voiceChannelMock.Object);
+        Mock<IGuildUser> guildUser3Mock = new();
+        guildUser3Mock.SetupGet(gu => gu.Id).Returns(connectedUser3Id);
         List<IReadOnlyCollection<IGuildUser>> voiceUsers =
-            [[Mock.Of<IGuildUser>(u => u.Id == connectedUser1Id), Mock.Of<IGuildUser>(u => u.Id == connectedUser2Id)]];
+            [[guildUser1Mock.Object, guildUser2Mock.Object, guildUser3Mock.Object]];
         voiceChannelMock
             .Setup(vc => vc.GetUsersAsync(It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
             .Returns(voiceUsers.ToAsyncEnumerable());
@@ -110,11 +120,20 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
     {
         const ulong connectedUser1Id = 123UL;
         const ulong connectedUser2Id = 456UL;
+        const ulong connectedUser3Id = 789UL;
         const ulong ownerId = 999UL;
         // Mock VoiceChannel
         Mock<IVoiceChannel> voiceChannelMock = new();
+        Mock<IGuildUser> guildUser1Mock = new();
+        guildUser1Mock.SetupGet(gu => gu.Id).Returns(connectedUser1Id);
+        guildUser1Mock.SetupGet(gu => gu.VoiceChannel).Returns(voiceChannelMock.Object);
+        Mock<IGuildUser> guildUser2Mock = new();
+        guildUser2Mock.SetupGet(gu => gu.Id).Returns(connectedUser2Id);
+        guildUser2Mock.SetupGet(gu => gu.VoiceChannel).Returns(voiceChannelMock.Object);
+        Mock<IGuildUser> guildUser3Mock = new();
+        guildUser3Mock.SetupGet(gu => gu.Id).Returns(connectedUser3Id);
         List<IReadOnlyCollection<IGuildUser>> voiceUsers =
-            [[Mock.Of<IGuildUser>(u => u.Id == connectedUser1Id), Mock.Of<IGuildUser>(u => u.Id == connectedUser2Id)]];
+            [[guildUser1Mock.Object, guildUser2Mock.Object, guildUser3Mock.Object]];
         voiceChannelMock
             .Setup(vc => vc.GetUsersAsync(It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
             .Returns(voiceUsers.ToAsyncEnumerable());
@@ -181,5 +200,58 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
+    }
+
+    [Test]
+    public async Task UserConnectsToNewVoiceChannel_BothConnectedAndDisconnectedCalled()
+    {
+        // Arrange
+        const ulong userInPreviousChannelId = 123UL;
+        const ulong userInCurrentChannelId = 456UL;
+        const ulong connectingUserId = 999UL;
+        Mock<IGuildUser> previousVoiceChannelUserMock = new();
+        previousVoiceChannelUserMock.SetupGet(u => u.Id).Returns(userInPreviousChannelId);
+        Mock<IGuildUser> currentVoiceChannelUserMock = new();
+        currentVoiceChannelUserMock.SetupGet(u => u.Id).Returns(userInCurrentChannelId);
+        Mock<IGuildUser> connectinngUserMock = new();
+        connectinngUserMock.SetupGet(u => u.Id).Returns(connectingUserId);
+        Mock<IVoiceChannel> previousVoiceChannelMock = new();
+        List<IReadOnlyCollection<IGuildUser>> previousVoiceUsers =
+            [[previousVoiceChannelUserMock.Object]];
+        previousVoiceChannelMock.Setup(prev => prev.GetUsersAsync(It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
+            .Returns(previousVoiceUsers.ToAsyncEnumerable());
+        Mock<IVoiceState> previousVoiceStateMock = new();
+        previousVoiceStateMock.SetupGet(vs => vs.VoiceChannel).Returns(previousVoiceChannelMock.Object);
+        previousVoiceChannelUserMock.SetupGet(prev => prev.VoiceChannel).Returns(previousVoiceChannelMock.Object);
+        Mock<IVoiceState> currentVoiceStateMock = new();
+        Mock<IVoiceChannel> currentVoiceChannelMock = new();
+        List<IReadOnlyCollection<IGuildUser>> currentVoiceUsers =
+            [[currentVoiceChannelUserMock.Object]];
+        currentVoiceChannelMock.Setup(curr => curr.GetUsersAsync(It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
+            .Returns(currentVoiceUsers.ToAsyncEnumerable());
+        currentVoiceStateMock.SetupGet(vs => vs.VoiceChannel).Returns(currentVoiceChannelMock.Object);
+        currentVoiceChannelUserMock.SetupGet(curr => curr.VoiceChannel).Returns(currentVoiceChannelMock.Object);
+        
+        // Act
+        await SyncService.UserVoiceStateUpdated(
+            connectinngUserMock.Object,
+            previousVoiceStateMock.Object,
+            currentVoiceStateMock.Object
+        );
+        
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            _hotOpServiceMock.Verify(h => h.UpdateHotOps(
+                connectingUserId,
+                UserVoiceStateAction.Disconnected,
+                It.Is<List<ulong>>(l => l.SequenceEqual(new[] { userInPreviousChannelId }))
+            ), Times.Once);
+            _hotOpServiceMock.Verify(h => h.UpdateHotOps(
+                connectingUserId,
+                UserVoiceStateAction.Connected,
+                It.Is<List<ulong>>(l => l.SequenceEqual(new[] { userInCurrentChannelId }))
+            ), Times.Once);
+        }
     }
 }
