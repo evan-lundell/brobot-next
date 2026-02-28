@@ -471,16 +471,17 @@ public class SyncService(
             logger.LogInformation("Processing user voice state updated for {UserId}", user.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var hotOpService = scope.ServiceProvider.GetRequiredService<IHotOpService>();
-            if (previousVoiceState.VoiceChannel == null && currentVoiceState.VoiceChannel != null)
+            
+            if (currentVoiceState.VoiceChannel != null)
             {
-                var connectedUsers = await currentVoiceState.VoiceChannel.GetUsersAsync().FlattenAsync();
+                var connectedUsers = await currentVoiceState.VoiceChannel.GetConnectedUsersAsync();
                 await hotOpService.UpdateHotOps(user.Id, UserVoiceStateAction.Connected,
                     connectedUsers.Select(u => u.Id).ToList());
             }
 
-            if (currentVoiceState.VoiceChannel == null && previousVoiceState.VoiceChannel != null)
+            if (previousVoiceState.VoiceChannel != null)
             {
-                var connectedUsers = await previousVoiceState.VoiceChannel.GetUsersAsync().FlattenAsync();
+                var connectedUsers = await previousVoiceState.VoiceChannel.GetConnectedUsersAsync();
                 await hotOpService.UpdateHotOps(user.Id, UserVoiceStateAction.Disconnected,
                     connectedUsers.Select(u => u.Id).ToList());
             }

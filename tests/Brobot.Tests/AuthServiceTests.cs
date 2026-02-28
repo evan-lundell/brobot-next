@@ -123,7 +123,7 @@ public class AuthServiceTests
             Assert.That(result.Succeeded, Is.True);
             Assert.That(result.ErrorMessage, Is.Null);
             Assert.That(result.User, Is.Not.Null);
-            Assert.That(result.User.DiscordUserId, Is.EqualTo(discordUserId));
+            Assert.That(result.User!.DiscordUserId, Is.EqualTo(discordUserId));
             Assert.That(result.DiscordUser, Is.SameAs(discordUser));
             Assert.That(result.Roles, Is.EquivalentTo(new List<string> { Constants.UserRoleName }));
         }
