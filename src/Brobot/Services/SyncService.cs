@@ -719,14 +719,12 @@ public class SyncService(
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var existingChannelModel = await uow.Channels.GetById(oldThread.Id);
-            if (existingChannelModel == null || (existingChannelModel.Name == newThread.Name &&
-                                                 existingChannelModel.Archived == newThread.IsArchived))
+            if (existingChannelModel == null || existingChannelModel.Name == newThread.Name)
             {
                 return;
             }
 
             existingChannelModel.Name = newThread.Name;
-            existingChannelModel.Archived = newThread.IsArchived;
             await uow.CompleteAsync();
             logger.LogInformation("Finished processing thread {ThreadId}", oldThread.Id);
         }

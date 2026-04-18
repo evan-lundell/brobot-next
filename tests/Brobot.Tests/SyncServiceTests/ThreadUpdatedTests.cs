@@ -97,32 +97,6 @@ public class ThreadUpdatedTests : SyncServiceTestsBase
     }
     
     [Test]
-    public async Task ArchivedUpdated_UpdatedInDatabase()
-    {
-        const ulong threadId = 1UL;
-        const string threadName = "test-thread";
-        Mock<IThreadChannel> oldThreadMock = new();
-        Mock<IThreadChannel> newThreadMock = new();
-        oldThreadMock.SetupGet(x => x.Id).Returns(threadId);
-        newThreadMock.SetupGet(x => x.Id).Returns(threadId);
-        oldThreadMock.SetupGet(x => x.Name).Returns(threadName);
-        newThreadMock.SetupGet(x => x.Name).Returns(threadName);
-        oldThreadMock.SetupGet(x => x.IsArchived).Returns(false);
-        newThreadMock.SetupGet(x => x.IsArchived).Returns(true);
-        
-        await SyncService.ThreadUpdated(oldThreadMock.Object, newThreadMock.Object);
-        
-        Context.ChangeTracker.Clear();
-        var threadModel = await Context.Channels.FindAsync(threadId);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(threadModel, Is.Not.Null);
-            Assert.That(threadModel!.Name, Is.EqualTo(threadName));
-            Assert.That(threadModel.Archived, Is.True);
-        }
-    }
-    
-    [Test]
     public async Task ThrowsException_LogsError()
     {
         Mock<IThreadChannel> oldThreadMock = new();
