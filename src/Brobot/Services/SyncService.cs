@@ -469,6 +469,13 @@ public class SyncService(
         try
         {
             logger.LogInformation("Processing user voice state updated for {UserId}", user.Id);
+
+            if (previousVoiceState.VoiceChannel?.Id == currentVoiceState.VoiceChannel?.Id)
+            {
+                logger.LogInformation("No channel change, finished processing user voice state updated for {UserId}", user.Id);
+                return;
+            }
+            
             using var scope = serviceScopeFactory.CreateScope();
             var hotOpService = scope.ServiceProvider.GetRequiredService<IHotOpService>();
             
