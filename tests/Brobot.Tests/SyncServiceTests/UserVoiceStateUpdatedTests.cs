@@ -67,7 +67,7 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
         const ulong connectedUser2Id = 456UL;
         const ulong connectedUser3Id = 789UL;
         const ulong ownerId = 999UL;
-        const ulong currentVoiceState1Id = 222UL;
+        const ulong currentVoiceChannelId = 222UL;
         // Mock VoiceChannel
         Mock<IVoiceChannel> voiceChannelMock = new();
         Mock<IGuildUser> guildUser1Mock = new();
@@ -83,7 +83,7 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
         voiceChannelMock
             .Setup(vc => vc.GetUsersAsync(It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
             .Returns(voiceUsers.ToAsyncEnumerable());
-        voiceChannelMock.SetupGet(vc => vc.Id).Returns(currentVoiceState1Id);
+        voiceChannelMock.SetupGet(vc => vc.Id).Returns(currentVoiceChannelId);
 
         Mock<IVoiceState> previousVoiceStateMock = new();
         previousVoiceStateMock.SetupGet(vs => vs.VoiceChannel).Returns((IVoiceChannel)null!);
@@ -218,7 +218,7 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
         const ulong userInCurrentChannelId = 456UL;
         const ulong connectingUserId = 999UL;
         const ulong currentVoiceChannelId = 111UL;
-        const ulong previousVoiceChannelUserId = 222UL;
+        const ulong previousVoiceChannelId = 222UL;
         Mock<IGuildUser> previousVoiceChannelUserMock = new();
         previousVoiceChannelUserMock.SetupGet(u => u.Id).Returns(userInPreviousChannelId);
         Mock<IGuildUser> currentVoiceChannelUserMock = new();
@@ -230,7 +230,7 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
             [[previousVoiceChannelUserMock.Object]];
         previousVoiceChannelMock.Setup(prev => prev.GetUsersAsync(It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
             .Returns(previousVoiceUsers.ToAsyncEnumerable());
-        previousVoiceChannelMock.SetupGet(prev => prev.Id).Returns(previousVoiceChannelUserId);
+        previousVoiceChannelMock.SetupGet(prev => prev.Id).Returns(previousVoiceChannelId);
         Mock<IVoiceState> previousVoiceStateMock = new();
         previousVoiceStateMock.SetupGet(vs => vs.VoiceChannel).Returns(previousVoiceChannelMock.Object);
         previousVoiceChannelUserMock.SetupGet(prev => prev.VoiceChannel).Returns(previousVoiceChannelMock.Object);
@@ -268,7 +268,7 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
     }
     
     [Test]
-    public async Task ConnectedChannelDoesNotChange_otOpServiceNotCalled()
+    public async Task ConnectedChannelDoesNotChange_HotOpServiceNotCalled()
     {
         // Arrange
         const ulong userId = 123UL;
