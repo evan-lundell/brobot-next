@@ -306,25 +306,25 @@ public class BrobotModule(
     }
 
     [SlashCommand("lastonline", "Get last online times")]
-    public async Task LastOnline([Summary("user")] SocketUser socketUser)
+    public async Task LastOnline([Summary("user")] IUser user)
     {
         try
         {
-            if (socketUser.Status == UserStatus.Online)
+            if (user.Status == UserStatus.Online)
             {
-                await RespondAsync(text: $"{socketUser.Username} is online now!", ephemeral: true);
+                await RespondAsync(text: $"{user.Username} is online now!", ephemeral: true);
                 return;
             }
 
-            var user = await uow.Users.GetById(socketUser.Id);
+            var discordUserModel = await uow.Users.GetById(user.Id);
             var callingUser = await uow.Users.GetById(Context.User.Id);
-            if (user?.LastOnline == null)
+            if (discordUserModel?.LastOnline == null)
             {
                 await RespondAsync(text: "Failed to get last online", ephemeral: true);
                 return;
             }
 
-            var lastOnline = user.LastOnline.Value;
+            var lastOnline = discordUserModel.LastOnline.Value;
             if (!string.IsNullOrWhiteSpace(callingUser?.Timezone))
             {
                 var timezone = TZConvert.GetTimeZoneInfo(callingUser.Timezone);
@@ -332,7 +332,7 @@ public class BrobotModule(
                 lastOnline = lastOnline + offset;
             }
 
-            await RespondAsync(text: $"{user.Username} was last online at {lastOnline:yyyy-MM-dd hh:mm tt}", ephemeral: true);
+            await RespondAsync(text: $"{discordUserModel.Username} was last online at {lastOnline:yyyy-MM-dd hh:mm tt}", ephemeral: true);
         }
         catch (Exception ex)
         {
