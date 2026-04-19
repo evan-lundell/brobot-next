@@ -45,8 +45,7 @@ jobs:
           VERSION=${TAG#v}
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-      
-      
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -56,6 +55,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             VERSION=${{ env.VERSION }}
+            NUGET_TOKEN=${{ secrets.NUGET_TOKEN }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -91,4 +91,3 @@ jobs:
             docker compose pull
             docker compose up -d
           EOF
-          
