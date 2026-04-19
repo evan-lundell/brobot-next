@@ -10,7 +10,7 @@ using Moq;
 namespace Brobot.Tests.BrobotModuleTests;
 
 [TestFixture]
-public class BrobotModuleTestBase
+public abstract class BrobotModuleTestBase
 {
     protected Mock<IInteractionContext> InteractionContextMock { get; private set; }
     protected Mock<IDiscordInteraction> DiscordInteractionMock { get; private set; }
