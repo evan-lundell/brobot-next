@@ -291,7 +291,7 @@ public class BrobotModule(
             var user = await uow.Users.GetById(Context.User.Id);
             if (user == null)
             {
-                await RespondAsync("An error has occured", ephemeral: true);
+                await RespondAsync("An error has occurred", ephemeral: true);
                 return;
             }
 

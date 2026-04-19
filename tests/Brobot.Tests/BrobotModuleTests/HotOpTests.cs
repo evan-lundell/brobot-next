@@ -87,6 +87,6 @@ public class HotOpTests : BrobotModuleTestBase
             null,
             null,
             null,
-            MessageFlags.None));
+            MessageFlags.None), Times.Once);
     }
 }

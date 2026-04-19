@@ -29,7 +29,7 @@ public class ReminderTests : BrobotModuleTestBase
         
         await BrobotModule.Reminder(dateString, "Test reminder");
         
-        AssertRespondAsyncCalledOnce("An error has occured", true);
+        AssertRespondAsyncCalledOnce("An error has occurred", true);
     }
     
     [Test]

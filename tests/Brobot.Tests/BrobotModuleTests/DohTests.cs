@@ -8,7 +8,7 @@ namespace Brobot.Tests.BrobotModuleTests;
 public class DohTests : BrobotModuleTestBase
 {
     [Test]
-    public async Task DohCalled_RespondsWithPikaFile()
+    public async Task DohCalled_RespondsWithDohFile()
     {
         await BrobotModule.Doh();
         

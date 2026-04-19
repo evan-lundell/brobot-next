@@ -7,7 +7,7 @@ namespace Brobot.Tests.BrobotModuleTests;
 public class TeamsTests : BrobotModuleTestBase
 {
     [Test]
-    public async Task LessThanTwoPlayers_RespondsWtihErrorMessage()
+    public async Task LessThanTwoPlayers_RespondsWithErrorMessage()
     {
         await BrobotModule.Teams();
         
@@ -15,7 +15,7 @@ public class TeamsTests : BrobotModuleTestBase
     }
 
     [Test]
-    public async Task ValidPlayers_RespondsWtihSuccessMessage()
+    public async Task ValidPlayers_RespondsWithSuccessMessage()
     {
         await BrobotModule.Teams(
             "Player1", "Player2", "Player3", "Player4", "Player5", "Player6", "Player7",  "Player8", "Player9", "Player10");

@@ -7,7 +7,7 @@ namespace Brobot.Tests.BrobotModuleTests;
 public class DefineTests : BrobotModuleTestBase
 {
     [Test]
-    public async Task RandomFactServiceThrowsException_RespondsWithErrorMessage()
+    public async Task DictionaryServiceThrowsException_RespondsWithErrorMessage()
     {
         DictionaryServiceMock.Setup(r => r.GetDefinition("Word"))
             .Throws(new Exception("DictionaryServiceThrowsException"));
@@ -18,7 +18,7 @@ public class DefineTests : BrobotModuleTestBase
     }
 
     [Test]
-    public async Task RandomFactServiceSucceeds_RespondsWithRandomFact()
+    public async Task DictionaryServiceSucceeds_RespondsWithRandomFact()
     {
         DictionaryServiceMock.Setup(r => r.GetDefinition("Word"))
             .ReturnsAsync("Definition of Word");
