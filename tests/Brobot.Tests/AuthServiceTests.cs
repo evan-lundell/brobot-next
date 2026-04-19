@@ -69,8 +69,6 @@ public class AuthServiceTests
             .ReturnsAsync(discordUser);
         
         var users = new List<ApplicationUserModel> { existingAppUser }
-            .AsQueryable()
-            .AsEnumerable()
             .BuildMock();
         
         _userManagerMock.Setup(um => um.Users)
@@ -102,8 +100,6 @@ public class AuthServiceTests
         _unitOfWorkMock.Setup(uow => uow.Users.GetById(discordUserId))
             .ReturnsAsync(discordUser);
         var users = new List<ApplicationUserModel>()
-            .AsQueryable()
-            .AsEnumerable()
             .BuildMock();
         _userManagerMock.Setup(um => um.Users)
             .Returns(users);
@@ -139,8 +135,6 @@ public class AuthServiceTests
         _unitOfWorkMock.Setup(uow => uow.Users.GetById(discordUserId))
             .ReturnsAsync(discordUser);
         var users = new List<ApplicationUserModel>()
-            .AsQueryable()
-            .AsEnumerable()
             .BuildMock();
         _userManagerMock.Setup(um => um.Users)
             .Returns(users);
@@ -168,8 +162,6 @@ public class AuthServiceTests
         _unitOfWorkMock.Setup(uow => uow.Users.GetById(discordUserId))
             .ReturnsAsync(discordUser);
         var users = new List<ApplicationUserModel>()
-            .AsQueryable()
-            .AsEnumerable()
             .BuildMock();
         _userManagerMock.Setup(um => um.Users)
             .Returns(users);
@@ -205,8 +197,6 @@ public class AuthServiceTests
             DiscordUserId = discordUserId
         };
         var users = new List<ApplicationUserModel> { existingAppUser }
-            .AsQueryable()
-            .AsEnumerable()
             .BuildMock();
         _userManagerMock.Setup(um => um.Users)
             .Returns(users);
