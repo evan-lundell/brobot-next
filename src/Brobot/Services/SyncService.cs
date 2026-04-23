@@ -307,9 +307,9 @@ public class SyncService(
             logger.LogInformation("Starting up sync service");
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var guildModels = (await uow.Guilds.Find(g => !g.Archived)).ToDictionary(g => g.Id);
-            var channelModels = (await uow.Channels.Find(c => !c.Archived)).ToDictionary(c => c.Id);
-            var userModels = (await uow.Users.GetAllWithGuildsAndChannels()).Where(u => !u.Archived)
+            var guildModels = (await uow.Guilds.Find(g => !g.Archived, cancellationToken)).ToDictionary(g => g.Id);
+            var channelModels = (await uow.Channels.Find(c => !c.Archived, cancellationToken)).ToDictionary(c => c.Id);
+            var userModels = (await uow.Users.GetAllWithGuildsAndChannels(cancellationToken)).Where(u => !u.Archived)
                 .ToDictionary(u => u.Id);
 
             var guildIds = new HashSet<ulong>();
@@ -317,6 +317,7 @@ public class SyncService(
             var userIds = new HashSet<ulong>();
 
             // Create new entities or update existing entities
+            cancellationToken.ThrowIfCancellationRequested();
             var guilds = await discordClient.GetGuildsAsync();
             foreach (var guild in guilds)
             {
@@ -330,7 +331,7 @@ public class SyncService(
                         Id = guild.Id,
                         Name = guild.Name
                     };
-                    await uow.Guilds.Add(newGuild);
+                    await uow.Guilds.Add(newGuild, cancellationToken);
                     guildModels.Add(guild.Id, newGuild);
                     logger.LogInformation("Added guild {GuildId} to the database", guild.Id);
                 }
@@ -341,14 +342,11 @@ public class SyncService(
                     guildModel.Name = guild.Name;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 var channels = await guild.GetChannelsAsync();
-                foreach (var channel in channels)
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var channel in channels.Where(c => c.ChannelType == ChannelType.Text))
                 {
-                    if (channel.ChannelType != ChannelType.Text)
-                    {
-                        continue;
-                    }
-
                     logger.LogInformation("Processing channel {ChannelId}", channel.Id);
                     channelIds.Add(channel.Id);
                     if (!channelModels.TryGetValue(channel.Id, out var channelModel))
@@ -362,7 +360,7 @@ public class SyncService(
                             GuildId = guild.Id
                         };
                         channelModels.Add(channel.Id, newChannel);
-                        await uow.Channels.Add(newChannel);
+                        await uow.Channels.Add(newChannel, cancellationToken);
                         logger.LogInformation("Added channel {ChannelId} to the database", channel.Id);
                     }
                     else if (channelModel.Name != channel.Name)
@@ -372,6 +370,7 @@ public class SyncService(
                             channel.Id, channelModel.Name, channel.Name);
                     }
 
+                    cancellationToken.ThrowIfCancellationRequested();
                     await foreach (var user in channel.GetUsersAsync().Flatten().Where(u => !u.IsBot))
                     {
                         logger.LogInformation("Processing user {UserId}", user.Id);
@@ -385,7 +384,7 @@ public class SyncService(
                                 Username = user.Username
                             };
                             userModels.Add(user.Id, newUser);
-                            await uow.Users.Add(newUser);
+                            await uow.Users.Add(newUser, cancellationToken);
                             logger.LogInformation("Added user {UserId} to the database", user.Id);
                         }
                         else if (userModel.Username != user.Username)
@@ -430,6 +429,7 @@ public class SyncService(
                 }
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             // Remove old entities
             foreach (var guild in guildModels.Values.Where(g => !guildIds.Contains(g.Id)))
             {
@@ -449,7 +449,7 @@ public class SyncService(
                 uow.Users.Remove(user);
             }
 
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Finished sync process");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

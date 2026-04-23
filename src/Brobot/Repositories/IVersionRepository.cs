@@ -4,5 +4,5 @@ namespace Brobot.Repositories;
 
 public interface IVersionRepository : IRepository<VersionModel, int>
 {
-    Task<VersionModel?> GetLatestVersion();
+    Task<VersionModel?> GetLatestVersion(CancellationToken cancellationToken = default);
 }

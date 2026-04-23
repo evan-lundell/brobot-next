@@ -19,6 +19,8 @@ public class DiscordEventHandler : IDisposable
     private readonly IConfiguration _config;
     private readonly IBackgroundTaskQueue _backgroundTaskQueue;
 
+    private int _readyInitializationQueued = 0;
+
     public DiscordEventHandler(DiscordSocketClient client, IServiceProvider services)
     {
         _client = client;
@@ -297,31 +299,57 @@ public class DiscordEventHandler : IDisposable
         return Task.CompletedTask;
     }
 
-    private async Task Ready()
+    private Task Ready()
     {
-
-        var serviceScopeFactory = _services.GetRequiredService<IServiceScopeFactory>();
-        using (var scope = serviceScopeFactory.CreateScope())
+        if (Interlocked.Exchange(ref _readyInitializationQueued, 1) == 1)
         {
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
+            return Task.CompletedTask;
         }
 
-        _ = Task.Run(async () =>
+        var enqueued = _backgroundTaskQueue.QueueBackgroundWorkItem(async ct =>
         {
-            List<Task> tasks =
-            [
-                _commands.RegisterCommandsGloballyAsync()
-            ];
-            if (!bool.TryParse(_config["NoSync"], out bool noSync) || !noSync)
+            try
             {
-                tasks.Add(_syncService.SyncOnStartup());
-            }
+                _logger.LogInformation("Running one-time initialization tasks");
+                ct.ThrowIfCancellationRequested();
+                using (var scope = _services.CreateScope())
+                {
+                    await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), scope.ServiceProvider);
+                }
 
-            using var scope =  _services.CreateScope();
-            var versionService = scope.ServiceProvider.GetRequiredService<IVersionService>();
-            tasks.Add(versionService.CheckForVersionUpdate());
-            await Task.WhenAll(tasks);
+                ct.ThrowIfCancellationRequested();
+                await _commands.RegisterCommandsGloballyAsync();
+
+                ct.ThrowIfCancellationRequested();
+                if (!bool.TryParse(_config["NoSync"], out bool noSync) || !noSync)
+                {
+                    await _syncService.SyncOnStartup(ct);
+                }
+
+                using (var scope = _services.CreateScope())
+                {
+                    var versionService = scope.ServiceProvider.GetRequiredService<IVersionService>();
+                    await versionService.CheckForVersionUpdate(ct);
+                }
+                _logger.LogInformation("Finished one-time initialization tasks");
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while initializing Discord startup");
+                throw;
+            }
         });
+
+        if (!enqueued)
+        {
+            Interlocked.Exchange(ref _readyInitializationQueued, 0);
+            _logger.LogWarning("Failed to queue Discord startup initialization");
+        }
+        return Task.CompletedTask;
     }
 
     private Task Log(LogMessage logMessage)

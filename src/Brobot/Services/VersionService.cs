@@ -13,53 +13,68 @@ public class VersionService(
     IOptions<GeneralOptions> generalOptions,
     IAssemblyService assemblyService) : IVersionService
 {
-    public async Task CheckForVersionUpdate()
+    public async Task CheckForVersionUpdate(CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Checking for version update");
-        var isVersionNew = false;
-        var assemblyVersion = assemblyService.GetVersionFromAssembly();
+        try
+        {
+            logger.LogInformation("Checking for version update");
+            var isVersionNew = false;
+            var assemblyVersion = assemblyService.GetVersionFromAssembly();
 
-        var currentVersion = await uow.Versions.GetLatestVersion();
-        if (currentVersion == null)
-        {
-            logger.LogInformation("Current version not in database, adding version '{Version}'", assemblyVersion);
-            _ = await CreateNewVersion(assemblyVersion);
-            isVersionNew = true;
+            var currentVersion = await uow.Versions.GetLatestVersion(cancellationToken);
+            if (currentVersion == null)
+            {
+                logger.LogInformation("Current version not in database, adding version '{Version}'", assemblyVersion);
+                _ = await CreateNewVersion(assemblyVersion, cancellationToken);
+                isVersionNew = true;
+            }
+            else if (currentVersion.VersionNumber != assemblyVersion)
+            {
+                logger.LogInformation("Updated to '{NewVersionNumber}'", assemblyVersion);
+                _ = await CreateNewVersion(assemblyVersion, cancellationToken);
+                isVersionNew = true;
+            }
+
+            if (isVersionNew && !string.IsNullOrEmpty(generalOptions.Value.ReleaseNotesUrl))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                logger.LogInformation("Sending version upgrade message for version '{Version}'", assemblyVersion);
+                await SendVersionUpgradeMessage(assemblyVersion, cancellationToken);
+            }
         }
-        else if (currentVersion.VersionNumber != assemblyVersion)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            logger.LogInformation("Updated to '{NewVersionNumber}'", assemblyVersion);
-            _ = await CreateNewVersion(assemblyVersion);
-            isVersionNew = true;
+            throw;
         }
-        
-        if (isVersionNew && !string.IsNullOrEmpty(generalOptions.Value.ReleaseNotesUrl))
+        catch (Exception ex)
         {
-            logger.LogInformation("Sending version upgrade message for version '{Version}'", assemblyVersion);
-            await SendVersionUpgradeMessage(assemblyVersion);
+            logger.LogError(ex, "Error checking for version update");
         }
-        
-        logger.LogInformation("Finished checking for version update");
+        finally
+        {
+            logger.LogInformation("Finished checking for version update");
+        }
+
     }
-    
-    private async Task<VersionModel> CreateNewVersion(string versionName)
+    private async Task<VersionModel> CreateNewVersion(string versionName, CancellationToken cancellationToken)
     {
         VersionModel newVersion = new()
         {
             VersionNumber = versionName,
             VersionDate = DateTimeOffset.UtcNow
         };
-        await uow.Versions.Add(newVersion);
-        await uow.CompleteAsync();
+        await uow.Versions.Add(newVersion, cancellationToken);
+        await uow.CompleteAsync(cancellationToken);
         return newVersion;
     }
 
-    private async Task SendVersionUpgradeMessage(string versionName)
+    private async Task SendVersionUpgradeMessage(string versionName, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var guilds = (await client.GetGuildsAsync())
             .ToDictionary(x => x.Id);
         var guildIds = guilds.Keys.ToList();
-        var guildModels = await uow.Guilds.Find(g => guildIds.Contains(g.Id));
+        var guildModels = await uow.Guilds.Find(g => guildIds.Contains(g.Id), cancellationToken);
         foreach (var guildModel in guildModels)
         {
             if (guildModel.PrimaryChannelId == null)
@@ -67,6 +82,7 @@ public class VersionService(
                 continue;
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             var channel = await guilds[guildModel.Id].GetChannelAsync(guildModel.PrimaryChannelId.Value);
             if (channel is ITextChannel textChannel)
             {
