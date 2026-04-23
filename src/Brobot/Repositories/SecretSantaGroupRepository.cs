@@ -16,11 +16,11 @@ public class SecretSantaGroupRepository(BrobotDbContext context)
         return secretSantaGroupModels;
     }
 
-    public override Task<SecretSantaGroupModel?> GetById(int id) =>
+    public override Task<SecretSantaGroupModel?> GetById(int id, CancellationToken cancellationToken = default) =>
         Context.SecretSantaGroups
             .Include(ssg => ssg.SecretSantaGroupUsers)
             .ThenInclude(ssgu => ssgu.DiscordUser)
-            .SingleOrDefaultAsync(ssg => ssg.Id == id);
+            .SingleOrDefaultAsync(ssg => ssg.Id == id, cancellationToken);
 
     public override Task<SecretSantaGroupModel?> GetByIdNoTracking(int id) =>
         Context.SecretSantaGroups

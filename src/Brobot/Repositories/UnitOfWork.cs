@@ -37,9 +37,9 @@ public class UnitOfWork : IUnitOfWork
     public IVersionRepository Versions { get; }
     public IStatPeriodRepository StatPeriods { get; }
 
-    public Task<int> CompleteAsync()
+    public Task<int> CompleteAsync(CancellationToken cancellationToken = default)
     {
-        return _context.SaveChangesAsync();
+        return _context.SaveChangesAsync(cancellationToken);
     }
 
     public Task<IDbContextTransaction> BeginTransaction() => _context.Database.BeginTransactionAsync();

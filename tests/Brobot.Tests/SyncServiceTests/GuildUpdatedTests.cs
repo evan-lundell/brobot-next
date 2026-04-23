@@ -122,9 +122,19 @@ public class GuildUpdatedTests : SyncServiceTestsBase
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing guild unavailable for GuildId")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing guild updated for GuildId")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+    }
+
+    [Test]
+    public void TokenCanceled_ThrowsOperationCanceledException()
+    {
+        Mock<IGuild> previousGuildMock = new();
+        Mock<IGuild> currentGuildMock = new();
+        previousGuildMock.SetupGet(p => p.Name).Returns("previous");
+        currentGuildMock.SetupGet(p => p.Name).Returns("current");
+        AssertCanceled(async ct => await SyncService.GuildUpdated(previousGuildMock.Object, currentGuildMock.Object, ct));
     }
 }

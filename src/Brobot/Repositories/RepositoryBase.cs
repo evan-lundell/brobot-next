@@ -10,19 +10,19 @@ public abstract class RepositoryBase<TEntity, TKey>(BrobotDbContext context) : I
 {
     protected readonly BrobotDbContext Context = context;
 
-    public virtual async Task Add(TEntity entity)
+    public virtual async Task Add(TEntity entity, CancellationToken cancellationToken = default)
     {
-        await Context.Set<TEntity>().AddAsync(entity);
+        await Context.Set<TEntity>().AddAsync(entity, cancellationToken);
     }
 
-    public virtual async Task AddRange(IEnumerable<TEntity> entities)
+    public virtual async Task AddRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
     {
-        await Context.Set<TEntity>().AddRangeAsync(entities);
+        await Context.Set<TEntity>().AddRangeAsync(entities, cancellationToken);
     }
 
-    public virtual async Task<IEnumerable<TEntity>> Find(Expression<Func<TEntity, bool>> expression)
+    public virtual async Task<IEnumerable<TEntity>> Find(Expression<Func<TEntity, bool>> expression, CancellationToken cancellationToken = default)
     {
-        return await Context.Set<TEntity>().Where(expression).ToListAsync();
+        return await Context.Set<TEntity>().Where(expression).ToListAsync(cancellationToken);
     }
 
     public virtual async Task<IEnumerable<TEntity>> GetAll()
@@ -30,9 +30,9 @@ public abstract class RepositoryBase<TEntity, TKey>(BrobotDbContext context) : I
         return await Context.Set<TEntity>().ToListAsync();
     }
 
-    public virtual async Task<TEntity?> GetById(TKey id)
+    public virtual async Task<TEntity?> GetById(TKey id, CancellationToken cancellationToken = default)
     {
-        return await Context.Set<TEntity>().FindAsync(id);
+        return await Context.Set<TEntity>().FindAsync(keyValues: [id], cancellationToken: cancellationToken);
     }
 
     public virtual async Task<TEntity?> GetByIdNoTracking(TKey id)

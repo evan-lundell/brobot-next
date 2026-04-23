@@ -217,4 +217,17 @@ public class ThreadMemberJoinedTests : SyncServiceTestsBase
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Test]
+    public void TokenCanceled_ThrowsOperationCanceledException()
+    {
+        Mock<IThreadUser> threadUserMock = new();
+        Mock<IGuildUser> guildUserMock = new();
+        Mock<IThreadChannel> threadChannelMock = new();
+        guildUserMock.SetupGet(u => u.Id).Returns(100UL);
+        threadUserMock.SetupGet(u => u.GuildUser).Returns(guildUserMock.Object);
+        threadChannelMock.SetupGet(t => t.Id).Returns(100UL);
+        threadUserMock.SetupGet(t => t.Thread).Returns(threadChannelMock.Object);
+        AssertCanceled(async ct => await SyncService.ThreadMemberJoined(threadUserMock.Object, ct));
+    }
 }

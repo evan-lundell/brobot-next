@@ -6,10 +6,10 @@ public class BackgroundTaskQueue : IBackgroundTaskQueue
 {
     private readonly Channel<Func<CancellationToken, Task>> _queue = Channel.CreateUnbounded<Func<CancellationToken, Task>>();
 
-    public void QueueBackgroundWorkItem(Func<CancellationToken, Task> workItem)
+    public bool QueueBackgroundWorkItem(Func<CancellationToken, Task> workItem)
     {
         ArgumentNullException.ThrowIfNull(workItem);
-        _queue.Writer.TryWrite(workItem);
+        return _queue.Writer.TryWrite(workItem);
     }
 
     public async Task<Func<CancellationToken, Task>> DequeueAsync(CancellationToken cancellationToken)

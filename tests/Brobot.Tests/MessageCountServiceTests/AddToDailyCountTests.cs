@@ -122,4 +122,13 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Test]
+    public void TokenCanceled_ThrowsOperationCanceledException()
+    {
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+        Assert.That(async () => await MessageCountService.AddToDailyCount(1, 1, DateOnly.FromDateTime(DateTime.UtcNow), cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
 }

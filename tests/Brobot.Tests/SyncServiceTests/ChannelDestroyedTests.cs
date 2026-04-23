@@ -114,4 +114,10 @@ public class ChannelDestroyedTests : SyncServiceTestsBase
                 It.IsAny<Exception>(),
                 ((Func<It.IsAnyType, Exception, string>)It.IsAny<object>())!), Times.Once);
     }
+
+    [Test]
+    public void WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        AssertCanceled(async cancellationToken => await SyncService.ChannelDestroyed(new Mock<IGuildChannel>().Object, cancellationToken));
+    }
 }

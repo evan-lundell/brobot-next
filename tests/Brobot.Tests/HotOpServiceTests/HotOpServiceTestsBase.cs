@@ -14,6 +14,7 @@ public abstract class HotOpServiceTestsBase
 {
     protected IUnitOfWork UnitOfWork;
     protected HotOpService HotOpService;
+    protected Mock<ILogger<HotOpService>> LoggerMock;
 
     private BrobotDbContext _context;
     private ServiceProvider _serviceProvider;
@@ -25,13 +26,14 @@ public abstract class HotOpServiceTestsBase
         var uniqueDbName = $"Brobot_{Guid.NewGuid()}";
         serviceCollection.AddDbContext<BrobotDbContext>(options => options.UseInMemoryDatabase(uniqueDbName));
         _serviceProvider = serviceCollection.BuildServiceProvider();
+        LoggerMock = new Mock<ILogger<HotOpService>>();
 
         _context = _serviceProvider.GetRequiredService<BrobotDbContext>();
         SetupDatabase();
 
         _context.SaveChanges();
         UnitOfWork = new UnitOfWork(_context);
-        HotOpService = new HotOpService(UnitOfWork, Mock.Of<ILogger<HotOpService>>());
+        HotOpService = new HotOpService(UnitOfWork, LoggerMock.Object);
     }
     
     [TearDown]

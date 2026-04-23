@@ -132,4 +132,15 @@ public class PresenceUpdatedTests : SyncServiceTestsBase
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    
+    [Test]
+    public void TokenCanceled_ThrowsOperationCanceledException()
+    {
+        Mock<IUser> userMock = new();
+        userMock.SetupGet(u => u.Id).Returns(1UL);
+        AssertCanceled(async ct => await SyncService.PresenceUpdated(userMock.Object,
+            new Mock<IPresence>().Object,
+            new Mock<IPresence>().Object,
+            ct));
+    }
 }

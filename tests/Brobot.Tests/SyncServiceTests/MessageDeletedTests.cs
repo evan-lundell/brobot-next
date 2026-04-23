@@ -10,7 +10,6 @@ namespace Brobot.Tests.SyncServiceTests;
 
 public class MessageDeletedTests : SyncServiceTestsBase
 {
-    private Mock<ILogger<SyncService>> _loggerMock;
     public override void Setup()
     {
         GeneralOptions generalOptions = new()
@@ -19,11 +18,11 @@ public class MessageDeletedTests : SyncServiceTestsBase
             VersionFilePath = "./version.txt",
             SeqUrl = "http://localhost:5341"
         };
-        _loggerMock = new Mock<ILogger<SyncService>>();
+        LoggerMock = new Mock<ILogger<SyncService>>();
         SyncService = new SyncService(
             Mock.Of<IServiceScopeFactory>(),
             Mock.Of<IDiscordClient>(),
-            _loggerMock.Object,
+            LoggerMock.Object,
             Options.Create(generalOptions));
     }
 
@@ -241,7 +240,7 @@ public class MessageDeletedTests : SyncServiceTestsBase
         
         await SyncService.MessageDeleted(messageMock.Object, channelMock.Object, guildMock.Object);
 
-        _loggerMock.Verify(
+        LoggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
@@ -249,5 +248,22 @@ public class MessageDeletedTests : SyncServiceTestsBase
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
+    }
+    
+    [Test]
+    public void WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        Mock<IMessage> messageMock = new();
+        Mock<IMessageChannel> channelMock = new();
+        Mock<IGuild> guildMock = new();
+        Mock<IUser> userMock = new();
+        userMock.SetupGet(u => u.Username).Returns("Username");
+        messageMock.SetupGet(m => m.Author).Returns(userMock.Object);
+        messageMock.SetupGet(m => m.Content).Returns(string.Empty);
+        channelMock.SetupGet(c => c.ChannelType).Returns(ChannelType.Text);
+        AssertCanceled(async cancellationToken => await SyncService.MessageDeleted(messageMock.Object,
+            channelMock.Object,
+            guildMock.Object,
+            cancellationToken)); 
     }
 }

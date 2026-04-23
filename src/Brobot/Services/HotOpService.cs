@@ -12,7 +12,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
 {
     private const int MinuteMultiplier = 10;
 
-    public async Task UpdateHotOps(ulong userId, UserVoiceStateAction action, IReadOnlyCollection<ulong> connectedUsers)
+    public async Task UpdateHotOps(ulong userId, UserVoiceStateAction action, IReadOnlyCollection<ulong> connectedUsers, CancellationToken cancellationToken = default)
     {
         var actionString = action == UserVoiceStateAction.Connected ? "Connected" : "Disconnected";
         using var userScope = logger.BeginScope(new Dictionary<string, object>
@@ -22,8 +22,8 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
         });
         logger.LogInformation("Updating active HotOps");
         var now = DateTimeOffset.UtcNow;
-        var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now);
-        var users = (await uow.Users.Find(u => u.Archived == false)).ToDictionary(u => u.Id);
+        var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now, cancellationToken);
+        var users = (await uow.Users.Find(u => u.Archived == false, cancellationToken)).ToDictionary(u => u.Id);
 
         foreach (var hotOp in activeHotOps)
         {
@@ -39,25 +39,37 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
                     logger.LogInformation("Creating sessions for all other users");
                     var sessions = connectedUsers
                         .Where(u => u != userId)
-                        .Select(u => new HotOpSessionModel
+                        .SelectMany(u =>
                         {
-                            HotOp = hotOp,
-                            HotOpId = hotOp.Id,
-                            DiscordUser = users[u],
-                            DiscordUserId = u,
-                            StartDateTime = now
-                        });
-                    await uow.HotOpSessions.AddRange(sessions);
+                            if (!users.TryGetValue(u, out var discordUser))
+                            {
+                                return Enumerable.Empty<HotOpSessionModel>();
+                            }
+
+                            return
+                            [
+                                new HotOpSessionModel
+                                {
+                                    HotOp = hotOp,
+                                    HotOpId = hotOp.Id,
+                                    DiscordUser = discordUser,
+                                    DiscordUserId = u,
+                                    StartDateTime = now
+                                }
+                            ];
+                        }
+                    );
+                    await uow.HotOpSessions.AddRange(sessions, cancellationToken);
                     logger.LogInformation("Finished creating sessions for all other users");
                 }
                 else
                 {
                     logger.LogInformation("Setting endtime for all other users' sessions");
                     var existingSessions =
-                        await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null);
+                        await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null, cancellationToken);
                     foreach (var existingSession in existingSessions)
                     {
-                        if (connectedUsers.Any(cu => cu == existingSession.DiscordUserId))
+                        if (connectedUsers.Any(cu => cu == existingSession.DiscordUserId) && users.ContainsKey(existingSession.DiscordUserId))
                         {
                             existingSession.EndDateTime = now;
                         }
@@ -76,15 +88,21 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
                         continue;
                     }
 
+
                     logger.LogInformation("Creating session for user");
+                    if (!users.TryGetValue(userId, out var discordUser))
+                    {
+                        logger.LogInformation("User {UserId} not found in database", userId);
+                        continue;
+                    }
                     await uow.HotOpSessions.Add(new HotOpSessionModel
                     {
                         HotOp = hotOp,
                         HotOpId = hotOp.Id,
-                        DiscordUser = users[userId],
+                        DiscordUser = discordUser,
                         DiscordUserId = userId,
                         StartDateTime = now
-                    });
+                    }, cancellationToken);
                     logger.LogInformation("Finished creating session for user");
                 }
                 else
@@ -98,7 +116,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
 
                     logger.LogInformation("Setting endtime for user");
                     var session = (await uow.HotOpSessions.Find(hos =>
-                            hos.HotOpId == hotOp.Id && hos.DiscordUserId == userId && hos.EndDateTime == null))
+                            hos.HotOpId == hotOp.Id && hos.DiscordUserId == userId && hos.EndDateTime == null, cancellationToken))
                         .FirstOrDefault();
                     if (session != null)
                     {
@@ -111,7 +129,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
             logger.LogInformation("Finished updating HotOp");
         }
 
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
         logger.LogInformation("Finished updating active HotOps");
 
     }

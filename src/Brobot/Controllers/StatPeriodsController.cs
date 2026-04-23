@@ -59,14 +59,22 @@ public class StatPeriodsController(
         await uow.StatPeriods.Add(statPeriod);
         await uow.CompleteAsync();
         logger.LogInformation("Stat period created, queueing background job");
-        
-        backgroundTaskQueue.QueueBackgroundWorkItem(async _ =>
+
+        var queued = backgroundTaskQueue.QueueBackgroundWorkItem(async _ =>
         {
             using var scope = scopeFactory.CreateScope();
             var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
             await statsService.GetStats(channel, request.StartDate, request.EndDate, statPeriod.Id);
         });
-        logger.LogInformation("Queued stats collecting for {Channel}", request.ChannelId);
+        if (queued)
+        {
+            logger.LogInformation("Queued stats collecting for {Channel}", request.ChannelId);
+        }
+        else
+        {
+            logger.LogError("Failed to queue stats collecting for {Channel}", request.ChannelId);
+            return StatusCode(500, "Failed to queue stats collecting");
+        }
         return Ok(statPeriod.ToStatPeriodResponse());
     }
     
@@ -97,14 +105,19 @@ public class StatPeriodsController(
         };
         await uow.StatPeriods.Add(statPeriod);
         await uow.CompleteAsync();
-        
-        backgroundTaskQueue.QueueBackgroundWorkItem(async _ =>
+
+        var queued = backgroundTaskQueue.QueueBackgroundWorkItem(async _ =>
         {
             using var scope = scopeFactory.CreateScope();
             var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
             var stats = await statsService.GetStats(channel, request.StartDate, request.EndDate, statPeriod.Id);
             await statsService.SendStats(channel.Id, stats);
         });
+        if (!queued)
+        {
+            logger.LogError("Failed to queue word cloud generation for {Channel}", request.ChannelId);
+            return StatusCode(500, "Failed to queue word cloud generation");
+        }
         return Ok(statPeriod.ToStatPeriodResponse());
     }
 }

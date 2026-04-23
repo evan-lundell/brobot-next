@@ -55,7 +55,7 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
         return await query.ToListAsync();
     }
 
-    public override async Task<IEnumerable<HotOpModel>> Find(Expression<Func<HotOpModel, bool>> expression)
+    public override async Task<IEnumerable<HotOpModel>> Find(Expression<Func<HotOpModel, bool>> expression, CancellationToken cancellationToken = default)
     {
         return await Context.HotOps
             .AsSplitQuery()
@@ -66,10 +66,10 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
             .ThenInclude(c => c.ChannelUsers)
             .ThenInclude(cu => cu.DiscordUser)
             .Where(expression)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public override Task<HotOpModel?> GetById(int id)
+    public override Task<HotOpModel?> GetById(int id, CancellationToken cancellationToken = default)
         => Context.HotOps
             .AsSplitQuery()
             .Include(ho => ho.DiscordUser)
@@ -78,5 +78,5 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
             .Include(ho => ho.Channel)
             .ThenInclude(c => c.ChannelUsers)
             .ThenInclude(cu => cu.DiscordUser)
-            .SingleOrDefaultAsync(ho => ho.Id == id);
+            .SingleOrDefaultAsync(ho => ho.Id == id,  cancellationToken);
 }

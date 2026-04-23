@@ -7,7 +7,7 @@ public interface IMessageCountService
 {
     Task<IEnumerable<DailyMessageCountResponse>> GetUsersDailyMessageCountForChannel(ulong userId, ulong channelId, int numOfDays);
     Task<IEnumerable<DailyMessageCountResponse>> GetUsersTotalDailyMessageCounts(DiscordUserModel discordUserModel, int numOfDays);
-    Task AddToDailyCount(ulong userId, ulong channelId, DateOnly? countDate = null);
+    Task AddToDailyCount(ulong userId, ulong channelId, DateOnly? countDate = null, CancellationToken cancellationToken = default);
     Task<IEnumerable<DailyMessageCountResponse>> GetUsersTopDays(DiscordUserModel discordUserModel, int numOfDays);
     Task<IEnumerable<DailyMessageCountResponse>> GetUsersTopDaysByChannel(DiscordUserModel discordUserModel, ulong channelId, int numOfDays);
     Task<IEnumerable<DailyMessageCountResponse>> GetTopToday(DiscordUserModel discordUserModel);

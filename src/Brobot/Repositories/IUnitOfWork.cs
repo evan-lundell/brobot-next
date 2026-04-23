@@ -19,5 +19,5 @@ public interface IUnitOfWork : IDisposable
     Task<IDbContextTransaction> BeginTransaction();
     Task CommitTransaction(IDbContextTransaction transaction);
     BrobotDbContext DbContext { get; }
-    Task<int> CompleteAsync();
+    Task<int> CompleteAsync(CancellationToken cancellationToken = default);
 }

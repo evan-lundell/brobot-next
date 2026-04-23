@@ -43,7 +43,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
         return GetDailyMessageCountResponses(counts, discordUserModel, startDate, currentDate);
     }
 
-    public async Task AddToDailyCount(ulong userId, ulong channelId, DateOnly? countDate = null)
+    public async Task AddToDailyCount(ulong userId, ulong channelId, DateOnly? countDate = null, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -61,14 +61,14 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
             }
 
             var dailyMessageCount = (await uow.DailyMessageCounts
-                    .Find(dmc => dmc.DiscordUserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate))
+                    .Find(dmc => dmc.DiscordUserId == userId && dmc.ChannelId == channelId && dmc.CountDate == countDate, cancellationToken: cancellationToken))
                 .FirstOrDefault();
 
             if (dailyMessageCount == null)
             {
                 user ??= await uow.Users.GetById(userId);
 
-                var channel = await uow.Channels.GetById(channelId);
+                var channel = await uow.Channels.GetById(channelId, cancellationToken: cancellationToken);
                 if (user == null || channel == null)
                 {
                     return;
@@ -82,14 +82,18 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
                     ChannelId = channelId,
                     CountDate = countDate.Value,
                     MessageCount = 1
-                });
+                }, cancellationToken: cancellationToken);
             }
             else
             {
                 dailyMessageCount.MessageCount += 1;
             }
 
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {

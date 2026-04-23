@@ -274,4 +274,16 @@ public class ChannelUpdatedTest : SyncServiceTestsBase
             Times.Once);
     }
     
+    [Test]
+    public void WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        Mock<ISocketMessageChannel> previousChannelMock = new();
+        Mock<ISocketMessageChannel> currentChannelMock = new();
+        previousChannelMock.SetupGet(pc => pc.Name).Returns("previous");
+        currentChannelMock.SetupGet(cc => cc.Name).Returns("current");
+        AssertCanceled(async cancellationToken => await SyncService.ChannelUpdated(
+            new Mock<IGuild>().Object,
+            previousChannelMock.Object, 
+            currentChannelMock.Object, cancellationToken)); 
+    }
 }

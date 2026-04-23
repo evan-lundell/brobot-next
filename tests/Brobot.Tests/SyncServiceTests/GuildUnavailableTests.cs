@@ -88,4 +88,10 @@ public class GuildUnavailableTests : SyncServiceTestsBase
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Test]
+    public void WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        AssertCanceled(async cancellationToken => await SyncService.GuildUnavailable(new Mock<IGuild>().Object, cancellationToken));
+    }
 }

@@ -13,9 +13,13 @@ public class QueuedHostedService(IBackgroundTaskQueue taskQueue, ILogger<QueuedH
             {
                 await workItem(stoppingToken);
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Error occurred while executing {nameof(workItem)}.");
+                logger.LogError(ex, "Error occurred while executing work item.");
             }
         }
     }
