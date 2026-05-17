@@ -143,4 +143,38 @@ public class SendStatsTests : StatsServiceTestBase
             
         }
     }
+    
+    [Test]
+    public async Task WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        var channelId = 1UL;
+        StatsDto stats = new()
+        {
+            ChannelId = channelId,
+            StartDate = new DateOnly(2025, 8, 1),
+            EndDate = new DateOnly(2025, 8, 31),
+            MessageCounts =
+            [
+                new MessageCountDto
+                {
+                    Count = 10,
+                    UserId = 1UL,
+                    Username = "test-user"
+                }
+            ],
+            WordCounts =
+            [
+                new WordCountDto
+                {
+                    Count = 15,
+                    Word = "test"
+                }
+            ]
+        };
+        
+        Assert.That(async () => await StatsService.SendStats(channelId, stats, cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
 }
