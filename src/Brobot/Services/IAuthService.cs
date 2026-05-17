@@ -4,6 +4,6 @@ namespace Brobot.Services;
 
 public interface IAuthService
 {
-    Task<AuthResultDto> GetOrCreateApplicationUserAsync(ulong discordUserId);
+    Task<AuthResultDto> GetOrCreateApplicationUserAsync(ulong discordUserId, CancellationToken cancellationToken = default);
 }
 

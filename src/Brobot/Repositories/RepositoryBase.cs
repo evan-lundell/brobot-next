@@ -25,9 +25,9 @@ public abstract class RepositoryBase<TEntity, TKey>(BrobotDbContext context) : I
         return await Context.Set<TEntity>().Where(expression).ToListAsync(cancellationToken);
     }
 
-    public virtual async Task<IEnumerable<TEntity>> GetAll()
+    public virtual async Task<IEnumerable<TEntity>> GetAll(CancellationToken cancellationToken = default)
     {
-        return await Context.Set<TEntity>().ToListAsync();
+        return await Context.Set<TEntity>().ToListAsync(cancellationToken);
     }
 
     public virtual async Task<TEntity?> GetById(TKey id, CancellationToken cancellationToken = default)
@@ -35,9 +35,9 @@ public abstract class RepositoryBase<TEntity, TKey>(BrobotDbContext context) : I
         return await Context.Set<TEntity>().FindAsync(keyValues: [id], cancellationToken: cancellationToken);
     }
 
-    public virtual async Task<TEntity?> GetByIdNoTracking(TKey id)
+    public virtual async Task<TEntity?> GetByIdNoTracking(TKey id, CancellationToken cancellationToken = default)
     {
-        var entity = await Context.Set<TEntity>().FindAsync(id);
+        var entity = await Context.Set<TEntity>().FindAsync(keyValues: [id], cancellationToken: cancellationToken);
         if (entity != null)
         {
             Context.Entry(entity).State = EntityState.Detached;

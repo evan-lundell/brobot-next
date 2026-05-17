@@ -4,5 +4,5 @@ namespace Brobot.Repositories;
 
 public interface ISecretSantaGroupRepository : IRepository<SecretSantaGroupModel, int>
 {
-    Task<IEnumerable<SecretSantaPairModel>> GetPairs(int secretSantaGroupId, int year);
+    Task<IEnumerable<SecretSantaPairModel>> GetPairs(int secretSantaGroupId, int year, CancellationToken cancellationToken = default);
 }

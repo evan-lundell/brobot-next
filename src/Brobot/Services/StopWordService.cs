@@ -9,7 +9,7 @@ public class StopWordService(
     private HashSet<string>? _stopWords;
     private bool _isOutdated = true;
 
-    public async Task<bool> IsStopWord(string word)
+    public async Task<bool> IsStopWord(string word, CancellationToken cancellationToken = default)
     {
         if (_stopWords == null || _isOutdated)
         {
@@ -17,7 +17,7 @@ public class StopWordService(
             using (var scope = serviceScopeFactory.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var stopWordModels = await uow.StopWords.GetAll();
+                var stopWordModels = await uow.StopWords.GetAll(cancellationToken);
                 _stopWords = stopWordModels.Select(sw => sw.Word).ToHashSet();
             }
 

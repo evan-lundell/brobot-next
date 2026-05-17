@@ -21,16 +21,18 @@ public class HotOpsController(
     ILogger<HotOpsController> logger) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<HotOpResponse>>> GetHotOps([FromQuery] HotOpQueryType type = HotOpQueryType.All)
+    public async Task<ActionResult<IEnumerable<HotOpResponse>>> GetHotOps(
+        [FromQuery] HotOpQueryType type = HotOpQueryType.All,
+        CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         var now = DateTimeOffset.UtcNow;
         var hotOps = (type switch
         {
-            HotOpQueryType.Upcoming => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id && ho.StartDate > now),
-            HotOpQueryType.Current => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current),
-            HotOpQueryType.Completed => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed),
-            _ => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id)
+            HotOpQueryType.Upcoming => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id && ho.StartDate > now, cancellationToken),
+            HotOpQueryType.Current => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current, cancellationToken),
+            HotOpQueryType.Completed => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed, cancellationToken),
+            _ => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id, cancellationToken)
         }).Select(hotOp => hotOp.ToHotOpResponse());
         
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
@@ -46,7 +48,7 @@ public class HotOpsController(
     }
     
     [HttpPost]
-    public async Task<ActionResult<HotOpResponse>> CreateHotOp(HotOpRequest hotOpRequest)
+    public async Task<ActionResult<HotOpResponse>> CreateHotOp(HotOpRequest hotOpRequest, CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
@@ -55,7 +57,7 @@ public class HotOpsController(
             return BadRequest("Start date must be before end date");
         }
         
-        var channel = await uow.Channels.GetById(hotOpRequest.ChannelId);
+        var channel = await uow.Channels.GetById(hotOpRequest.ChannelId, cancellationToken);
         if (channel == null)
         {
             logger.LogWarning("Channel not found");
@@ -85,8 +87,8 @@ public class HotOpsController(
             EndDate = endDateAdjusted,
         };
 
-        await uow.HotOps.Add(hotOpModel);
-        await uow.CompleteAsync();
+        await uow.HotOps.Add(hotOpModel, cancellationToken);
+        await uow.CompleteAsync(cancellationToken);
         var hotOpResponse = hotOpModel.ToHotOpResponse();
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
@@ -98,10 +100,10 @@ public class HotOpsController(
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<HotOpResponse>> UpdateHotOp(int id, HotOpRequest hotOpRequest)
+    public async Task<ActionResult<HotOpResponse>> UpdateHotOp(int id, HotOpRequest hotOpRequest, CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
-        var hotOpModel = await uow.HotOps.GetById(id);
+        var hotOpModel = await uow.HotOps.GetById(id, cancellationToken);
         if (hotOpModel == null)
         {
             logger.LogWarning("Hot Op {HotOpId} not found", id);
@@ -120,7 +122,7 @@ public class HotOpsController(
             return BadRequest("Start date must be before end date");
         }
         
-        var channel = await uow.Channels.GetById(hotOpRequest.ChannelId);
+        var channel = await uow.Channels.GetById(hotOpRequest.ChannelId, cancellationToken);
         if (channel == null)
         {
             logger.LogWarning("Channel not found");
@@ -137,7 +139,7 @@ public class HotOpsController(
         hotOpModel.Channel = channel;
         hotOpModel.StartDate = adjustedTimes.StartDate;
         hotOpModel.EndDate = adjustedTimes.EndDate;
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
         var hotOpResponse = hotOpModel.ToHotOpResponse();
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
@@ -149,10 +151,10 @@ public class HotOpsController(
     }
     
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> DeleteHotOp(int id)
+    public async Task<IActionResult> DeleteHotOp(int id, CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
-        var hotOpModel = await uow.HotOps.GetById(id);
+        var hotOpModel = await uow.HotOps.GetById(id, cancellationToken);
         if (hotOpModel == null)
         {
             logger.LogWarning("Hot Op {HotOpId} not found", id);
@@ -166,14 +168,14 @@ public class HotOpsController(
         }
 
         uow.HotOps.Remove(hotOpModel);
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
         return Ok();
     }
 
     [HttpGet("{id:int}/scoreboard")]
-    public async Task<ActionResult<IEnumerable<ScoreboardItemResponse>>> GetHotOpScoreboard(int id)
+    public async Task<ActionResult<IEnumerable<ScoreboardItemResponse>>> GetHotOpScoreboard(int id, CancellationToken cancellationToken = default)
     {
-        var hotOp = await uow.HotOps.GetById(id);
+        var hotOp = await uow.HotOps.GetById(id, cancellationToken);
         if (hotOp == null)
         {
             logger.LogWarning("Hot Op {HotOpId} not found", id);

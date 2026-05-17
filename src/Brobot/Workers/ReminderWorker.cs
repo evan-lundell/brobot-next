@@ -16,7 +16,7 @@ public class ReminderWorker(
     {
         using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var messages = await uow.ScheduledMessages.GetActiveMessages();
+        var messages = await uow.ScheduledMessages.GetActiveMessages(cancellationToken: cancellationToken);
         foreach (var message in messages)
         {
             var channel = await client.GetChannelAsync(message.ChannelId);
@@ -24,10 +24,11 @@ public class ReminderWorker(
             {
                 continue;
             }
+            cancellationToken.ThrowIfCancellationRequested();
             await textChannel.SendMessageAsync(message.MessageText);
             message.SentDate = DateTime.UtcNow;
         }
 
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
     }
 }

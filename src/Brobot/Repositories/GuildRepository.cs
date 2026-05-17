@@ -9,7 +9,7 @@ public class GuildRepository(BrobotDbContext context, IChannelRepository channel
 {
     public IChannelRepository Channels { get; } = channels;
 
-    public override async Task Add(GuildModel entity,  CancellationToken cancellationToken = default)
+    public override async Task Add(GuildModel entity, CancellationToken cancellationToken = default)
     {
         var guild = await GetById(entity.Id, cancellationToken);
         if (guild is { Archived: true })
@@ -27,10 +27,10 @@ public class GuildRepository(BrobotDbContext context, IChannelRepository channel
     }
 
     [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-    public override async Task AddRange(IEnumerable<GuildModel> entities,  CancellationToken cancellationToken = default)
+    public override async Task AddRange(IEnumerable<GuildModel> entities, CancellationToken cancellationToken = default)
     {
         var guildIds = entities.Select(e => e.Id);
-        var existingGuilds = await Find(g => guildIds.Contains(g.Id),  cancellationToken);
+        var existingGuilds = await Find(g => guildIds.Contains(g.Id), cancellationToken);
         foreach (var existingGuild in existingGuilds)
         {
             if (!existingGuild.Archived)

@@ -4,5 +4,5 @@ namespace Brobot.Services;
 
 public interface IWordCloudService
 {
-    Task<byte[]> GetWordCloud(IEnumerable<WordCountDto> wordCounts);
+    Task<byte[]> GetWordCloud(IEnumerable<WordCountDto> wordCounts, CancellationToken cancellationToken = default);
 }

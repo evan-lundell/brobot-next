@@ -6,7 +6,7 @@ namespace Brobot.Services;
 
 public class DiscordOauthService(HttpClient client, IOptions<DiscordOptions> discordOptions, ILogger<DiscordOauthService> logger)
 {
-    public async Task<string> GetToken(string authorizationCode, string redirectUri)
+    public async Task<string> GetToken(string authorizationCode, string redirectUri, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Getting token");
         var body = new Dictionary<string, string>
@@ -18,8 +18,8 @@ public class DiscordOauthService(HttpClient client, IOptions<DiscordOptions> dis
             { "redirect_uri", redirectUri }
         };
 
-        var response = await client.PostAsync(discordOptions.Value.TokenEndpoint, new FormUrlEncodedContent(body));
-        var userData = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var response = await client.PostAsync(discordOptions.Value.TokenEndpoint, new FormUrlEncodedContent(body), cancellationToken);
+        var userData = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
         var accessToken = userData.GetProperty("access_token").GetString();
         if (string.IsNullOrWhiteSpace(accessToken))
         {
@@ -30,12 +30,12 @@ public class DiscordOauthService(HttpClient client, IOptions<DiscordOptions> dis
         return accessToken;
     }
 
-    public async Task<ulong> GetDiscordUserId(string accessToken)
+    public async Task<ulong> GetDiscordUserId(string accessToken, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Getting user id");
         client.DefaultRequestHeaders.Remove("Authorization");
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
-        var response = await client.GetFromJsonAsync<JsonElement>(discordOptions.Value.UserInformationEndpoint);
+        var response = await client.GetFromJsonAsync<JsonElement>(discordOptions.Value.UserInformationEndpoint, cancellationToken);
         var id = response.GetProperty("id").GetString();
         if (string.IsNullOrWhiteSpace(id))
         {

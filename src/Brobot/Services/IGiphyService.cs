@@ -2,5 +2,5 @@ namespace Brobot.Services;
 
 public interface IGiphyService
 {
-    Task<string> GetGif(string? tag);
+    Task<string> GetGif(string? tag, CancellationToken cancellationToken = default);
 }

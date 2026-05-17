@@ -7,7 +7,7 @@ namespace Brobot.Repositories;
 public class DailyMessageCountRepository(BrobotDbContext context)
     : RepositoryBase<DailyMessageCountModel, (ulong, ulong, DateOnly)>(context), IDailyMessageCountRepository
 {
-    public async Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDays(ulong userId, int numOfDays)
+    public async Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDays(ulong userId, int numOfDays, CancellationToken cancellationToken = default)
     {
         return await Context.DailyMessageCounts
             .Where(dmc => dmc.DiscordUserId == userId)
@@ -44,11 +44,11 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                     MessageCount = dmc.MessageCount
 
                 })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
 
-    public async Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDaysInChannel(ulong userId, ulong channelId, int numOfDays)
+    public async Task<IEnumerable<DailyMessageCountModel>> GetUsersTopDaysInChannel(ulong userId, ulong channelId, int numOfDays, CancellationToken cancellationToken = default)
     {
         return await Context.DailyMessageCounts
             .Where(dmc => dmc.DiscordUserId == userId && dmc.ChannelId == channelId)
@@ -86,10 +86,10 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                     MessageCount = dmc.MessageCount
 
                 })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<DailyMessageCountModel>> GetTopForDate(DateOnly date)
+    public async Task<IEnumerable<DailyMessageCountModel>> GetTopForDate(DateOnly date, CancellationToken cancellationToken = default)
     {
         var result = await Context.DailyMessageCounts
             .Where(d => d.CountDate == date)
@@ -124,12 +124,12 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                     },
                     MessageCount = dmc.MessageCount
                 })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
         return result;
     }
 
 
-    public async Task<IEnumerable<DailyMessageCountModel>> GetTopForDateByChannel(DateOnly date, ulong channelId)
+    public async Task<IEnumerable<DailyMessageCountModel>> GetTopForDateByChannel(DateOnly date, ulong channelId, CancellationToken cancellationToken = default)
     {
         var result = await Context.DailyMessageCounts
             .Where(d => d.CountDate == date && d.ChannelId == channelId)
@@ -165,11 +165,11 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                     },
                     MessageCount = dmc.MessageCount
                 })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
         return result;
     }
 
-    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalDailyMessageCounts(DateOnly startDate, DateOnly endDate)
+    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalDailyMessageCounts(DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken = default)
     {
         return await Context.DailyMessageCounts
             .Where(dmc => dmc.CountDate >= startDate && dmc.CountDate <= endDate)
@@ -204,10 +204,10 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                     },
                     MessageCount = dmc.MessageCount
                 })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
     
-    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalDailyMessageCountsByChannel(DateOnly startDate, DateOnly endDate, ulong channelId)
+    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalDailyMessageCountsByChannel(DateOnly startDate, DateOnly endDate, ulong channelId, CancellationToken cancellationToken = default)
     {
         return await Context.DailyMessageCounts
             .Where(dmc => dmc.CountDate >= startDate && dmc.CountDate <= endDate && dmc.ChannelId == channelId)
@@ -243,10 +243,10 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                     },
                     MessageCount = dmc.MessageCount
                 })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalTopDays(int numOfDays)
+    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalTopDays(int numOfDays, CancellationToken cancellationToken = default)
     {
         return await Context.DailyMessageCounts
             .GroupBy(dmc => new { dmc.CountDate })
@@ -276,10 +276,10 @@ public class DailyMessageCountRepository(BrobotDbContext context)
             })
             .OrderByDescending(d => d.MessageCount)
             .Take(numOfDays)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
     
-    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalTopDaysByChannel(ulong channelId, int numOfDays)
+    public async Task<IEnumerable<DailyMessageCountModel>> GetTotalTopDaysByChannel(ulong channelId, int numOfDays, CancellationToken cancellationToken = default)
     {
         return await Context.DailyMessageCounts
             .Where(dmc => dmc.ChannelId == channelId)
@@ -310,6 +310,6 @@ public class DailyMessageCountRepository(BrobotDbContext context)
             })
             .OrderByDescending(d => d.MessageCount)
             .Take(numOfDays)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 }

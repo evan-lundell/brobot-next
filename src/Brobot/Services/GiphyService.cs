@@ -9,7 +9,7 @@ namespace Brobot.Services;
 public class GiphyService(HttpClient http, IOptions<ExternalApisOptions> options, ILogger<GiphyService> logger)
     : IGiphyService
 {
-    public async Task<string> GetGif(string? tag)
+    public async Task<string> GetGif(string? tag, CancellationToken cancellationToken = default)
     {
         var queryStringBuilder = HttpUtility.ParseQueryString("");
         queryStringBuilder.Add("api_key", options.Value.GiphyApiKey);
@@ -25,7 +25,7 @@ public class GiphyService(HttpClient http, IOptions<ExternalApisOptions> options
 
         queryStringBuilder.Add("rating", "pg-13");
 
-        var response = await http.GetStringAsync($"random?{queryStringBuilder}");
+        var response = await http.GetStringAsync($"random?{queryStringBuilder}", cancellationToken);
         var giphy = JsonConvert.DeserializeObject<GiphyResponse>(response);
         var url = giphy?.Data?.Url ?? "";
 

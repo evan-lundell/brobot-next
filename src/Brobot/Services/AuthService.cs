@@ -12,10 +12,10 @@ public class AuthService(
     IUnitOfWork uow,
     ILogger<AuthService> logger) : IAuthService
 {
-    public async Task<AuthResultDto> GetOrCreateApplicationUserAsync(ulong discordUserId)
+    public async Task<AuthResultDto> GetOrCreateApplicationUserAsync(ulong discordUserId, CancellationToken cancellationToken = default)
     {
         // Check if this Discord user exists in our database
-        var discordUser = await uow.Users.GetById(discordUserId);
+        var discordUser = await uow.Users.GetById(discordUserId, cancellationToken);
         if (discordUser == null)
         {
             logger.LogWarning("Discord user {DiscordUserId} attempted to login but does not exist in database", discordUserId);
@@ -26,7 +26,7 @@ public class AuthService(
 
         // Check if an ApplicationUser already exists for this Discord user
         var existingUser = await userManager.Users
-            .FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId);
+            .FirstOrDefaultAsync(u => u.DiscordUserId == discordUserId, cancellationToken);
         ApplicationUserModel applicationUser;
 
         if (existingUser == null)
@@ -39,6 +39,7 @@ public class AuthService(
                 DiscordUser = discordUser
             };
 
+            cancellationToken.ThrowIfCancellationRequested();
             var createResult = await userManager.CreateAsync(applicationUser);
             if (!createResult.Succeeded)
             {
@@ -50,6 +51,7 @@ public class AuthService(
                     ErrorMessage: "Failed to create user account. Please try again.");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             var roleResult = await userManager.AddToRoleAsync(applicationUser, Constants.UserRoleName);
             if (!roleResult.Succeeded)
             {
@@ -68,6 +70,7 @@ public class AuthService(
             applicationUser = existingUser;
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         var roles = await userManager.GetRolesAsync(applicationUser);
 
         if (roles.Count == 0)

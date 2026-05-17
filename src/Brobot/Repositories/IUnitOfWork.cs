@@ -16,8 +16,8 @@ public interface IUnitOfWork : IDisposable
     IStopWordRepository StopWords { get; }
     IVersionRepository Versions { get; }
     IStatPeriodRepository StatPeriods { get; }
-    Task<IDbContextTransaction> BeginTransaction();
-    Task CommitTransaction(IDbContextTransaction transaction);
+    Task<IDbContextTransaction> BeginTransaction(CancellationToken cancellationToken = default);
+    Task CommitTransaction(IDbContextTransaction transaction, CancellationToken cancellationToken = default);
     BrobotDbContext DbContext { get; }
     Task<int> CompleteAsync(CancellationToken cancellationToken = default);
 }

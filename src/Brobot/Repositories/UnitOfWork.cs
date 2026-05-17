@@ -42,9 +42,9 @@ public class UnitOfWork : IUnitOfWork
         return _context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<IDbContextTransaction> BeginTransaction() => _context.Database.BeginTransactionAsync();
+    public Task<IDbContextTransaction> BeginTransaction(CancellationToken cancellationToken = default) => _context.Database.BeginTransactionAsync(cancellationToken);
 
-    public Task CommitTransaction(IDbContextTransaction transaction) => transaction.CommitAsync();
+    public Task CommitTransaction(IDbContextTransaction transaction, CancellationToken cancellationToken = default) => transaction.CommitAsync(cancellationToken);
 
 #pragma warning disable CA1816
     public void Dispose()
