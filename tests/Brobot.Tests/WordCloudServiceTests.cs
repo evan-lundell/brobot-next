@@ -82,7 +82,7 @@ public class WordCloudServiceTests
     }
     
     [Test]
-    public async Task GetWordCount_WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    public async Task GetWordCloudWhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
     {
         var cts = new CancellationTokenSource();
         await cts.CancelAsync();

@@ -69,7 +69,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
                         await uow.HotOpSessions.Find(hos => hos.HotOpId == hotOp.Id && hos.EndDateTime == null, cancellationToken);
                     foreach (var existingSession in existingSessions)
                     {
-                        if (connectedUsers.Any(cu => cu == existingSession.DiscordUserId) && users.ContainsKey(existingSession.DiscordUserId))
+                        if (connectedUsers.Any(cu => cu == existingSession.DiscordUserId))
                         {
                             existingSession.EndDateTime = now;
                         }

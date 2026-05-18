@@ -69,7 +69,14 @@ public abstract class CronWorkerBase : IHostedService, IDisposable
 
                         if (!cancellationToken.IsCancellationRequested)
                         {
-                            await DoWork(cancellationToken);
+                            try
+                            {
+                                await DoWork(cancellationToken);
+                            }
+                            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                            {
+                                return;
+                            }
                         }
 
                         if (!cancellationToken.IsCancellationRequested)

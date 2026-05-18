@@ -37,61 +37,80 @@ public class AuthController(
     public async Task<ActionResult<LoginResponse>> DiscordLogin(DiscordLoginRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Validate the state parameter to prevent CSRF attacks
-        if (!HttpContext.Request.Cookies.TryGetValue(OAuthStateCookieKey, out var storedState) ||
-            string.IsNullOrEmpty(storedState) ||
-            storedState != request.State)
+        try
         {
-            logger.LogWarning("OAuth state mismatch - possible CSRF attack");
+
+            // Validate the state parameter to prevent CSRF attacks
+            if (!HttpContext.Request.Cookies.TryGetValue(OAuthStateCookieKey, out var storedState) ||
+                string.IsNullOrEmpty(storedState) ||
+                storedState != request.State)
+            {
+                logger.LogWarning("OAuth state mismatch - possible CSRF attack");
+                return Ok(new LoginResponse
+                {
+                    Succeeded = false,
+                    Errors = ["Invalid authentication state. Please try again."]
+                });
+            }
+
+            // Clear the state cookie after validation
+            HttpContext.Response.Cookies.Delete(OAuthStateCookieKey);
+
+            // Exchange the authorization code for an access token
+            var accessToken =
+                await discordOauthService.GetToken(request.AuthorizationCode, request.RedirectUri, cancellationToken);
+
+            // Get the Discord user ID from the access token
+            var discordUserId = await discordOauthService.GetDiscordUserId(accessToken, cancellationToken);
+
+            // Get or create the application user
+            var authResult = await authService.GetOrCreateApplicationUserAsync(discordUserId, cancellationToken);
+            if (!authResult.Succeeded)
+            {
+                return Ok(new LoginResponse
+                {
+                    Succeeded = false,
+                    Errors = [authResult.ErrorMessage!]
+                });
+            }
+
+            // Generate JWT token
+            var token = jwtService.CreateJwt(authResult.User!, authResult.DiscordUser!, authResult.Roles!);
+
+            // Set refresh token cookie (longer expiry than JWT)
+            if (!string.IsNullOrWhiteSpace(authResult.User!.SecurityStamp))
+            {
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                };
+                HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, authResult.User.SecurityStamp,
+                    cookieOptions);
+            }
+
+            logger.LogInformation("Discord user {DiscordUserId} logged in successfully", discordUserId);
+            return Ok(new LoginResponse
+            {
+                Succeeded = true,
+                Token = token
+            });
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during Discord login");
             return Ok(new LoginResponse
             {
                 Succeeded = false,
-                Errors = ["Invalid authentication state. Please try again."]
+                Errors = ["An error occurred during login. Please try again."]
             });
         }
-
-        // Clear the state cookie after validation
-        HttpContext.Response.Cookies.Delete(OAuthStateCookieKey);
-
-        // Exchange the authorization code for an access token
-        var accessToken = await discordOauthService.GetToken(request.AuthorizationCode, request.RedirectUri, cancellationToken);
-
-        // Get the Discord user ID from the access token
-        var discordUserId = await discordOauthService.GetDiscordUserId(accessToken, cancellationToken);
-
-        // Get or create the application user
-        var authResult = await authService.GetOrCreateApplicationUserAsync(discordUserId, cancellationToken);
-        if (!authResult.Succeeded)
-        {
-            return Ok(new LoginResponse
-            {
-                Succeeded = false,
-                Errors = [authResult.ErrorMessage!]
-            });
-        }
-
-        // Generate JWT token
-        var token = jwtService.CreateJwt(authResult.User!, authResult.DiscordUser!, authResult.Roles!);
-
-        // Set refresh token cookie (longer expiry than JWT)
-        if (!string.IsNullOrWhiteSpace(authResult.User!.SecurityStamp))
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7)
-            };
-            HttpContext.Response.Cookies.Append(RefreshTokenCookieKey, authResult.User.SecurityStamp, cookieOptions);
-        }
-
-        logger.LogInformation("Discord user {DiscordUserId} logged in successfully", discordUserId);
-        return Ok(new LoginResponse
-        {
-            Succeeded = true,
-            Token = token
-        });
     }
 
     [HttpPost("refresh-token")]

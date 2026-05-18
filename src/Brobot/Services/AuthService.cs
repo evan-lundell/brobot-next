@@ -50,8 +50,7 @@ public class AuthService(
                     Succeeded: false,
                     ErrorMessage: "Failed to create user account. Please try again.");
             }
-
-            cancellationToken.ThrowIfCancellationRequested();
+            
             var roleResult = await userManager.AddToRoleAsync(applicationUser, Constants.UserRoleName);
             if (!roleResult.Succeeded)
             {

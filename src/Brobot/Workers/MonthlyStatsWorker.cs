@@ -39,6 +39,10 @@ public class MonthlyStatsWorker(
 
             logger.LogInformation("Finished monthly stats worker");
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error occurred during monthly stats worker");
