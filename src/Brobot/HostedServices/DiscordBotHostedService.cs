@@ -25,30 +25,34 @@ public class DiscordBotHostedService(
         _eventHandler.RegisterEvents();
 
         logger.LogInformation("Starting Discord bot");
-        
-        await socketClient.LoginAsync(TokenType.Bot, options.Value.BrobotToken);
 
-        // This will throw if connection fails
-        await socketClient.StartAsync();
+        var readyTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        // Optionally, wait for Ready event
-        var tcs = new TaskCompletionSource<bool>();
-        Task ReadyHandler()
+        Task OnReady()
         {
-            tcs.SetResult(true);
+            readyTcs.TrySetResult(true);
             return Task.CompletedTask;
         }
 
-        socketClient.Ready += ReadyHandler;
+        socketClient.Ready += OnReady;
 
-        // Wait up to 10 seconds
-        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(10), cancellationToken));
-        socketClient.Ready -= ReadyHandler;
-
-        if (completedTask != tcs.Task)
+        try
         {
-            logger.LogCritical("Failed to start Discord bot. Exiting");
-            throw new TimeoutException("Discord client did not become ready in time.");
+            await socketClient.LoginAsync(TokenType.Bot, options.Value.BrobotToken);
+            await socketClient.StartAsync();
+
+            var completed = await Task.WhenAny(
+                readyTcs.Task,
+                Task.Delay(TimeSpan.FromSeconds(10), cancellationToken));
+
+            if (completed != readyTcs.Task)
+            {
+                throw new TimeoutException("Discord client did not become ready in time.");
+            }
+        }
+        finally
+        {
+            socketClient.Ready -= OnReady;
         }
         
         logger.LogInformation("Discord bot started");

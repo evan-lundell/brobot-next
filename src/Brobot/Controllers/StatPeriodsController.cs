@@ -19,9 +19,9 @@ public class StatPeriodsController(
 {
     [HttpGet("{statPeriodId}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> GetStatPeriod([FromRoute] int statPeriodId)
+    public async Task<ActionResult> GetStatPeriod([FromRoute] int statPeriodId, CancellationToken cancellationToken = default)
     {
-        var statPeriodModel = await uow.StatPeriods.GetStatPeriodWithCounts(statPeriodId);
+        var statPeriodModel = await uow.StatPeriods.GetStatPeriodWithCounts(statPeriodId, cancellationToken);
         if (statPeriodModel == null)
         {
             logger.LogWarning("StatPeriod {StatPeriodId} not found", statPeriodId);
@@ -32,10 +32,10 @@ public class StatPeriodsController(
     
     [HttpPost("collect")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> CollectStats(StatPeriodRequest request)
+    public async Task<ActionResult> CollectStats(StatPeriodRequest request, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting collect stats for channel {Channel}", request.ChannelId);
-        var channel = await uow.Channels.GetById(request.ChannelId);
+        var channel = await uow.Channels.GetById(request.ChannelId, cancellationToken);
         if (channel == null)
         {
             logger.LogWarning("Channel {ChannelId} not found", request.ChannelId);
@@ -56,26 +56,34 @@ public class StatPeriodsController(
             StartDate = request.StartDate,
             EndDate = request.EndDate
         };
-        await uow.StatPeriods.Add(statPeriod);
-        await uow.CompleteAsync();
+        await uow.StatPeriods.Add(statPeriod, cancellationToken);
+        await uow.CompleteAsync(cancellationToken);
         logger.LogInformation("Stat period created, queueing background job");
-        
-        backgroundTaskQueue.QueueBackgroundWorkItem(async _ =>
+
+        var queued = backgroundTaskQueue.QueueBackgroundWorkItem(async ct =>
         {
             using var scope = scopeFactory.CreateScope();
             var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
-            await statsService.GetStats(channel, request.StartDate, request.EndDate, statPeriod.Id);
+            await statsService.GetStats(channel, request.StartDate, request.EndDate, statPeriod.Id, ct);
         });
-        logger.LogInformation("Queued stats collecting for {Channel}", request.ChannelId);
+        if (queued)
+        {
+            logger.LogInformation("Queued stats collecting for {Channel}", request.ChannelId);
+        }
+        else
+        {
+            logger.LogError("Failed to queue stats collecting for {Channel}", request.ChannelId);
+            return StatusCode(500, "Failed to queue stats collecting");
+        }
         return Ok(statPeriod.ToStatPeriodResponse());
     }
     
     
     [HttpPost("generate")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> GenerateWordCloud(StatPeriodRequest request)
+    public async Task<ActionResult> GenerateWordCloud(StatPeriodRequest request, CancellationToken cancellationToken = default)
     {
-        var channel = await uow.Channels.GetById(request.ChannelId);
+        var channel = await uow.Channels.GetById(request.ChannelId, cancellationToken);
         if (channel == null)
         {
             logger.LogWarning("Channel {ChannelId} not found", request.ChannelId);
@@ -95,16 +103,21 @@ public class StatPeriodsController(
             StartDate = request.StartDate,
             EndDate = request.EndDate
         };
-        await uow.StatPeriods.Add(statPeriod);
-        await uow.CompleteAsync();
-        
-        backgroundTaskQueue.QueueBackgroundWorkItem(async _ =>
+        await uow.StatPeriods.Add(statPeriod, cancellationToken);
+        await uow.CompleteAsync(cancellationToken);
+
+        var queued = backgroundTaskQueue.QueueBackgroundWorkItem(async ct =>
         {
             using var scope = scopeFactory.CreateScope();
             var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
-            var stats = await statsService.GetStats(channel, request.StartDate, request.EndDate, statPeriod.Id);
-            await statsService.SendStats(channel.Id, stats);
+            var stats = await statsService.GetStats(channel, request.StartDate, request.EndDate, statPeriod.Id, ct);
+            await statsService.SendStats(channel.Id, stats, ct);
         });
+        if (!queued)
+        {
+            logger.LogError("Failed to queue word cloud generation for {Channel}", request.ChannelId);
+            return StatusCode(500, "Failed to queue word cloud generation");
+        }
         return Ok(statPeriod.ToStatPeriodResponse());
     }
 }

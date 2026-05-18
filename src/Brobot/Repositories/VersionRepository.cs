@@ -6,11 +6,11 @@ namespace Brobot.Repositories;
 
 public class VersionRepository(BrobotDbContext context) : RepositoryBase<VersionModel, int>(context), IVersionRepository
 {
-    public async Task<VersionModel?> GetLatestVersion()
+    public async Task<VersionModel?> GetLatestVersion(CancellationToken cancellationToken = default)
     {
         var latestVersion = await Context.Versions
             .OrderByDescending(v => v.VersionDate)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
         return latestVersion;
     }
 }

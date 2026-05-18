@@ -11,11 +11,12 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
     private readonly string[] _separators =
         [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "\"", "@", "*", "<", ">", "[", "]", "(", ")", "-", ";", "*", "{", "}", "+", "=", "#", "~"];
 
-    public async Task<IEnumerable<WordCountDto>> GetWordCount(ChannelModel channel, DateTime startDate, DateTime endDate)
+    public async Task<IEnumerable<WordCountDto>> GetWordCount(ChannelModel channel, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("Getting word count for channel {Channel} from {StartDate} to {EndDate}",  channel.Id, startDate.Date.ToShortDateString(), endDate.Date.ToShortDateString());
+            cancellationToken.ThrowIfCancellationRequested();
             var socketChannel = await client.GetChannelAsync(channel.Id);
             if (socketChannel is not ISocketMessageChannel socketTextChannel)
             {
@@ -43,6 +44,7 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
                 IAsyncEnumerable<IReadOnlyCollection<IMessage>> messageCollection = fromMessageId.HasValue
                     ? socketTextChannel.GetMessagesAsync(fromMessageId.Value, Direction.Before)
                     : socketTextChannel.GetMessagesAsync();
+                cancellationToken.ThrowIfCancellationRequested();
                 var messages = (await messageCollection.FlattenAsync()).ToList();
                 if (messages.Count == 0)
                 {
@@ -69,7 +71,7 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
                     var wordSplit = message.Content.Split(_separators, StringSplitOptions.RemoveEmptyEntries);
                     foreach (var word in wordSplit)
                     {
-                        if (await stopWordService.IsStopWord(word))
+                        if (await stopWordService.IsStopWord(word, cancellationToken))
                         {
                             continue;
                         }
@@ -92,12 +94,16 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
 
                 if (!done)
                 {
-                    await Task.Delay(2500);
+                    await Task.Delay(2500, cancellationToken);
                 }
             }
 
             logger.LogInformation("Finished getting word counts for channel {Channel} from {StartDate} to {EndDate}",  channel.Id, startDate.Date.ToShortDateString(), endDate.Date.ToShortDateString());
             return wordCounts.Values;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception e)
         {

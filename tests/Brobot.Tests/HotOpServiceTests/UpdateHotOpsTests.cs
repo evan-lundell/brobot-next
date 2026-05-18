@@ -1,4 +1,6 @@
 using Brobot.Shared;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Brobot.Tests.HotOpServiceTests;
 
@@ -77,5 +79,33 @@ public class UpdateHotOpsTests : HotOpServiceTestsBase
             Assert.That(hotOps.First(ho => ho.Id == 4).HotOpSessions, Is.Empty);
             Assert.That(hotOps.First(ho => ho.Id == 5).HotOpSessions, Has.Count.EqualTo(2));
         });
+    }
+
+    [Test]
+    public async Task UserNotInDatabase_NoChangesToHotOps()
+    {
+        await HotOpService.UpdateHotOps(100UL, UserVoiceStateAction.Connected, [1UL, 2UL]);
+
+        var hotOp = await UnitOfWork.HotOps.GetById(1);
+        Assert.That(hotOp, Is.Not.Null);
+        Assert.That(hotOp.HotOpSessions, Has.Count.EqualTo(4));
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("User 100 not found in database")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Exactly(3));
+    }
+
+    [Test]
+    public async Task ConnectedUserNotInDatabase_NoChangesToHotOps()
+    {
+        await HotOpService.UpdateHotOps(1UL, UserVoiceStateAction.Connected, [100UL]);
+        
+        var hotOp = await UnitOfWork.HotOps.GetById(5);
+        Assert.That(hotOp, Is.Not.Null);
+        Assert.That(hotOp.HotOpSessions, Has.Count.EqualTo(2));
     }
 }

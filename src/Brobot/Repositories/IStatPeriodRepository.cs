@@ -4,5 +4,5 @@ namespace Brobot.Repositories;
 
 public interface IStatPeriodRepository : IRepository<StatPeriodModel, int>
 {
-    Task<StatPeriodModel?> GetStatPeriodWithCounts(int statPeriodId);
+    Task<StatPeriodModel?> GetStatPeriodWithCounts(int statPeriodId, CancellationToken cancellationToken = default);
 }

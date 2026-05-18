@@ -42,7 +42,7 @@ public class UsersController(
 
     [HttpPatch("settings")]
     [Authorize]
-    public async Task<ActionResult<UserSettingsResponse>> UpdateUserSettings(UserSettingsRequest userSettingsRequest)
+    public async Task<ActionResult<UserSettingsResponse>> UpdateUserSettings(UserSettingsRequest userSettingsRequest, CancellationToken cancellationToken = default)
     {
         var identityUser = await userManager.GetUserAsync(HttpContext.User);
         if (identityUser == null)
@@ -55,7 +55,7 @@ public class UsersController(
         discordUser.Birthdate = userSettingsRequest.BirthDate;
         discordUser.Timezone = userSettingsRequest.Timezone;
         discordUser.PrimaryChannelId = userSettingsRequest.PrimaryChannelId;
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
 
         return Ok(new UserSettingsResponse
         {
@@ -67,17 +67,17 @@ public class UsersController(
 
     [HttpGet("all")]
     [Authorize(Roles = Constants.AdminRoleName)]
-    public async Task<ActionResult<IEnumerable<DiscordUserModel>>> GetAllUsers()
+    public async Task<ActionResult<IEnumerable<DiscordUserModel>>> GetAllUsers(CancellationToken cancellationToken = default)
     {
-        var users = await uow.Users.GetAll();
+        var users = await uow.Users.GetAll(cancellationToken);
         return Ok(users.Select(u => u.ToUserResponse()));
     }
 
     [HttpGet("{userId}/settings")]
     [Authorize(Roles = Constants.AdminRoleName)]
-    public async Task<ActionResult<UserSettingsResponse>> GetUserSettingsById(ulong userId)
+    public async Task<ActionResult<UserSettingsResponse>> GetUserSettingsById(ulong userId, CancellationToken cancellationToken = default)
     {
-        var discordUser = await uow.Users.GetById(userId);
+        var discordUser = await uow.Users.GetById(userId, cancellationToken);
         if (discordUser == null)
         {
             return NotFound();
@@ -94,9 +94,9 @@ public class UsersController(
 
     [HttpPatch("{userId}/settings")]
     [Authorize(Roles = Constants.AdminRoleName)]
-    public async Task<ActionResult<UserSettingsResponse>> UpdateUserSettingsById(ulong userId, UserSettingsRequest userSettingsRequest)
+    public async Task<ActionResult<UserSettingsResponse>> UpdateUserSettingsById(ulong userId, UserSettingsRequest userSettingsRequest, CancellationToken cancellationToken = default)
     {
-        var discordUser = await uow.Users.GetById(userId);
+        var discordUser = await uow.Users.GetById(userId, cancellationToken);
         if (discordUser == null)
         {
             return NotFound();
@@ -105,7 +105,7 @@ public class UsersController(
         discordUser.Birthdate = userSettingsRequest.BirthDate;
         discordUser.Timezone = userSettingsRequest.Timezone;
         discordUser.PrimaryChannelId = userSettingsRequest.PrimaryChannelId;
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
 
         return Ok(new UserSettingsResponse
         {

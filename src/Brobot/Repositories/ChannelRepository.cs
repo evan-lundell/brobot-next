@@ -8,9 +8,9 @@ namespace Brobot.Repositories;
 public class ChannelRepository(BrobotDbContext context)
     : RepositoryBase<ChannelModel, ulong>(context), IChannelRepository
 {
-    public override async Task Add(ChannelModel entity)
+    public override async Task Add(ChannelModel entity, CancellationToken cancellationToken = default)
     {
-        var existingChannel = await GetById(entity.Id);
+        var existingChannel = await GetById(entity.Id, cancellationToken);
         if (existingChannel is { Archived: true })
         {
             existingChannel.Archived = false;
@@ -22,14 +22,14 @@ public class ChannelRepository(BrobotDbContext context)
             throw new ArgumentException($"Channel with id {entity.Id} already exists");
         }
 
-        await base.Add(entity);
+        await base.Add(entity, cancellationToken);
     }
 
     [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-    public override async Task AddRange(IEnumerable<ChannelModel> entities)
+    public override async Task AddRange(IEnumerable<ChannelModel> entities, CancellationToken cancellationToken = default)
     {
         var channelIds = entities.Select(e => e.Id);
-        var existingChannels = await Find(c => channelIds.Contains(c.Id));
+        var existingChannels = await Find(c => channelIds.Contains(c.Id), cancellationToken);
         foreach (var existingChannel in existingChannels)
         {
             if (!existingChannel.Archived)
@@ -40,7 +40,7 @@ public class ChannelRepository(BrobotDbContext context)
             existingChannel.Archived = false;
         }
 
-        await base.AddRange(entities.ExceptBy(existingChannels.Select(ec => ec.Id), c => c.Id));
+        await base.AddRange(entities.ExceptBy(existingChannels.Select(ec => ec.Id), c => c.Id), cancellationToken);
     }
 
     public override void Remove(ChannelModel entity)
@@ -56,13 +56,13 @@ public class ChannelRepository(BrobotDbContext context)
         }
     }
 
-    public async Task<IEnumerable<ChannelModel>> FindByUser(ulong userId)
+    public async Task<IEnumerable<ChannelModel>> FindByUser(ulong userId, CancellationToken cancellationToken = default)
         => await Context.Channels
             .Where(c => !c.Archived && c.ChannelUsers.Any(cu => cu.UserId == userId))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
-    public Task<ChannelModel?> GetByIdWithChannelUsers(ulong channelId)
+    public Task<ChannelModel?> GetByIdWithChannelUsers(ulong channelId, CancellationToken cancellationToken = default)
         => Context.Channels
             .Include(c => c.ChannelUsers)
-            .SingleOrDefaultAsync(c => c.Id == channelId);
+            .SingleOrDefaultAsync(c => c.Id == channelId, cancellationToken);
 }

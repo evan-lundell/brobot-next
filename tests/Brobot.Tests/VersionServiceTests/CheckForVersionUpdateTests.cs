@@ -213,4 +213,40 @@ public class CheckForVersionUpdateTests : VersionServiceTestsBase
                 It.IsAny<PollProperties>()), Times.Once);
         }
     }
+
+    [Test]
+    public async Task WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        
+        Assert.That(async () => await VersionService.CheckForVersionUpdate(cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+        MockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Never);
+    }
+    
+    [Test]
+    public async Task WhenExceptionIsThrown_LogsError()
+    {
+        MockAssemblyService.Setup(a => a.GetVersionFromAssembly())
+            .Throws(new Exception());
+        
+        await VersionService.CheckForVersionUpdate();
+        
+        MockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Equals("Error checking for version update")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }

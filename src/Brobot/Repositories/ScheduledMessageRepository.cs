@@ -7,18 +7,18 @@ namespace Brobot.Repositories;
 public class ScheduledMessageRepository(BrobotDbContext context)
     : RepositoryBase<ScheduledMessageModel, int>(context), IScheduledMessageRepository
 {
-    public async Task<IEnumerable<ScheduledMessageModel>> GetActiveMessages(DateTime? time = null)
+    public async Task<IEnumerable<ScheduledMessageModel>> GetActiveMessages(DateTime? time = null, CancellationToken cancellationToken = default)
     {
         time ??= DateTime.UtcNow;
         var messages = await Context.ScheduledMessages
             .Where(m => time >= m.SendDate && time < m.SendDate.Value.AddMinutes(1) && m.SentDate == null)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return messages;
     }
 
     public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(ulong userId, int? limit = null,
-        int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
+        int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null, CancellationToken cancellationToken = default)
     {
         var query = Context.ScheduledMessages
             .AsSplitQuery()
@@ -48,6 +48,6 @@ public class ScheduledMessageRepository(BrobotDbContext context)
         }
 
         return await query
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 }

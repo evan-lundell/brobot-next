@@ -4,6 +4,6 @@ namespace Brobot.Repositories;
 
 public interface IScheduledMessageRepository : IRepository<ScheduledMessageModel, int>
 {
-    Task<IEnumerable<ScheduledMessageModel>> GetActiveMessages(DateTime? time = null);
-    Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(ulong userId, int? limit = null, int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null);
+    Task<IEnumerable<ScheduledMessageModel>> GetActiveMessages(DateTime? time = null, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(ulong userId, int? limit = null, int skip = 0, DateTime? scheduledBefore = null, DateTime? scheduledAfter = null, CancellationToken cancellationToken = default);
 }

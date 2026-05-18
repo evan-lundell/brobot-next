@@ -90,4 +90,10 @@ public class ThreadDeletedTests : SyncServiceTestsBase
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Test]
+    public void TokenCanceled_ThrowsOperationCanceledException()
+    {
+        AssertCanceled(async ct => await SyncService.ThreadDeleted(Mock.Of<IThreadChannel>(), ct));
+    }
 }    

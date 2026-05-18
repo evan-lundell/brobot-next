@@ -5,20 +5,20 @@ namespace Brobot.Services;
 
 public interface ISyncService
 {
-    Task SyncOnStartup();
-    Task GuildAvailable(IGuild guild);
-    Task GuildUnavailable(IGuild guild);
-    Task GuildUpdated(IGuild previousGuild, IGuild currentGuild);
-    Task ChannelCreated(IGuildChannel channel);
-    Task ChannelDestroyed(IGuildChannel channel);
-    Task ChannelUpdated(IGuild guild, ISocketMessageChannel previous, ISocketMessageChannel current);
-    Task PresenceUpdated(IUser socketUser, IPresence formerSocketPresence, IPresence currentSocketPresence);
-    Task UserVoiceStateUpdated(IUser user, IVoiceState previousVoiceState, IVoiceState currentVoiceState);
-    Task MessageReceived(IMessage message);
-    Task MessageDeleted(IMessage message, IMessageChannel channel, IGuild guild);
-    Task ThreadCreated(IThreadChannel thread);
-    Task ThreadDeleted(IThreadChannel thread);
-    Task ThreadMemberJoined(IThreadUser user);
-    Task ThreadUpdated(IThreadChannel oldThread, IThreadChannel newThread);
-    Task ThreadMemberLeft(IThreadUser threadUser);
+    Task SyncOnStartup(CancellationToken cancellationToken = default);
+    Task GuildAvailable(IGuild guild, CancellationToken cancellationToken = default);
+    Task GuildUnavailable(IGuild guild, CancellationToken cancellationToken = default);
+    Task GuildUpdated(IGuild previousGuild, IGuild currentGuild, CancellationToken cancellationToken = default);
+    Task ChannelCreated(IGuildChannel channel, CancellationToken cancellationToken = default);
+    Task ChannelDestroyed(IGuildChannel channel, CancellationToken cancellationToken = default);
+    Task ChannelUpdated(IGuild guild, ISocketMessageChannel previous, ISocketMessageChannel current, CancellationToken cancellationToken = default);
+    Task PresenceUpdated(IUser socketUser, IPresence formerSocketPresence, IPresence currentSocketPresence, CancellationToken cancellationToken = default);
+    Task UserVoiceStateUpdated(IUser user, IVoiceState previousVoiceState, IVoiceState currentVoiceState, CancellationToken cancellationToken = default);
+    Task MessageReceived(IMessage message, CancellationToken cancellationToken = default);
+    Task MessageDeleted(IMessage message, IMessageChannel channel, IGuild guild, CancellationToken cancellationToken = default);
+    Task ThreadCreated(IThreadChannel thread, CancellationToken cancellationToken = default);
+    Task ThreadDeleted(IThreadChannel thread, CancellationToken cancellationToken = default);
+    Task ThreadMemberJoined(IThreadUser user, CancellationToken cancellationToken = default);
+    Task ThreadUpdated(IThreadChannel oldThread, IThreadChannel newThread, CancellationToken cancellationToken = default);
+    Task ThreadMemberLeft(IThreadUser threadUser, CancellationToken cancellationToken = default);
 }

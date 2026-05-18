@@ -22,41 +22,48 @@ public class HotOpWorker(
         var now = DateTime.UtcNow;
         var minuteStart = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, now.Kind);
 
-        var newHotOps = await uow.HotOps.Find(ho => minuteStart <= ho.StartDate && minuteStart.AddMinutes(1) > ho.StartDate);
+        var newHotOps = await uow.HotOps.Find(
+            ho => minuteStart <= ho.StartDate && minuteStart.AddMinutes(1) > ho.StartDate,
+            cancellationToken);
         foreach (var newHotOp in newHotOps)
         {
-            await HandleNewHotOp(newHotOp);
+            await HandleNewHotOp(newHotOp, cancellationToken);
         }
 
-        var endingHotOps = await uow.HotOps.Find(ho => minuteStart <= ho.EndDate && minuteStart.AddMinutes(1) > ho.EndDate);
+        var endingHotOps = await uow.HotOps.Find(
+            ho => minuteStart <= ho.EndDate && minuteStart.AddMinutes(1) > ho.EndDate,
+            cancellationToken);
         foreach (var endingHotOp in endingHotOps)
         {
-            await HandleEndingHotOp(endingHotOp, uow, hotOpService);
+            await HandleEndingHotOp(endingHotOp, uow, hotOpService, cancellationToken);
         }
     }
 
-    private async Task HandleNewHotOp(HotOpModel hotOp)
+    private async Task HandleNewHotOp(HotOpModel hotOp, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var channel = await client.GetChannelAsync(hotOp.ChannelId);
         if (channel is ISocketMessageChannel textChannel)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             await textChannel.SendMessageAsync($"Operation Hot {hotOp.DiscordUser.Username} has begun!");
         }
     }
 
-    private async Task HandleEndingHotOp(HotOpModel hotOp, IUnitOfWork uow, IHotOpService hotOpService)
+    private async Task HandleEndingHotOp(HotOpModel hotOp, IUnitOfWork uow, IHotOpService hotOpService, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         foreach (var openSession in hotOp.HotOpSessions.Where(hos => hos.EndDateTime == null))
         {
             openSession.EndDateTime = now;
         }
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
 
         var channel = await client.GetChannelAsync(hotOp.ChannelId);
         if (channel is ISocketMessageChannel textChannel)
         {
             var scoreboardEmbed = hotOpService.CreateScoreboardEmbed(hotOp);
+            cancellationToken.ThrowIfCancellationRequested();
             await textChannel.SendMessageAsync(text: $"Operation Hot {hotOp.DiscordUser.Username} has ended!", embed: scoreboardEmbed);
         }
     }

@@ -14,21 +14,21 @@ public class SyncService(
     ILogger<SyncService> logger,
     IOptions<GeneralOptions> generalOptions) : ISyncService
 {
-    public async Task ChannelCreated(IGuildChannel channel)
+    public async Task ChannelCreated(IGuildChannel channel, CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("New channel created with ChannelId {ChannelId}", channel.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var guild = await uow.Guilds.GetById(channel.GuildId);
+            var guild = await uow.Guilds.GetById(channel.GuildId, cancellationToken);
             if (guild == null)
             {
                 logger.LogWarning("No guild found with Id of {GuildId}", channel.GuildId);
                 return;
             }
 
-            var userModels = (await uow.Users.GetAllWithGuildsAndChannels())
+            var userModels = (await uow.Users.GetAllWithGuildsAndChannels(cancellationToken))
                 .Where(u => !u.Archived)
                 .ToDictionary(u => u.Id);
             var newChannel = new ChannelModel
@@ -39,6 +39,7 @@ public class SyncService(
                 GuildId = guild.Id
             };
 
+            cancellationToken.ThrowIfCancellationRequested();
             await foreach (var user in channel.GetUsersAsync().Flatten())
             {
                 newChannel.ChannelUsers.Add(new ChannelDiscordUserModel
@@ -50,9 +51,13 @@ public class SyncService(
                 });
             }
 
-            await uow.Channels.Add(newChannel);
-            await uow.CompleteAsync();
+            await uow.Channels.Add(newChannel, cancellationToken);
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Channel {ChannelId} added to database.", channel.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -60,14 +65,14 @@ public class SyncService(
         }
     }
 
-    public async Task ChannelDestroyed(IGuildChannel channel)
+    public async Task ChannelDestroyed(IGuildChannel channel, CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("Channel {ChannelId} was destroyed.", channel.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var channelToBeDeleted = await uow.Channels.GetById(channel.Id);
+            var channelToBeDeleted = await uow.Channels.GetById(channel.Id, cancellationToken);
             if (channelToBeDeleted == null)
             {
                 logger.LogWarning("Channel {ChannelId} could not be found.", channel.Id);
@@ -75,8 +80,12 @@ public class SyncService(
             }
 
             uow.Channels.Remove(channelToBeDeleted);
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Channel {ChannelId} removed from database.", channel.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -84,7 +93,7 @@ public class SyncService(
         }
     }
 
-    public async Task ChannelUpdated(IGuild guild, ISocketMessageChannel previous, ISocketMessageChannel current)
+    public async Task ChannelUpdated(IGuild guild, ISocketMessageChannel previous, ISocketMessageChannel current, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -96,6 +105,7 @@ public class SyncService(
             logger.LogInformation("Channel {ChannelId} name updated from {PreviousName} to {CurrentName}.",
                 current.Id, previous.Name, current.Name);
             var userName = "";
+            cancellationToken.ThrowIfCancellationRequested();
             var auditLogs = await guild.GetAuditLogsAsync(limit: 1, actionType: ActionType.ChannelUpdated);
             var auditLog = auditLogs.FirstOrDefault();
             if (auditLog != null)
@@ -104,6 +114,7 @@ public class SyncService(
             }
 
             logger.LogInformation("Sending name update message");
+            cancellationToken.ThrowIfCancellationRequested();
             if (!string.IsNullOrWhiteSpace(userName))
             {
                 await current.SendMessageAsync(
@@ -119,7 +130,7 @@ public class SyncService(
             logger.LogInformation("Updating database");
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var channelModel = await uow.Channels.GetById(current.Id);
+            var channelModel = await uow.Channels.GetById(current.Id, cancellationToken);
             if (channelModel == null)
             {
                 logger.LogWarning("Channel {ChannelId} could not be found in database.", current.Id);
@@ -127,8 +138,12 @@ public class SyncService(
             }
 
             channelModel.Name = current.Name;
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Finished updating name in database");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -136,21 +151,21 @@ public class SyncService(
         }
     }
 
-    public async Task GuildAvailable(IGuild guild)
+    public async Task GuildAvailable(IGuild guild, CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("Guild {GuildId} is now available", guild.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var guildModel = await uow.Guilds.GetById(guild.Id);
+            var guildModel = await uow.Guilds.GetById(guild.Id, cancellationToken);
             if (guildModel != null)
             {
                 logger.LogInformation("Guild {GuildId} is already in the database", guild.Id);
                 return;
             }
 
-            var userLookup = (await uow.Users.GetAllWithGuildsAndChannels())
+            var userLookup = (await uow.Users.GetAllWithGuildsAndChannels(cancellationToken))
                 .Where(u => !u.Archived)
                 .ToDictionary(u => u.Id);
             var newGuild = new GuildModel
@@ -158,7 +173,7 @@ public class SyncService(
                 Id = guild.Id,
                 Name = guild.Name
             };
-            await uow.Guilds.Add(newGuild);
+            await uow.Guilds.Add(newGuild, cancellationToken);
             logger.LogInformation("Guild {GuildId} added to database", guild.Id);
 
             var channels = await guild.GetChannelsAsync();
@@ -173,8 +188,9 @@ public class SyncService(
                     Guild = newGuild,
                     GuildId = guild.Id
                 };
-                await uow.Channels.Add(newChannel);
+                await uow.Channels.Add(newChannel, cancellationToken);
 
+                cancellationToken.ThrowIfCancellationRequested();
                 await foreach (var user in channel.GetUsersAsync().Flatten().Where(u => !u.IsBot))
                 {
                     logger.LogInformation("Processing user {UserId}", user.Id);
@@ -216,8 +232,12 @@ public class SyncService(
                 logger.LogInformation("Finished adding channel {ChannelId} to the database", channel.Id);
             }
 
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Finished processing guild {GuildId}", guild.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -225,22 +245,26 @@ public class SyncService(
         }
     }
 
-    public async Task GuildUnavailable(IGuild guild)
+    public async Task GuildUnavailable(IGuild guild, CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("Guild {GuildId} is now unavailable", guild.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var guildToBeDeleted = await uow.Guilds.GetById(guild.Id);
+            var guildToBeDeleted = await uow.Guilds.GetById(guild.Id, cancellationToken);
             if (guildToBeDeleted == null)
             {
                 return;
             }
 
             uow.Guilds.Remove(guildToBeDeleted);
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Finished deleting guild {GuildId}", guild.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -248,45 +272,44 @@ public class SyncService(
         }
     }
 
-        public async Task GuildUpdated(IGuild previousGuild, IGuild currentGuild)
+    public async Task GuildUpdated(IGuild previousGuild, IGuild currentGuild, CancellationToken cancellationToken = default)
+    {
+        try
         {
-            try
+            logger.LogInformation("Updating guild name from {PreviousGuildName} to {CurrentGuildName}",
+                previousGuild.Name, currentGuild.Name);
+            using var scope = serviceScopeFactory.CreateScope();
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var guildModel = await uow.Guilds.GetById(currentGuild.Id, cancellationToken);
+            if (guildModel == null)
             {
-                if (previousGuild.Name == currentGuild.Name)
-                {
-                    return;
-                }
-
-                logger.LogInformation("Updating guild name from {PreviousGuildName} to {CurrentGuildName}",
-                    previousGuild.Name, currentGuild.Name);
-                using var scope = serviceScopeFactory.CreateScope();
-                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var guildModel = await uow.Guilds.GetById(currentGuild.Id);
-                if (guildModel == null)
-                {
-                    return;
-                }
-
-                guildModel.Name = currentGuild.Name;
-                await uow.CompleteAsync();
-                logger.LogInformation("Finished updating guild {GuildId}", currentGuild.Id);
+                return;
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error processing guild unavailable for GuildId {GuildId}", previousGuild.Id);
-            }
+
+            guildModel.Name = currentGuild.Name;
+            await uow.CompleteAsync(cancellationToken);
+            logger.LogInformation("Finished updating guild {GuildId}", currentGuild.Id);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error processing guild updated for GuildId {GuildId}", previousGuild.Id);
+        }
+    }
 
-    public async Task SyncOnStartup()
+    public async Task SyncOnStartup(CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("Starting up sync service");
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var guildModels = (await uow.Guilds.Find(g => !g.Archived)).ToDictionary(g => g.Id);
-            var channelModels = (await uow.Channels.Find(c => !c.Archived)).ToDictionary(c => c.Id);
-            var userModels = (await uow.Users.GetAllWithGuildsAndChannels()).Where(u => !u.Archived)
+            var guildModels = (await uow.Guilds.Find(g => !g.Archived, cancellationToken)).ToDictionary(g => g.Id);
+            var channelModels = (await uow.Channels.Find(c => !c.Archived, cancellationToken)).ToDictionary(c => c.Id);
+            var userModels = (await uow.Users.GetAllWithGuildsAndChannels(cancellationToken)).Where(u => !u.Archived)
                 .ToDictionary(u => u.Id);
 
             var guildIds = new HashSet<ulong>();
@@ -294,6 +317,7 @@ public class SyncService(
             var userIds = new HashSet<ulong>();
 
             // Create new entities or update existing entities
+            cancellationToken.ThrowIfCancellationRequested();
             var guilds = await discordClient.GetGuildsAsync();
             foreach (var guild in guilds)
             {
@@ -307,7 +331,7 @@ public class SyncService(
                         Id = guild.Id,
                         Name = guild.Name
                     };
-                    await uow.Guilds.Add(newGuild);
+                    await uow.Guilds.Add(newGuild, cancellationToken);
                     guildModels.Add(guild.Id, newGuild);
                     logger.LogInformation("Added guild {GuildId} to the database", guild.Id);
                 }
@@ -318,14 +342,11 @@ public class SyncService(
                     guildModel.Name = guild.Name;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 var channels = await guild.GetChannelsAsync();
-                foreach (var channel in channels)
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var channel in channels.Where(c => c.ChannelType == ChannelType.Text))
                 {
-                    if (channel.ChannelType != ChannelType.Text)
-                    {
-                        continue;
-                    }
-
                     logger.LogInformation("Processing channel {ChannelId}", channel.Id);
                     channelIds.Add(channel.Id);
                     if (!channelModels.TryGetValue(channel.Id, out var channelModel))
@@ -339,7 +360,7 @@ public class SyncService(
                             GuildId = guild.Id
                         };
                         channelModels.Add(channel.Id, newChannel);
-                        await uow.Channels.Add(newChannel);
+                        await uow.Channels.Add(newChannel, cancellationToken);
                         logger.LogInformation("Added channel {ChannelId} to the database", channel.Id);
                     }
                     else if (channelModel.Name != channel.Name)
@@ -349,6 +370,7 @@ public class SyncService(
                             channel.Id, channelModel.Name, channel.Name);
                     }
 
+                    cancellationToken.ThrowIfCancellationRequested();
                     await foreach (var user in channel.GetUsersAsync().Flatten().Where(u => !u.IsBot))
                     {
                         logger.LogInformation("Processing user {UserId}", user.Id);
@@ -362,7 +384,7 @@ public class SyncService(
                                 Username = user.Username
                             };
                             userModels.Add(user.Id, newUser);
-                            await uow.Users.Add(newUser);
+                            await uow.Users.Add(newUser, cancellationToken);
                             logger.LogInformation("Added user {UserId} to the database", user.Id);
                         }
                         else if (userModel.Username != user.Username)
@@ -407,6 +429,7 @@ public class SyncService(
                 }
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             // Remove old entities
             foreach (var guild in guildModels.Values.Where(g => !guildIds.Contains(g.Id)))
             {
@@ -426,8 +449,12 @@ public class SyncService(
                 uow.Users.Remove(user);
             }
 
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Finished sync process");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -435,28 +462,26 @@ public class SyncService(
         }
     }
 
-    public async Task PresenceUpdated(IUser socketUser, IPresence formerSocketPresence, IPresence currentSocketPresence)
+    public async Task PresenceUpdated(IUser socketUser, IPresence formerSocketPresence, IPresence currentSocketPresence, CancellationToken cancellationToken = default)
     {
         try
         {
-            if (currentSocketPresence.Status == UserStatus.Online || socketUser.IsBot)
-            {
-                return;
-            }
-
             var now = DateTime.UtcNow;
             logger.LogInformation("Updating user {UserId} last online to {LastOnline}", socketUser.Id, now);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var user = await uow.Users.GetById(socketUser.Id);
+            var user = await uow.Users.GetById(socketUser.Id, cancellationToken);
             if (user == null)
             {
-
                 return;
             }
 
             user.LastOnline = now;
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -464,36 +489,36 @@ public class SyncService(
         }
     }
 
-    public async Task UserVoiceStateUpdated(IUser user, IVoiceState previousVoiceState, IVoiceState currentVoiceState)
+    public async Task UserVoiceStateUpdated(IUser user, IVoiceState previousVoiceState, IVoiceState currentVoiceState, CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("Processing user voice state updated for {UserId}", user.Id);
 
-            if (previousVoiceState.VoiceChannel?.Id == currentVoiceState.VoiceChannel?.Id)
-            {
-                logger.LogInformation("No channel change, finished processing user voice state updated for {UserId}", user.Id);
-                return;
-            }
-            
             using var scope = serviceScopeFactory.CreateScope();
             var hotOpService = scope.ServiceProvider.GetRequiredService<IHotOpService>();
-            
+
             if (currentVoiceState.VoiceChannel != null)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var connectedUsers = await currentVoiceState.VoiceChannel.GetConnectedUsersAsync();
                 await hotOpService.UpdateHotOps(user.Id, UserVoiceStateAction.Connected,
-                    connectedUsers.Select(u => u.Id).ToList());
+                    connectedUsers.Select(u => u.Id).ToList(), cancellationToken);
             }
 
             if (previousVoiceState.VoiceChannel != null)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var connectedUsers = await previousVoiceState.VoiceChannel.GetConnectedUsersAsync();
                 await hotOpService.UpdateHotOps(user.Id, UserVoiceStateAction.Disconnected,
-                    connectedUsers.Select(u => u.Id).ToList());
+                    connectedUsers.Select(u => u.Id).ToList(), cancellationToken);
             }
 
             logger.LogInformation("Finished processing user voice state updated for {UserId}", user.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -501,7 +526,7 @@ public class SyncService(
         }
     }
 
-    public async Task MessageReceived(IMessage message)
+    public async Task MessageReceived(IMessage message, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -512,8 +537,10 @@ public class SyncService(
 
             using var scope = serviceScopeFactory.CreateScope();
             var messageCountService = scope.ServiceProvider.GetRequiredService<IMessageCountService>();
-            await messageCountService.AddToDailyCount(message.Author.Id, message.Channel.Id);
+            await messageCountService.AddToDailyCount(message.Author.Id, message.Channel.Id, cancellationToken: cancellationToken);
 
+
+            cancellationToken.ThrowIfCancellationRequested();
             switch (message.Content.ToLower())
             {
                 case "good bot":
@@ -524,6 +551,7 @@ public class SyncService(
                     break;
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             var fixTwitterLinks = generalOptions.Value.FixTwitterLinks;
             if (fixTwitterLinks)
             {
@@ -540,6 +568,10 @@ public class SyncService(
                 }
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error processing message received");
@@ -547,7 +579,7 @@ public class SyncService(
     }
 
     public async Task MessageDeleted(IMessage message,
-        IMessageChannel channel, IGuild guild)
+        IMessageChannel channel, IGuild guild, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -557,11 +589,13 @@ public class SyncService(
             {
                 return;
             }
-                
+
+            cancellationToken.ThrowIfCancellationRequested();
             var auditLog = (await guild.GetAuditLogsAsync(limit: 1, actionType: ActionType.MessageDeleted))
                 .FirstOrDefault();
             if (auditLog == null)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 await channel.SendMessageAsync($"I saw that {message.Author.Username} :spy:");
                 return;
             }
@@ -570,8 +604,13 @@ public class SyncService(
                 ? auditLog.User.Username
                 : message.Author.Username;
 
+            cancellationToken.ThrowIfCancellationRequested();
             await channel.SendMessageAsync($"I saw that {username} :spy:");
             logger.LogInformation("Finished processing message deletion");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -579,21 +618,21 @@ public class SyncService(
         }
     }
 
-    public async Task ThreadCreated(IThreadChannel thread)
+    public async Task ThreadCreated(IThreadChannel thread, CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("Thread created: {ThreadId}", thread.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var guild = await uow.Guilds.GetById(thread.Guild.Id);
+            var guild = await uow.Guilds.GetById(thread.Guild.Id, cancellationToken);
             if (guild == null)
             {
                 logger.LogWarning("Thread creation failed. Guild {GuildId} does not exist", thread.Guild.Id);
                 return;
             }
 
-            var existingThread = await uow.Channels.GetById(thread.Id);
+            var existingThread = await uow.Channels.GetById(thread.Id, cancellationToken);
             if (existingThread is { Archived: false })
             {
                 logger.LogWarning("Thread creation failed. Thread with ID {ThreadId} already exists", thread.Id);
@@ -615,9 +654,9 @@ public class SyncService(
                     Guild = guild,
                     GuildId = thread.Guild.Id
                 };
-                await uow.Channels.Add(newThread);
+                await uow.Channels.Add(newThread, cancellationToken);
 
-                var discordUser = await uow.Users.GetById(thread.OwnerId);
+                var discordUser = await uow.Users.GetById(thread.OwnerId, cancellationToken);
                 if (discordUser != null)
                 {
                     newThread.ChannelUsers.Add(new ChannelDiscordUserModel
@@ -630,7 +669,11 @@ public class SyncService(
                 }
             }
 
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -638,22 +681,26 @@ public class SyncService(
         }
     }
 
-    public async Task ThreadDeleted(IThreadChannel thread)
+    public async Task ThreadDeleted(IThreadChannel thread, CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("Thread deleted: {ThreadId}", thread.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var existingThread = await uow.Channels.GetById(thread.Id);
+            var existingThread = await uow.Channels.GetById(thread.Id, cancellationToken);
             if (existingThread == null)
             {
                 return;
             }
 
             uow.Channels.Remove(existingThread);
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Finished deleting thread {ThreadId} from database", thread.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -661,20 +708,15 @@ public class SyncService(
         }
     }
 
-    public async Task ThreadMemberJoined(IThreadUser user)
+    public async Task ThreadMemberJoined(IThreadUser user, CancellationToken cancellationToken = default)
     {
         try
         {
-            if (user.GuildUser.IsBot || user.GuildUser.IsWebhook)
-            {
-                return;
-            }
-
             logger.LogInformation("User {UserId} joined thread {ThreadId}", user.GuildUser.Id, user.Thread.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(user.Thread.Id);
-            var existingDiscordUser = await uow.Users.GetById(user.GuildUser.Id);
+            var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(user.Thread.Id, cancellationToken);
+            var existingDiscordUser = await uow.Users.GetById(user.GuildUser.Id, cancellationToken);
 
             if (existingChannelModel == null)
             {
@@ -699,11 +741,15 @@ public class SyncService(
                     DiscordUser = existingDiscordUser,
                     UserId = existingDiscordUser.Id
                 });
-                await uow.CompleteAsync();
+                await uow.CompleteAsync(cancellationToken);
             }
 
             logger.LogInformation("Finished processing user {UserId} joining thread {ThreadId}", user.GuildUser.Id,
                 user.Thread.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -711,22 +757,26 @@ public class SyncService(
         }
     }
 
-    public async Task ThreadUpdated(IThreadChannel oldThread, IThreadChannel newThread)
+    public async Task ThreadUpdated(IThreadChannel oldThread, IThreadChannel newThread, CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation("Thread updated: {ThreadId}", oldThread.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var existingChannelModel = await uow.Channels.GetById(oldThread.Id);
+            var existingChannelModel = await uow.Channels.GetById(oldThread.Id, cancellationToken);
             if (existingChannelModel == null || existingChannelModel.Name == newThread.Name)
             {
                 return;
             }
 
             existingChannelModel.Name = newThread.Name;
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Finished processing thread {ThreadId}", oldThread.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -734,21 +784,16 @@ public class SyncService(
         }
     }
 
-    public async Task ThreadMemberLeft(IThreadUser threadUser)
+    public async Task ThreadMemberLeft(IThreadUser threadUser, CancellationToken cancellationToken = default)
     {
         try
         {
-            if (threadUser.GuildUser.IsBot)
-            {
-                return;
-            }
-
             logger.LogInformation("User {UserId} left thread {ThreadId}", threadUser.GuildUser.Id,
                 threadUser.Thread.Id);
             using var scope = serviceScopeFactory.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(threadUser.Thread.Id);
-            var existingDiscordUser = await uow.Users.GetById(threadUser.GuildUser.Id);
+            var existingChannelModel = await uow.Channels.GetByIdWithChannelUsers(threadUser.Thread.Id, cancellationToken);
+            var existingDiscordUser = await uow.Users.GetById(threadUser.GuildUser.Id, cancellationToken);
 
             if (existingChannelModel == null)
             {
@@ -771,9 +816,13 @@ public class SyncService(
             }
 
             existingChannelModel.ChannelUsers.Remove(channelUserModel);
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
             logger.LogInformation("Finished processing user {UserId} leaving thread {ThreadId}",
                 threadUser.GuildUser.Id, threadUser.Thread.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {

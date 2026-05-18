@@ -5,7 +5,7 @@ namespace Brobot.Services;
 
 public class WordCloudService(HttpClient http, ILogger<WordCloudService> logger) : IWordCloudService
 {
-    public async Task<byte[]> GetWordCloud(IEnumerable<WordCountDto> wordCounts)
+    public async Task<byte[]> GetWordCloud(IEnumerable<WordCountDto> wordCounts, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -19,10 +19,14 @@ public class WordCloudService(HttpClient http, ILogger<WordCloudService> logger)
                 fontSize = 8,
                 height = 1000,
                 width = 1000
-            });
+            }, cancellationToken);
             response.EnsureSuccessStatusCode();
             logger.LogInformation("Finished getting wordcloud");
-            return await response.Content.ReadAsByteArrayAsync();
+            return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception e)
         {

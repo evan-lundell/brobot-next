@@ -211,4 +211,10 @@ public class GuildAvailableTests : SyncServiceTestsBase
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
     }
+
+    [Test]
+    public void WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        AssertCanceled(async cancellationToken => await SyncService.GuildAvailable(new Mock<IGuild>().Object, cancellationToken));
+    }
 }

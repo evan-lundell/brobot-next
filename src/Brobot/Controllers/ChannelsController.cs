@@ -14,10 +14,10 @@ public class ChannelsController(IUnitOfWork uow) : ControllerBase
 {
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<ChannelResponse>>> GetChannels()
+    public async Task<ActionResult<IEnumerable<ChannelResponse>>> GetChannels(CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
-        var channels = await uow.Channels.FindByUser(discordUser.Id);
+        var channels = await uow.Channels.FindByUser(discordUser.Id, cancellationToken);
         return Ok(channels.Select(c => c.ToChannelResponse()));
     }
 }

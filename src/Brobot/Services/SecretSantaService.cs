@@ -14,23 +14,23 @@ public class SecretSantaService(
     Random random,
     ILogger<SecretSantaService> logger) : ISecretSantaService
 {
-    public async Task<IEnumerable<SecretSantaGroupResponse>> GetSecretSantaGroups()
+    public async Task<IEnumerable<SecretSantaGroupResponse>> GetSecretSantaGroups(CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Getting secret santa groups");
-        var secretSantaGroups = (await uow.SecretSantaGroups.GetAll()).ToArray();
+        var secretSantaGroups = (await uow.SecretSantaGroups.GetAll(cancellationToken)).ToArray();
         logger.LogInformation("Found {Length} secrets santa groups", secretSantaGroups.Length);
         return secretSantaGroups.Select(group => group.ToSecretSantaGroupResponse());
     }
 
-    public async Task<SecretSantaGroupResponse?> GetSecretSantaGroup(int secretSantaGroupId)
+    public async Task<SecretSantaGroupResponse?> GetSecretSantaGroup(int secretSantaGroupId, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Getting secret santa group {SecretSantaGroupId}", secretSantaGroupId);
-        var secretSantaGroup = await uow.SecretSantaGroups.GetByIdNoTracking(secretSantaGroupId);
+        var secretSantaGroup = await uow.SecretSantaGroups.GetByIdNoTracking(secretSantaGroupId, cancellationToken);
         logger.LogInformation("Found secret santa group {SecretSantaGroupId}", secretSantaGroupId);
         return secretSantaGroup?.ToSecretSantaGroupResponse();
     }
 
-    public async Task<SecretSantaGroupResponse> CreateSecretSantaGroup(SecretSantaGroupRequest secretSantaGroup)
+    public async Task<SecretSantaGroupResponse> CreateSecretSantaGroup(SecretSantaGroupRequest secretSantaGroup, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Creating secret santa group");
         var secretSantaGroupModel = new SecretSantaGroupModel
@@ -40,7 +40,7 @@ public class SecretSantaService(
 
         foreach (var user in secretSantaGroup.Users)
         {
-            var userModel = await uow.Users.GetById(user.Id);
+            var userModel = await uow.Users.GetById(user.Id, cancellationToken);
             if (userModel == null)
             {
                 throw new InvalidOperationException($"User with id {user.Id} does not exist");
@@ -53,23 +53,23 @@ public class SecretSantaService(
             });
         }
 
-        await uow.SecretSantaGroups.Add(secretSantaGroupModel);
-        await uow.CompleteAsync();
+        await uow.SecretSantaGroups.Add(secretSantaGroupModel, cancellationToken);
+        await uow.CompleteAsync(cancellationToken);
         
         logger.LogInformation("Finished creating secret santa group with id of {SecretSantaGroupId}", secretSantaGroupModel.Id);
         return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 
-    public async Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, DiscordUserResponse discordUser)
+    public async Task<SecretSantaGroupResponse> AddUserToGroup(int secretSantaGroupId, DiscordUserResponse discordUser, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Adding user {UserId} to secret santa group {SecretSantaGroupId}", discordUser.Id, secretSantaGroupId);
-        var secretSantaGroupModel = await uow.SecretSantaGroups.GetById(secretSantaGroupId);
+        var secretSantaGroupModel = await uow.SecretSantaGroups.GetById(secretSantaGroupId, cancellationToken);
         if (secretSantaGroupModel == null)
         {
             throw new ModelNotFoundException<SecretSantaGroupModel, int>(secretSantaGroupId);
         }
 
-        var userModel = await uow.Users.GetById(discordUser.Id);
+        var userModel = await uow.Users.GetById(discordUser.Id, cancellationToken);
         if (userModel == null)
         {
             throw new InvalidOperationException($"User with id {discordUser.Id} does not exist");
@@ -81,16 +81,16 @@ public class SecretSantaService(
             SecretSantaGroup = secretSantaGroupModel
         };
         secretSantaGroupModel.SecretSantaGroupUsers.Add(secretSantaGroupUserModel);
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
         
         logger.LogInformation("Finished adding user {UserId} to secret santa group {SecretSantaGroupId}", discordUser.Id, secretSantaGroupId);
         return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 
-    public async Task<SecretSantaGroupResponse> RemoveUserFromGroup(int secretSantaGroupId, ulong userId)
+    public async Task<SecretSantaGroupResponse> RemoveUserFromGroup(int secretSantaGroupId, ulong userId, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Removing user {UserId} from secret santa group {SecretSantaGroupId}", userId, secretSantaGroupId);
-        var secretSantaGroupModel = await uow.SecretSantaGroups.GetById(secretSantaGroupId);
+        var secretSantaGroupModel = await uow.SecretSantaGroups.GetById(secretSantaGroupId, cancellationToken);
         if (secretSantaGroupModel == null)
         {
             throw new ModelNotFoundException<SecretSantaGroupModel, int>(secretSantaGroupId);
@@ -104,29 +104,29 @@ public class SecretSantaService(
         }
 
         secretSantaGroupModel.SecretSantaGroupUsers.Remove(secretSantaGroupUserModel);
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
         
         logger.LogInformation("Finished removing user {UserId} from secret santa group {SecretSantaGroupId}", userId, secretSantaGroupId);
         return secretSantaGroupModel.ToSecretSantaGroupResponse();
     }
 
-    public async Task<IEnumerable<SecretSantaPairResponse>> GeneratePairsForCurrentYear(int secretSantaGroupId)
+    public async Task<IEnumerable<SecretSantaPairResponse>> GeneratePairsForCurrentYear(int secretSantaGroupId, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Generating pairs for secret santa group {SecretSantaGroupId}", secretSantaGroupId);
-        var secretSantaGroup = await uow.SecretSantaGroups.GetById(secretSantaGroupId);
+        var secretSantaGroup = await uow.SecretSantaGroups.GetById(secretSantaGroupId, cancellationToken);
         if (secretSantaGroup == null)
         {
             throw new ModelNotFoundException<SecretSantaGroupModel, int>(secretSantaGroupId);
         }
 
         var currentYear = DateTime.Now.Year;
-        var existingPairsInYear = (await uow.SecretSantaGroups.GetPairs(secretSantaGroupId, currentYear)).ToArray();
+        var existingPairsInYear = (await uow.SecretSantaGroups.GetPairs(secretSantaGroupId, currentYear, cancellationToken)).ToArray();
         if (existingPairsInYear.Length != 0)
         {
             throw new InvalidOperationException("Pairs already exists for current year");
         }
 
-        var previousYearPairs = (await uow.SecretSantaGroups.GetPairs(secretSantaGroupId, currentYear - 1)).ToArray();
+        var previousYearPairs = (await uow.SecretSantaGroups.GetPairs(secretSantaGroupId, currentYear - 1, cancellationToken)).ToArray();
         var availableGivers = secretSantaGroup.SecretSantaGroupUsers.Select(ssgu => ssgu.DiscordUser).ToList();
         var availableRecipients = secretSantaGroup.SecretSantaGroupUsers.Select(ssgu => ssgu.DiscordUser).ToList();
         var newPairs = new List<SecretSantaPairModel>();
@@ -167,18 +167,21 @@ public class SecretSantaService(
         {
             secretSantaGroup.SecretSantaPairs.Add(pair);
         }
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
         
         logger.LogInformation("Finished generating pairs for secret santa group {SecretSantaGroupId}", secretSantaGroupId);
         return newPairs.Select(pair => pair.ToSecretSantaPairResponse());
     }
 
-    public async Task SendPairs(IEnumerable<SecretSantaPairResponse> pairs)
+    public async Task SendPairs(IEnumerable<SecretSantaPairResponse> pairs, CancellationToken cancellationToken = default)
     {
+        
         logger.LogInformation("Sending secret santa pairs");
         foreach (var pair in pairs)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var socketUser = await client.GetUserAsync(pair.Giver.Id);
+            cancellationToken.ThrowIfCancellationRequested();
             await socketUser.SendMessageAsync($"You have {pair.Recipient.Username}! :santa:");
         }
         logger.LogInformation("Finished sending pairs for secret santa pairs");

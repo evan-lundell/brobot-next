@@ -621,6 +621,12 @@ public class SyncOnStartupTests : SyncServiceTestsBase
             Times.Once);
     }
 
+    [Test]
+    public void WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        AssertCanceled(async cancellationToken => await SyncService.SyncOnStartup(cancellationToken));
+    }
+
     private Mock<IGuildUser> SetupUserMock(ulong userId, string username)
     {
         Mock<IGuildUser> mockUser = new();

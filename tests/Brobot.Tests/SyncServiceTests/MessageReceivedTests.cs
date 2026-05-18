@@ -16,6 +16,7 @@ public class MessageReceivedTests : SyncServiceTestsBase
     [SetUp]
     public override void Setup()
     {
+        LoggerMock = new Mock<ILogger<SyncService>>();
         Mock<IServiceScopeFactory> scopeFactoryMock = new();
         Mock<IServiceScope> scopeMock = new();
         Mock<IServiceProvider> scopedProviderMock = new();
@@ -51,7 +52,7 @@ public class MessageReceivedTests : SyncServiceTestsBase
         SyncService = new SyncService(
             scopeFactoryMock.Object, 
             Mock.Of<IDiscordClient>(), 
-            Mock.Of<ILogger<SyncService>>(),
+            LoggerMock.Object,
             Options.Create(generalOptions));
     }
 
@@ -276,5 +277,19 @@ public class MessageReceivedTests : SyncServiceTestsBase
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
+    }
+    
+    [Test]
+    public void TokenCanceled_ThrowsOperationCanceledException()
+    {
+        Mock<IMessage> messageMock = new();
+        Mock<IUser> authorMock = new();
+        Mock<IMessageChannel> channelMock = new();
+        authorMock.Setup(a => a.IsBot).Returns(false);
+        messageMock.Setup(m => m.Author).Returns(authorMock.Object);
+        messageMock.SetupGet(m => m.Channel).Returns(channelMock.Object);
+        messageMock.SetupGet(m => m.Id).Returns(1);
+        channelMock.SetupGet(c => c.Id).Returns(1);
+        AssertCanceled(token => SyncService.MessageReceived(messageMock.Object, token));
     }
 }

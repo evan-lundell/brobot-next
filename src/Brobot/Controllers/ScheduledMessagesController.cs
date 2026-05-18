@@ -24,7 +24,8 @@ public class ScheduledMessagesController(
         [FromQuery] int? limit = null,
         [FromQuery] int skip = 0,
         [FromQuery] DateTime? scheduledBefore = null,
-        [FromQuery] DateTime? scheduledAfter = null)
+        [FromQuery] DateTime? scheduledAfter = null,
+        CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (limit > MaxLimit)
@@ -32,13 +33,14 @@ public class ScheduledMessagesController(
             logger.LogWarning("{Limit} exceeds the maximum limit of {MaxLimit}.", limit, MaxLimit);
             return BadRequest($"Limit cannot be greater than {MaxLimit}");
         }
-        var scheduledMessages = await scheduledMessageService.GetScheduledMessagesByUser(discordUser, limit, skip, scheduledBefore, scheduledAfter);
+        var scheduledMessages = await scheduledMessageService.GetScheduledMessagesByUser(discordUser, limit, skip, scheduledBefore, scheduledAfter, cancellationToken);
         return Ok(scheduledMessages.Select(sm => sm.ToScheduledMessageResponse()));
     }
 
     [HttpPost]
     public async Task<ActionResult<ScheduledMessageResponse>> CreateScheduledMessage(
-        ScheduledMessageRequest scheduledMessage)
+        ScheduledMessageRequest scheduledMessage,
+        CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         if (scheduledMessage.ChannelId == null)
@@ -48,7 +50,7 @@ public class ScheduledMessagesController(
         }
 
         var newScheduledMessage = await scheduledMessageService.CreateScheduledMessage(scheduledMessage.MessageText,
-            discordUser, scheduledMessage.SendDate, scheduledMessage.ChannelId.Value);
+            discordUser, scheduledMessage.SendDate, scheduledMessage.ChannelId.Value, cancellationToken);
         // ReSharper disable once InvertIf
         if (newScheduledMessage.SendDate.HasValue &&
             !string.IsNullOrWhiteSpace(newScheduledMessage.CreatedBy.Timezone))
@@ -63,11 +65,13 @@ public class ScheduledMessagesController(
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<ScheduledMessageResponse>> UpdateScheduledMessage(int id,
-        ScheduledMessageRequest scheduledMessageRequest)
+    public async Task<ActionResult<ScheduledMessageResponse>> UpdateScheduledMessage(
+        int id,
+        ScheduledMessageRequest scheduledMessageRequest,
+        CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
-        if (!await scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id))
+        if (!await scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id, cancellationToken))
         {
             logger.LogWarning("User {UserId} is not authorized to update scheduled message {ScheduledMessageId}.", discordUser.Id, id);
             return Unauthorized();
@@ -75,21 +79,22 @@ public class ScheduledMessagesController(
 
         var updated = await scheduledMessageService.UpdateScheduledMessage(id,
             scheduledMessageRequest.MessageText, scheduledMessageRequest.ChannelId,
-            scheduledMessageRequest.SendDate);
+            scheduledMessageRequest.SendDate,
+            cancellationToken);
         return Ok(updated.ToScheduledMessageResponse());
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteScheduledMessage(int id)
+    public async Task<IActionResult> DeleteScheduledMessage(int id, CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
-        if (!await scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id))
+        if (!await scheduledMessageService.CanUserUpdateScheduledMessage(discordUser, id, cancellationToken))
         {
             logger.LogWarning("User {UserId} is not authorized to delete scheduled message {ScheduledMessageId}.", discordUser.Id, id);
             return Unauthorized();
         }
 
-        if (!await scheduledMessageService.DeleteScheduledMessage(id))
+        if (!await scheduledMessageService.DeleteScheduledMessage(id, cancellationToken))
         {
             logger.LogWarning("Scheduled message {ScheduledMessageId} was not found and could not be deleted.", id);
             return NotFound();

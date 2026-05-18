@@ -168,7 +168,7 @@ public class ThreadCreatedTests : SyncServiceTestsBase
         serviceScopeFactoryMock.Setup(s => s.CreateScope()).Throws<Exception>();
         Mock<IThreadChannel> threadChannelMock = new();
         threadChannelMock.SetupGet(t => t.Id).Returns(1UL);
-        
+
         SyncService syncService = new(
             serviceScopeFactoryMock.Object,
             MockDiscordClient.Object,
@@ -180,7 +180,7 @@ public class ThreadCreatedTests : SyncServiceTestsBase
             }));
 
         await syncService.ThreadCreated(threadChannelMock.Object);
-        
+
         LoggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -189,5 +189,16 @@ public class ThreadCreatedTests : SyncServiceTestsBase
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
+    }
+    
+    [Test]
+    public void TokenCanceled_ThrowsOperationCanceledException()
+    {
+        Mock<IThreadChannel> threadChannelMock = new();
+        threadChannelMock.SetupGet(t => t.Id).Returns(100UL);
+        Mock<IGuild> guildMock = new();
+        guildMock.SetupGet(g => g.Id).Returns(1UL);
+        threadChannelMock.Setup(t => t.Guild).Returns(guildMock.Object);
+        AssertCanceled(async cancellationToken => await SyncService.ThreadCreated(threadChannelMock.Object, cancellationToken));
     }
 }

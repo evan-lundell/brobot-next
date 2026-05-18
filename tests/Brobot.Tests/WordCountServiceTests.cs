@@ -269,6 +269,24 @@ public class WordCountServiceTests
         }
     }
 
+    [Test]
+    public async Task GetWordCount_WhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        
+        Assert.That(async () => await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow, cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Never);
+    }
+
     private static IAsyncEnumerable<IReadOnlyCollection<IMessage>> CreateMockAsyncEnumerable(List<IMessage> messages)
     {
         return new[] { (IReadOnlyCollection<IMessage>)messages }.ToAsyncEnumerable();

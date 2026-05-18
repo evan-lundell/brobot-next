@@ -64,4 +64,26 @@ public abstract class SyncServiceTestsBase
         Context.Dispose();
         _serviceProvider.Dispose();
     }
+
+    protected static CancellationToken CreateCanceledToken()
+    {
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+        return cts.Token;
+    }
+
+    protected void AssertCanceled(Func<CancellationToken, Task> action)
+    {
+        var token = CreateCanceledToken();
+        Assert.That(async () => await action(token),
+            Throws.InstanceOf<OperationCanceledException>());
+        LoggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Never);
+    }
 }

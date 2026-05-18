@@ -80,4 +80,47 @@ public class WordCloudServiceTests
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
     }
+    
+    [Test]
+    public async Task GetWordCloudWhenCancellationTokenIsCanceled_ThrowsOperationCanceledException()
+    {
+        var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        var wordCounts = new[] { new WordCountDto { Word = "test", Count = 1 } };
+        var expectedBytes = new byte[] { 1, 2, 3 };
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns<HttpRequestMessage, CancellationToken>((request, token) =>
+            {
+                token.ThrowIfCancellationRequested();
+                return Task.FromResult(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new ByteArrayContent(expectedBytes)
+                });
+            });
+
+        var httpClient = new HttpClient(handlerMock.Object)
+        {
+            BaseAddress = new Uri("http://localhost/")
+        };
+        var loggerMock = new Mock<ILogger<WordCloudService>>();
+        
+        var service = new WordCloudService(httpClient, loggerMock.Object);
+        
+        Assert.That(async () => await service.GetWordCloud(wordCounts, cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+        loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Never);
+    }
 }

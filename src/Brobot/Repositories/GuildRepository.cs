@@ -9,9 +9,9 @@ public class GuildRepository(BrobotDbContext context, IChannelRepository channel
 {
     public IChannelRepository Channels { get; } = channels;
 
-    public override async Task Add(GuildModel entity)
+    public override async Task Add(GuildModel entity, CancellationToken cancellationToken = default)
     {
-        var guild = await GetById(entity.Id);
+        var guild = await GetById(entity.Id, cancellationToken);
         if (guild is { Archived: true })
         {
             guild.Archived = false;
@@ -23,14 +23,14 @@ public class GuildRepository(BrobotDbContext context, IChannelRepository channel
             throw new ArgumentException($"Guild with id {entity.Id} already exists");
         }
 
-        await base.Add(entity);
+        await base.Add(entity, cancellationToken);
     }
 
     [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-    public override async Task AddRange(IEnumerable<GuildModel> entities)
+    public override async Task AddRange(IEnumerable<GuildModel> entities, CancellationToken cancellationToken = default)
     {
         var guildIds = entities.Select(e => e.Id);
-        var existingGuilds = await Find(g => guildIds.Contains(g.Id));
+        var existingGuilds = await Find(g => guildIds.Contains(g.Id), cancellationToken);
         foreach (var existingGuild in existingGuilds)
         {
             if (!existingGuild.Archived)
@@ -39,7 +39,7 @@ public class GuildRepository(BrobotDbContext context, IChannelRepository channel
             }
             existingGuild.Archived = false;
         }
-        await base.AddRange(entities.ExceptBy(existingGuilds.Select(eg => eg.Id), e => e.Id));
+        await base.AddRange(entities.ExceptBy(existingGuilds.Select(eg => eg.Id), e => e.Id), cancellationToken);
     }
 
     public override void Remove(GuildModel entity)

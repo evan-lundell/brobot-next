@@ -6,9 +6,9 @@ namespace Brobot.Repositories;
 
 public class UserRepository(BrobotDbContext context) : RepositoryBase<DiscordUserModel, ulong>(context), IUserRepository
 {
-    public override async Task Add(DiscordUserModel entity)
+    public override async Task Add(DiscordUserModel entity, CancellationToken cancellationToken = default)
     {
-        var existingUser = await GetById(entity.Id);
+        var existingUser = await GetById(entity.Id, cancellationToken);
         if (existingUser is { Archived: true })
         {
             existingUser.Archived = false;
@@ -20,7 +20,7 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<DiscordUse
             throw new ArgumentException($"User with ID of {entity.Id} already exists");
         }
 
-        await base.Add(entity);
+        await base.Add(entity, cancellationToken);
     }
 
     public override void Remove(DiscordUserModel entity)
@@ -38,7 +38,7 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<DiscordUse
         }
     }
 
-    public async Task<IEnumerable<DiscordUserModel>> GetAllWithGuildsAndChannels()
+    public async Task<IEnumerable<DiscordUserModel>> GetAllWithGuildsAndChannels(CancellationToken cancellationToken = default)
     {
         return await Context.DiscordUsers
             .AsSplitQuery()
@@ -48,10 +48,10 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<DiscordUse
             .ThenInclude(cu => cu.Channel)
             .Include(u => u.ScheduledMessages)
             .AsSplitQuery()
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public Task<DiscordUserModel?> GetByIdWithIncludes(ulong id)
+    public Task<DiscordUserModel?> GetByIdWithIncludes(ulong id, CancellationToken cancellationToken = default)
     {
         return Context.DiscordUsers
             .AsSplitQuery()
@@ -61,6 +61,6 @@ public class UserRepository(BrobotDbContext context) : RepositoryBase<DiscordUse
             .ThenInclude(cu => cu.Channel)
             .Include(u => u.ScheduledMessages)
             .AsSplitQuery()
-            .SingleOrDefaultAsync(u => u.Id == id);
+            .SingleOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 }

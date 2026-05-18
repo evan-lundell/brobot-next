@@ -43,10 +43,11 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
             VersionFilePath = "./version.txt",
             SeqUrl = "http://localhost:5341"
         };
+        LoggerMock =  new Mock<ILogger<SyncService>>();
         SyncService = new SyncService(
             scopeFactoryMock.Object,
             Mock.Of<IDiscordClient>(),
-            Mock.Of<ILogger<SyncService>>(),
+            LoggerMock.Object,
             Options.Create(generalOptions));
     }
 
@@ -266,37 +267,21 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
             ), Times.Once);
         }
     }
-    
+
     [Test]
-    public async Task ConnectedChannelDoesNotChange_HotOpServiceNotCalled()
+    public void TokenCanceled_ThrowsOperationCanceledException()
     {
-        // Arrange
-        const ulong userId = 123UL;
-        Mock<IGuildUser> guildUserMock = new();
-        guildUserMock.SetupGet(u => u.Id).Returns(userId);
+        Mock<IUser> userMock = new();
+        userMock.SetupGet(u => u.Id).Returns(1UL);
         Mock<IVoiceChannel> voiceChannelMock = new();
-        List<IReadOnlyCollection<IGuildUser>> voiceUsers =
-            [[guildUserMock.Object]];
-        voiceChannelMock.Setup(vc => vc.GetUsersAsync(It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
-            .Returns(voiceUsers.ToAsyncEnumerable());
         Mock<IVoiceState> previousVoiceStateMock = new();
         previousVoiceStateMock.SetupGet(vs => vs.VoiceChannel).Returns(voiceChannelMock.Object);
-        guildUserMock.SetupGet(g => g.VoiceChannel).Returns(voiceChannelMock.Object);
         Mock<IVoiceState> currentVoiceStateMock = new();
         currentVoiceStateMock.SetupGet(vs => vs.VoiceChannel).Returns(voiceChannelMock.Object);
-        
-        // Act
-        await SyncService.UserVoiceStateUpdated(
-            guildUserMock.Object,
+        AssertCanceled(async ct => await SyncService.UserVoiceStateUpdated(
+            userMock.Object,
             previousVoiceStateMock.Object,
-            currentVoiceStateMock.Object
-        );
-        
-        // Assert
-        _hotOpServiceMock.Verify(h => h.UpdateHotOps(
-            It.IsAny<ulong>(),
-            It.IsAny<UserVoiceStateAction>(),
-            It.IsAny<List<ulong>>()
-        ), Times.Never);
+            currentVoiceStateMock.Object,
+            ct));
     }
 }

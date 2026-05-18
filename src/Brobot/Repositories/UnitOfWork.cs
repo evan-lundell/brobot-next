@@ -37,14 +37,14 @@ public class UnitOfWork : IUnitOfWork
     public IVersionRepository Versions { get; }
     public IStatPeriodRepository StatPeriods { get; }
 
-    public Task<int> CompleteAsync()
+    public Task<int> CompleteAsync(CancellationToken cancellationToken = default)
     {
-        return _context.SaveChangesAsync();
+        return _context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<IDbContextTransaction> BeginTransaction() => _context.Database.BeginTransactionAsync();
+    public Task<IDbContextTransaction> BeginTransaction(CancellationToken cancellationToken = default) => _context.Database.BeginTransactionAsync(cancellationToken);
 
-    public Task CommitTransaction(IDbContextTransaction transaction) => transaction.CommitAsync();
+    public Task CommitTransaction(IDbContextTransaction transaction, CancellationToken cancellationToken = default) => transaction.CommitAsync(cancellationToken);
 
 #pragma warning disable CA1816
     public void Dispose()

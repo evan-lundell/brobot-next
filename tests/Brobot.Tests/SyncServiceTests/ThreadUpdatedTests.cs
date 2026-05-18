@@ -125,4 +125,15 @@ public class ThreadUpdatedTests : SyncServiceTestsBase
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Test]
+    public void TokenCanceled_ThrowsOperationCanceledException()
+    {
+        AssertCanceled(async token =>
+        {
+            Mock<IThreadChannel> oldThreadMock = new();
+            Mock<IThreadChannel> newThreadMock = new();
+            await SyncService.ThreadUpdated(oldThreadMock.Object, newThreadMock.Object, token);
+        });
+    }
 }

@@ -18,7 +18,7 @@ public class MonthlyStatsWorker(
             using var scope = serviceScopeFactory.CreateScope();
             using var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
-            var channels = await uow.Channels.Find(c => c.MonthlyWordCloud);
+            var channels = await uow.Channels.Find(c => c.MonthlyWordCloud, cancellationToken);
             var now = DateOnly.FromDateTime(DateTime.UtcNow);
             var startDate = now.AddMonths(-1);
             var endDate = now.AddDays(-1);
@@ -31,13 +31,17 @@ public class MonthlyStatsWorker(
                     StartDate = startDate,
                     EndDate = endDate
                 };
-                await uow.StatPeriods.Add(statPeriod);
-                await uow.CompleteAsync();
-                var stats = await statsService.GetStats(channel, startDate, endDate, statPeriod.Id);
-                await statsService.SendStats(channel.Id, stats);
+                await uow.StatPeriods.Add(statPeriod, cancellationToken);
+                await uow.CompleteAsync(cancellationToken);
+                var stats = await statsService.GetStats(channel, startDate, endDate, statPeriod.Id, cancellationToken);
+                await statsService.SendStats(channel.Id, stats, cancellationToken);
             }
 
             logger.LogInformation("Finished monthly stats worker");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {

@@ -2,5 +2,5 @@ namespace Brobot.Services;
 
 public interface IVersionService
 {
-    Task CheckForVersionUpdate();
+    Task CheckForVersionUpdate(CancellationToken cancellationToken = default);
 }

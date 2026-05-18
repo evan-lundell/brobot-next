@@ -8,7 +8,7 @@ namespace Brobot.Services;
 public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageService> logger) : IScheduledMessageService
 {
     public async Task<IEnumerable<ScheduledMessageModel>> GetScheduledMessagesByUser(DiscordUserModel discordUser, int? limit = null, int skip = 0,
-        DateTime? scheduledBefore = null, DateTime? scheduledAfter = null)
+        DateTime? scheduledBefore = null, DateTime? scheduledAfter = null, CancellationToken cancellationToken = default)
     {
         logger.LogInformation(
             "Getting scheduled messages for user {UserId}. Limit: {Limit}, Skip: {Skip}, ScheduledBefore: {ScheduledBefore}, ScheduledAfter: {ScheduledAfter}",
@@ -18,7 +18,7 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
             scheduledBefore, 
             scheduledAfter
         );
-        var scheduledMessages = (await uow.ScheduledMessages.GetScheduledMessagesByUser(discordUser.Id, limit, skip, scheduledBefore, scheduledAfter)).ToList();
+        var scheduledMessages = (await uow.ScheduledMessages.GetScheduledMessagesByUser(discordUser.Id, limit, skip, scheduledBefore, scheduledAfter, cancellationToken)).ToList();
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
 
@@ -48,7 +48,7 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
     }
 
     public async Task<ScheduledMessageModel> CreateScheduledMessage(string messageText, DiscordUserModel createdBy,
-        DateTime sendDate, ulong channelId)
+        DateTime sendDate, ulong channelId, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Creating a scheduled message for user {UserId}, channel {ChannelId}, with send date of {SendDate}", createdBy.Id,  channelId, sendDate);
         var offset = TimeSpan.FromHours(0);
@@ -65,7 +65,7 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
             throw new InvalidOperationException("Send date cannot be in the past");
         }
         
-        var channelModel = await uow.Channels.GetById(channelId);
+        var channelModel = await uow.Channels.GetById(channelId, cancellationToken);
 
         if (channelModel == null)
         {
@@ -82,17 +82,17 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
             CreatedById = createdBy.Id
         };
 
-        await uow.ScheduledMessages.Add(reminder);
-        await uow.CompleteAsync();
+        await uow.ScheduledMessages.Add(reminder, cancellationToken);
+        await uow.CompleteAsync(cancellationToken);
 
         logger.LogInformation("Finished creating a scheduled message for user {UserId}, channel {ChannelId}, with send date of {SendDate}", createdBy.Id,  channelId, sendDate);
         return reminder;
     }
     
-    public async Task<ScheduledMessageModel> UpdateScheduledMessage(int id, string? text = null, ulong? channelId = null, DateTime? sendDate = null)
+    public async Task<ScheduledMessageModel> UpdateScheduledMessage(int id, string? text = null, ulong? channelId = null, DateTime? sendDate = null, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Updating scheduled message {ScheduledMessageId}", id);
-        var scheduledMessage = await uow.ScheduledMessages.GetById(id);
+        var scheduledMessage = await uow.ScheduledMessages.GetById(id, cancellationToken);
         if (scheduledMessage == null)
         {
             throw new ModelNotFoundException<ScheduledMessageModel, int>(id);
@@ -110,7 +110,7 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
 
         if (channelId.HasValue)
         {
-            var channel = await uow.Channels.GetById(channelId.Value);
+            var channel = await uow.Channels.GetById(channelId.Value, cancellationToken);
             if (channel == null)
             {
                 throw new InvalidOperationException("Channel not found");
@@ -135,29 +135,29 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
             scheduledMessage.SendDate = newSendDate;
         }
         
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
         scheduledMessage.SendDate = scheduledMessage.SendDate?.ToOffset(offset);
         
         logger.LogInformation("Finished updating scheduled message {ScheduledMessageId}", id);
         return scheduledMessage;
     }
     
-    public async Task<bool> DeleteScheduledMessage(int id)
+    public async Task<bool> DeleteScheduledMessage(int id, CancellationToken cancellationToken = default)
     {
-        var scheduledMessage = await uow.ScheduledMessages.GetById(id);
+        var scheduledMessage = await uow.ScheduledMessages.GetById(id, cancellationToken);
         if (scheduledMessage == null)
         {
             return false;
         }
 
         uow.ScheduledMessages.Remove(scheduledMessage);
-        await uow.CompleteAsync();
+        await uow.CompleteAsync(cancellationToken);
         return true;
     }
     
-    public async Task<bool> CanUserUpdateScheduledMessage(DiscordUserModel discordUser, int scheduledMessageId)
+    public async Task<bool> CanUserUpdateScheduledMessage(DiscordUserModel discordUser, int scheduledMessageId, CancellationToken cancellationToken = default)
     {
-        var scheduledMessage = await uow.ScheduledMessages.GetById(scheduledMessageId);
+        var scheduledMessage = await uow.ScheduledMessages.GetById(scheduledMessageId, cancellationToken);
         return scheduledMessage != null && scheduledMessage.CreatedById == discordUser.Id;
     }
 }
