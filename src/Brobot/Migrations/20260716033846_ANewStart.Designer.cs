@@ -12,15 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Brobot.Migrations
 {
     [DbContext(typeof(BrobotDbContext))]
-    [Migration("20251225011553_ReworkAuth")]
-    partial class ReworkAuth
+    [Migration("20260716033846_ANewStart")]
+    partial class ANewStart
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -840,7 +840,7 @@ namespace Brobot.Migrations
             modelBuilder.Entity("Brobot.Models.DiscordUserModel", b =>
                 {
                     b.HasOne("Brobot.Models.ChannelModel", "PrimaryChannel")
-                        .WithMany("Users")
+                        .WithMany("DiscordUsers")
                         .HasForeignKey("PrimaryChannelId");
 
                     b.Navigation("PrimaryChannel");
@@ -855,7 +855,7 @@ namespace Brobot.Migrations
                         .IsRequired();
 
                     b.HasOne("Brobot.Models.GuildModel", "Guild")
-                        .WithMany("GuildUsers")
+                        .WithMany("GuildDiscordUsers")
                         .HasForeignKey("GuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1056,13 +1056,13 @@ namespace Brobot.Migrations
 
                     b.Navigation("DailyMessageCounts");
 
+                    b.Navigation("DiscordUsers");
+
                     b.Navigation("HotOps");
 
                     b.Navigation("ScheduledMessages");
 
                     b.Navigation("StatPeriods");
-
-                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("Brobot.Models.DiscordUserModel", b =>
@@ -1090,7 +1090,7 @@ namespace Brobot.Migrations
                 {
                     b.Navigation("Channels");
 
-                    b.Navigation("GuildUsers");
+                    b.Navigation("GuildDiscordUsers");
                 });
 
             modelBuilder.Entity("Brobot.Models.HotOpModel", b =>

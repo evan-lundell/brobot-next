@@ -1,7 +1,6 @@
 .vscode
 **/obj
 **/bin
-**/Properties
 .env
 **/build
 
@@ -11,3 +10,4 @@ application.yml
 
 brobot-next.sln.DotSettings.user
 .idea
+**/.DS_Store

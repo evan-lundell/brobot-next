@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Brobot.Repositories;
 using Brobot.Services;
@@ -375,6 +376,27 @@ public class BrobotModule(
         {
             logger.LogError(e, "Version command failed");
             await RespondAsync(text: "Failed to get version of brobot", ephemeral: true);
+        }
+    }
+
+    [SlashCommand("birthday", "Gets the birthday of a user")]
+    public async Task GetBirthday([Summary("user", "The user to get the birthday of")] IUser user)
+    {
+        try
+        {
+            var discordUserModel = await uow.Users.GetById(user.Id);
+            if (discordUserModel?.Birthdate == null)
+            {
+                await RespondAsync(text: $"{user.Username} has not set their birthday", ephemeral: true);
+                return;
+            }
+
+            await RespondAsync(text: discordUserModel.Birthdate.Value.ToString("m", CultureInfo.InvariantCulture), ephemeral: true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "GetBirthday command failed");
+            await RespondAsync(text: "Failed to get birthday", ephemeral: true);
         }
     }
 }
