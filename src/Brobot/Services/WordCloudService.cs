@@ -16,9 +16,11 @@ public class WordCloudService(HttpClient http, ILogger<WordCloudService> logger)
                 text,
                 useWordList = true,
                 format = "png",
-                fontSize = 8,
-                height = 1000,
-                width = 1000
+                fontScale = 15,
+                height = 1400,
+                width = 1400,
+                cleanWords = false,
+                scale = "linear"
             }, cancellationToken);
             response.EnsureSuccessStatusCode();
             logger.LogInformation("Finished getting wordcloud");

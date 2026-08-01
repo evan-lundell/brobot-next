@@ -71,22 +71,23 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
                     var wordSplit = message.Content.Split(_separators, StringSplitOptions.RemoveEmptyEntries);
                     foreach (var word in wordSplit)
                     {
-                        if (await stopWordService.IsStopWord(word, cancellationToken))
+                        var normalizedWord = NormalizeWord(word);
+                        if (await stopWordService.IsStopWord(normalizedWord, cancellationToken))
                         {
                             continue;
                         }
 
-                        if (long.TryParse(word, out _))
+                        if (long.TryParse(normalizedWord, out _))
                         {
                             continue;
                         }
-                        var wordLower = word.ToLowerInvariant();
-                        wordCounts.TryAdd(wordLower, new WordCountDto
+                        
+                        wordCounts.TryAdd(normalizedWord, new WordCountDto
                         {
-                            Word = wordLower,
+                            Word = normalizedWord,
                             Count = 0
                         });
-                        wordCounts[wordLower].Count += 1;
+                        wordCounts[normalizedWord].Count += 1;
                     }
 
                     fromMessageId = message.Id;
@@ -110,5 +111,11 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
             logger.LogError(e, "Word Count failed");
             return [];
         }
+    }
+
+    private string NormalizeWord(string word)
+    {
+        var normalized = word.ToLowerInvariant().Replace('\u2019', '\'').Replace('\u2018', '\'');
+        return normalized;
     }
 }
