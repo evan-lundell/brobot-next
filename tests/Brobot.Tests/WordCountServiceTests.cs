@@ -62,8 +62,8 @@ public class WordCountServiceTests
             .Returns(CreateMockAsyncEnumerable(messages));
         _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
 
-        _stopWordServiceMock.Setup(s => s.IsStopWord("StopWord")).ReturnsAsync(true);
-        _stopWordServiceMock.Setup(s => s.IsStopWord(It.IsNotIn(new[] { "StopWord" }))).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("stopword")).ReturnsAsync(true);
+        _stopWordServiceMock.Setup(s => s.IsStopWord(It.IsNotIn(new[] { "stopword" }))).ReturnsAsync(false);
 
         var result = (await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow)).ToList();
 
@@ -169,10 +169,10 @@ public class WordCountServiceTests
             .Returns(CreateMockAsyncEnumerable([]));
         _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
             
-        _stopWordServiceMock.Setup(s => s.IsStopWord("Hello")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("hello")).ReturnsAsync(false);
         _stopWordServiceMock.Setup(s => s.IsStopWord("world")).ReturnsAsync(false);
         _stopWordServiceMock.Setup(s => s.IsStopWord("again")).ReturnsAsync(false);
-        _stopWordServiceMock.Setup(s => s.IsStopWord("Latest")).ReturnsAsync(false);
+        _stopWordServiceMock.Setup(s => s.IsStopWord("latest")).ReturnsAsync(false);
         _stopWordServiceMock.Setup(s => s.IsStopWord("message")).ReturnsAsync(false);
         
         var result = (await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-1))).ToList();
@@ -285,6 +285,48 @@ public class WordCountServiceTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Never);
+    }
+
+    [Test]
+    public async Task GetWordCount_WhenMessageHasCurlyApostrophes_NormalizesWord()
+    {
+        var messages = new List<IMessage>
+        {
+            CreateMockMessage(1UL, "Hello world!"),
+            CreateMockMessage(2UL, "It’s a beautiful day."),
+            CreateMockMessage(3UL, "Don’t stop believing.")
+        };
+        var textChannelMock = new Mock<ISocketMessageChannel>();
+        textChannelMock
+            .Setup(c => c.GetMessagesAsync(
+                It.IsAny<ulong>(),
+                It.IsAny<Direction>(),
+                It.IsAny<int>(),
+                It.IsAny<CacheMode>(),
+                It.IsAny<RequestOptions>()))
+            .Returns(CreateMockAsyncEnumerable([]));
+        textChannelMock
+            .Setup(c => c.GetMessagesAsync(
+                It.IsAny<int>(),
+                It.IsAny<CacheMode>(),
+                It.IsAny<RequestOptions>()))
+            .Returns(CreateMockAsyncEnumerable(messages));
+        _clientMock.Setup(c => c.GetChannelAsync(_channel.Id, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>())).ReturnsAsync(textChannelMock.Object);
+
+        _stopWordServiceMock.Setup(s => s.IsStopWord("don't")).ReturnsAsync(true);
+        _stopWordServiceMock.Setup(s => s.IsStopWord(It.IsNotIn(new[] { "don't" }))).ReturnsAsync(false);
+
+        var result = (await _service.GetWordCount(_channel, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow)).ToList();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Count, Is.EqualTo(8));
+            Assert.That(result.Sum(r => r.Count), Is.EqualTo(8));
+            Assert.That(result.Any(r => r is { Word: "it's", Count: 1 }), Is.True);
+            Assert.That(result.Any(r => r.Word == "don't"), Is.False);
+            Assert.That(result.Any(r => r.Word == "it’s"), Is.False);
+            Assert.That(result.Any(r => r.Word == "don’t"), Is.False);
+        }
     }
 
     private static IAsyncEnumerable<IReadOnlyCollection<IMessage>> CreateMockAsyncEnumerable(List<IMessage> messages)
