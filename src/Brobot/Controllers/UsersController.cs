@@ -69,8 +69,24 @@ public class UsersController(
     [Authorize(Roles = Constants.AdminRoleName)]
     public async Task<ActionResult<IEnumerable<DiscordUserModel>>> GetAllUsers(CancellationToken cancellationToken = default)
     {
+        var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
         var users = await uow.Users.GetAll(cancellationToken);
-        return Ok(users.Select(u => u.ToUserResponse()));
+        var responses = users.Select(u => u.ToUserResponse()).ToList();
+        if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
+        {
+            for (var i = 0; i < responses.Count; i++)
+            {
+                if (responses[i].LastOnline.HasValue)
+                {
+                    responses[i] = responses[i] with
+                    {
+                        LastOnline = responses[i].LastOnline!.Value.AdjustToUsersTimezone(discordUser.Timezone)
+                    };
+                }
+            }
+        }
+
+        return Ok(responses);
     }
 
     [HttpGet("{userId}/settings")]

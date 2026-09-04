@@ -33,8 +33,8 @@ public class HotOpsController(
             HotOpQueryType.Current => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current, cancellationToken),
             HotOpQueryType.Completed => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed, cancellationToken),
             _ => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id, cancellationToken)
-        }).Select(hotOp => hotOp.ToHotOpResponse());
-        
+        }).Select(hotOp => hotOp.ToHotOpResponse()).ToList();
+
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
             foreach (var hotOp in hotOps)
