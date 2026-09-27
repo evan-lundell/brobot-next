@@ -2,7 +2,6 @@ using Brobot.Dtos;
 using Brobot.Models;
 using Discord;
 using Discord.WebSocket;
-using TimeZoneConverter;
 
 namespace Brobot.Services;
 
@@ -24,7 +23,7 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
                 return [];
             }
 
-            var timezone = TZConvert.GetTimeZoneInfo(channel.Timezone);
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(channel.Timezone);
             var start = new DateTimeOffset(TimeZoneInfo.ConvertTimeFromUtc(startDate, timezone), timezone.GetUtcOffset(startDate));
             var end = new DateTimeOffset(TimeZoneInfo.ConvertTimeFromUtc(endDate, timezone), timezone.GetUtcOffset(endDate));
             ulong? fromMessageId = null;

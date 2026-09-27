@@ -3,10 +3,10 @@ using Brobot.Repositories;
 using Discord;
 using Moq;
 
-namespace Brobot.Tests.BrobotModuleTests;
+namespace Brobot.Tests.HotOpModuleTests;
 
 [TestFixture]
-public class HotOpTests : BrobotModuleTestBase
+public class ScoreboardTests : HotOpModuleTestBase
 {
     [Test]
     public async Task ThrowsException_RespondsWithErrorMessage()
@@ -14,7 +14,7 @@ public class HotOpTests : BrobotModuleTestBase
         UnitOfWorkMock.Setup(uow => uow.HotOps)
             .Throws(new Exception("Database error"));
 
-        await BrobotModule.HotOp();
+        await HotOpModule.Scoreboard();
         
         AssertRespondAsyncCalledOnce("Failed to get hot op scores", true);
     }
@@ -32,7 +32,7 @@ public class HotOpTests : BrobotModuleTestBase
         UnitOfWorkMock.SetupGet(uow => uow.HotOps)
             .Returns(hotOpRepositoryMock.Object);
         
-        await BrobotModule.HotOp();
+        await HotOpModule.Scoreboard();
         
         AssertRespondAsyncCalledOnce("No active hot ops");
     }
@@ -75,7 +75,7 @@ public class HotOpTests : BrobotModuleTestBase
         HotOpServiceMock.Setup(ho => ho.CreateScoreboardEmbed(hotOpModels[0]))
             .Returns(embed);
         
-        await BrobotModule.HotOp();
+        await HotOpModule.Scoreboard();
 
         DiscordInteractionMock.Verify(x => x.RespondAsync(
             null,

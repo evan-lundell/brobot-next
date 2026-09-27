@@ -26,7 +26,6 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.150.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.2" />
-    <PackageReference Include="TimeZoneConverter" Version="7.2.0" />
     <PackageReference Include="System.Linq.Async" Version="7.0.1">
       <ExcludeAssets>compile</ExcludeAssets>
     </PackageReference>

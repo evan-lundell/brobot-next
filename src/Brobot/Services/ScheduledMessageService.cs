@@ -1,7 +1,6 @@
 using Brobot.Exceptions;
 using Brobot.Models;
 using Brobot.Repositories;
-using TimeZoneConverter;
 
 namespace Brobot.Services;
 
@@ -55,7 +54,7 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
         var sendDateUnspecified = new DateTime(sendDate.Ticks, DateTimeKind.Unspecified);
         if (!string.IsNullOrWhiteSpace(createdBy.Timezone))
         {
-            var timezone = TZConvert.GetTimeZoneInfo(createdBy.Timezone);
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(createdBy.Timezone);
             offset = timezone.GetUtcOffset(DateTime.Now);
         }
         var sendDateAdjusted = new DateTimeOffset(sendDateUnspecified, offset).ToUniversalTime();
@@ -122,7 +121,7 @@ public class ScheduledMessageService(IUnitOfWork uow, ILogger<ScheduledMessageSe
         var offset = TimeSpan.FromHours(0);
         if (!string.IsNullOrEmpty(user.Timezone))
         {
-            var tz = TZConvert.GetTimeZoneInfo(user.Timezone);
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(user.Timezone);
             offset = tz.GetUtcOffset(DateTime.UtcNow);
         }
         if (sendDate.HasValue)

@@ -1,5 +1,3 @@
-using TimeZoneConverter;
-
 namespace Brobot.Tests.ScheduledMessageServiceTests;
 
 [TestFixture]
@@ -18,7 +16,7 @@ public class CreateScheduledMessageTests : ScheduledMessageServiceTestBase
         var offset = TimeSpan.FromHours(0);
         if (!string.IsNullOrWhiteSpace(user.Timezone))
         {
-            var timezone = TZConvert.GetTimeZoneInfo(user.Timezone);
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(user.Timezone);
             offset = timezone.GetUtcOffset(DateTime.Now);
         }
 

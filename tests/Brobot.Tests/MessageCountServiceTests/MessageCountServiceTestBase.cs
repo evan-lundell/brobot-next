@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using TimeZoneConverter;
 
 namespace Brobot.Tests.MessageCountServiceTests;
 
@@ -34,14 +33,14 @@ public abstract class MessageCountServiceTestBase
         var channel1 = CreateChannel(1, "Channel1", testGuild);
         var channel2 = CreateChannel(2, "Channel2", testGuild);
 
-        var timezoneString = "america/chicago";
+        var timezoneString = "America/Chicago";
         var user1 = CreateUser(1, "User1", timezoneString, testGuild, testGuild.Channels);
         var user2 = CreateUser(2, "User2", timezoneString, testGuild, testGuild.Channels);
         var user3 = CreateUser(3, "User3", timezoneString, testGuild, [testGuild.Channels.First()]);
         _ = CreateUser(4, "User4", null, testGuild, [testGuild.Channels.First()]);
         var user5 = CreateUser(5, "User5", timezoneString, testGuild, [testGuild.Channels.First()]);
 
-        var timezone = TZConvert.GetTimeZoneInfo(timezoneString);
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById(timezoneString);
         var offset = timezone.GetUtcOffset(DateTime.UtcNow);
         var date = DateOnly.FromDateTime(DateTime.UtcNow + offset);
         CreateDailyMessageCount(user1, channel1, date, 10);

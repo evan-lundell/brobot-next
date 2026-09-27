@@ -72,7 +72,7 @@ public class BrobotDbContext(DbContextOptions<BrobotDbContext> options) : Identi
                 .HasColumnName("timezone")
                 .IsRequired()
                 .HasMaxLength(255)
-                .HasDefaultValue("america/chicago");
+                .HasDefaultValue("America/Chicago");
             
             entity.HasOne(e => e.Guild)
                 .WithMany(g => g.Channels)

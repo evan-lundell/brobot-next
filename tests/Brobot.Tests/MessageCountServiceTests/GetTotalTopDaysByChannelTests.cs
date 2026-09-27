@@ -1,5 +1,3 @@
-using TimeZoneConverter;
-
 namespace Brobot.Tests.MessageCountServiceTests;
 
 public class GetTotalTopDaysByChannelTests : MessageCountServiceTestBase
@@ -7,7 +5,7 @@ public class GetTotalTopDaysByChannelTests : MessageCountServiceTestBase
     [Test]
     public async Task ReturnsCorrectCounts()
     {
-        var timezone = TZConvert.GetTimeZoneInfo("america/chicago");
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
         var offset = timezone.GetUtcOffset(DateTime.UtcNow);
 
         var counts = (await MessageCountService.GetTotalTopDaysByChannel(1UL, 10)).ToList();

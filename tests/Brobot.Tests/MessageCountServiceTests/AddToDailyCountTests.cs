@@ -3,7 +3,6 @@ using Brobot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
-using TimeZoneConverter;
 
 namespace Brobot.Tests.MessageCountServiceTests;
 
@@ -14,7 +13,7 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
     {
         ulong userId = 1;
         ulong channelId = 1;
-        var timezone = TZConvert.GetTimeZoneInfo("america/chicago");
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
         var countDate = DateOnly.FromDateTime(DateTime.UtcNow + timezone.GetUtcOffset(DateTime.UtcNow));
 
         await MessageCountService.AddToDailyCount(userId, channelId, countDate);
@@ -32,7 +31,7 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
     {
         ulong userId = 1;
         ulong channelId = 1;
-        var timezone = TZConvert.GetTimeZoneInfo("america/chicago");
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
         var countDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-3) + timezone.GetUtcOffset(DateTime.UtcNow));
 
         await MessageCountService.AddToDailyCount(userId, channelId, countDate);
@@ -63,7 +62,7 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
     {
         var userId = 5UL;
         var channelId = 1UL;
-        var timezone = TZConvert.GetTimeZoneInfo("america/chicago");
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
         var today = DateOnly.FromDateTime(DateTime.UtcNow + timezone.GetUtcOffset(DateTime.UtcNow));
         
         await MessageCountService.AddToDailyCount(userId, channelId);

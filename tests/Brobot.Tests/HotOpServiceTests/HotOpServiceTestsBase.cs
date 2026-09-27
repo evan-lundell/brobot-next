@@ -193,7 +193,7 @@ public abstract class HotOpServiceTestsBase
         return channel;
     }
 
-    protected DiscordUserModel CreateUser(ulong id, GuildModel guild, ChannelModel[] channels, string timezone = "america/chicago")
+    protected DiscordUserModel CreateUser(ulong id, GuildModel guild, ChannelModel[] channels, string timezone = "America/Chicago")
     {
         var user = new DiscordUserModel
         {

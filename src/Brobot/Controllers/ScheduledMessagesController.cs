@@ -5,7 +5,6 @@ using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
-using TimeZoneConverter;
 using Brobot.Mappers;
 
 namespace Brobot.Controllers;
@@ -55,7 +54,7 @@ public class ScheduledMessagesController(
         if (newScheduledMessage.SendDate.HasValue &&
             !string.IsNullOrWhiteSpace(newScheduledMessage.CreatedBy.Timezone))
         {
-            var timezone = TZConvert.GetTimeZoneInfo(newScheduledMessage.CreatedBy.Timezone);
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(newScheduledMessage.CreatedBy.Timezone);
             var offset = timezone.GetUtcOffset(DateTime.UtcNow);
             newScheduledMessage.SendDate = newScheduledMessage.SendDate.Value.ToOffset(offset);
         }

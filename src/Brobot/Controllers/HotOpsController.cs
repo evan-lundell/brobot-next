@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Brobot.Mappers;
-using TimeZoneConverter;
 
 namespace Brobot.Controllers;
 
@@ -70,7 +69,7 @@ public class HotOpsController(
         var endDateUnspecified = new DateTime(hotOpRequest.EndDate.Ticks, DateTimeKind.Unspecified);
         if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
         {
-            var timezone = TZConvert.GetTimeZoneInfo(discordUser.Timezone);
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(discordUser.Timezone);
             startOffset = timezone.GetUtcOffset(startDateUnspecified);
             endOffset = timezone.GetUtcOffset(endDateUnspecified);
         }

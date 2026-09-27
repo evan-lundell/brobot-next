@@ -39,7 +39,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                             Id = 0,
                             Name = "Global"
                         },
-                        Timezone = "america/chicago"
+                        Timezone = "America/Chicago"
                     },
                     MessageCount = dmc.MessageCount
 
@@ -81,7 +81,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                             Id = 0,
                             Name = "Global"
                         },
-                        Timezone = "america/chicago"
+                        Timezone = "America/Chicago"
                     },
                     MessageCount = dmc.MessageCount
 
@@ -120,7 +120,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                             Id = 0,
                             Name = "Global"
                         },
-                        Timezone = "america/chicago"
+                        Timezone = "America/Chicago"
                     },
                     MessageCount = dmc.MessageCount
                 })
@@ -161,7 +161,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                             Id = 0,
                             Name = "Global"
                         },
-                        Timezone = "america/chicago"
+                        Timezone = "America/Chicago"
                     },
                     MessageCount = dmc.MessageCount
                 })
@@ -200,7 +200,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                             Id = 0,
                             Name = "Global"
                         },
-                        Timezone = "america/chicago"
+                        Timezone = "America/Chicago"
                     },
                     MessageCount = dmc.MessageCount
                 })
@@ -239,7 +239,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                             Id = 0,
                             Name = "Global"
                         },
-                        Timezone = "america/chicago"
+                        Timezone = "America/Chicago"
                     },
                     MessageCount = dmc.MessageCount
                 })
@@ -269,7 +269,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                         Id = 0,
                         Name = "Global"
                     },
-                    Timezone = "america/chicago"
+                    Timezone = "America/Chicago"
                 },
                 CountDate = g.Key.CountDate,
                 MessageCount = g.Sum(d => d.MessageCount)
@@ -303,7 +303,7 @@ public class DailyMessageCountRepository(BrobotDbContext context)
                         Id = 0,
                         Name = "Global"
                     },
-                    Timezone = "america/chicago"
+                    Timezone = "America/Chicago"
                 },
                 CountDate = g.Key.CountDate,
                 MessageCount = g.Sum(d => d.MessageCount)

@@ -1,5 +1,3 @@
-using TimeZoneConverter;
-
 namespace Brobot.Tests.MessageCountServiceTests;
 
 public class GetTotalDailyMessageCountsByChannelTests : MessageCountServiceTestBase
@@ -7,10 +5,10 @@ public class GetTotalDailyMessageCountsByChannelTests : MessageCountServiceTestB
     [Test]
     public async Task UserTimezoneExists_ReturnsCorrectCounts()
     {
-        var timezone = TZConvert.GetTimeZoneInfo("america/chicago");
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
         var offset = timezone.GetUtcOffset(DateTime.UtcNow);
 
-        var counts = (await MessageCountService.GetTotalDailyMessageCountsByChannel(10, 1, "america/chicago"))
+        var counts = (await MessageCountService.GetTotalDailyMessageCountsByChannel(10, 1, "America/Chicago"))
             .ToList();
 
         Assert.Multiple(() =>

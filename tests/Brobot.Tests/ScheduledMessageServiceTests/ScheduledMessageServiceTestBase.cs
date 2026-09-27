@@ -67,9 +67,9 @@ public abstract class ScheduledMessageServiceTestBase
         
         DiscordUserModel[] users =
         [
-            CreateUser(1, guild, channels, "america/chicago"),
+            CreateUser(1, guild, channels, "America/Chicago"),
             CreateUser(2, guild, channels),
-            CreateUser(3, guild, [channels[0]], "america/chicago"),
+            CreateUser(3, guild, [channels[0]], "America/Chicago"),
             CreateUser(4, guild, [channels[1]])
         ];
         

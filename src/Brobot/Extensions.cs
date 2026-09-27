@@ -1,6 +1,5 @@
 using Brobot.Workers;
 using Discord;
-using TimeZoneConverter;
 
 namespace Brobot;
 
@@ -35,17 +34,15 @@ public static class Extensions
     {
         public DateTimeOffset AdjustToUtc(string timezoneName)
         {
-            var dateTimeUnspecified = new DateTime(dateTimeOffset.Ticks, DateTimeKind.Unspecified);
-            var timezone = TZConvert.GetTimeZoneInfo(timezoneName);
-            var offset = timezone.GetUtcOffset(DateTime.UtcNow);
-            return new DateTimeOffset(dateTimeUnspecified, offset).ToUniversalTime();
+           var local = new DateTime(dateTimeOffset.Ticks, DateTimeKind.Unspecified);
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(timezoneName);
+            return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(local, timezone), TimeSpan.Zero);
         }
 
         public DateTimeOffset AdjustToUsersTimezone(string timezoneName)
         {
-            var timezone = TZConvert.GetTimeZoneInfo(timezoneName);
-            var offset = timezone.GetUtcOffset(DateTime.UtcNow);
-            return dateTimeOffset.ToOffset(offset);
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(timezoneName);
+            return TimeZoneInfo.ConvertTime(dateTimeOffset, timezone);
         }
     }
     

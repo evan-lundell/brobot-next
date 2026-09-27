@@ -1,5 +1,3 @@
-using TimeZoneConverter;
-
 namespace Brobot.Tests.MessageCountServiceTests;
 
 public class GetUsersTotalDailyMessageCountsTests : MessageCountServiceTestBase
@@ -13,7 +11,7 @@ public class GetUsersTotalDailyMessageCountsTests : MessageCountServiceTestBase
             throw new Exception("User not defined");
         }
 
-        var timezone = TZConvert.GetTimeZoneInfo("america/chicago");
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
         var offset = timezone.GetUtcOffset(DateTime.UtcNow);
 
         var counts = (await MessageCountService.GetUsersTotalDailyMessageCounts(user, 10)).ToList();

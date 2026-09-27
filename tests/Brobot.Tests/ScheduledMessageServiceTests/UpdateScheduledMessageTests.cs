@@ -1,6 +1,5 @@
 using Brobot.Exceptions;
 using Brobot.Models;
-using TimeZoneConverter;
 
 namespace Brobot.Tests.ScheduledMessageServiceTests;
 
@@ -75,7 +74,7 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
         var offset = TimeSpan.FromHours(0);
         if (!string.IsNullOrWhiteSpace(user.Timezone))
         {
-            var timezone = TZConvert.GetTimeZoneInfo(user.Timezone);
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(user.Timezone);
             offset = timezone.GetUtcOffset(DateTime.Now);
         }
         var dateTimeUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
@@ -112,7 +111,7 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
         var offset = TimeSpan.FromHours(0);
         if (!string.IsNullOrWhiteSpace(user.Timezone))
         {
-            var timezone = TZConvert.GetTimeZoneInfo(user.Timezone);
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(user.Timezone);
             offset = timezone.GetUtcOffset(DateTime.Now);
         }
         var dateTimeUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);

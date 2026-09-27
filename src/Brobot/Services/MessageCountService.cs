@@ -2,7 +2,6 @@ using Brobot.Mappers;
 using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Shared.Responses;
-using TimeZoneConverter;
 
 namespace Brobot.Services;
 
@@ -58,7 +57,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
                     return;
                 }
 
-                var timezone = TZConvert.GetTimeZoneInfo(user.Timezone);
+                var timezone = TimeZoneInfo.FindSystemTimeZoneById(user.Timezone);
                 countDate = DateOnly.FromDateTime(DateTime.UtcNow + timezone.GetUtcOffset(DateTime.UtcNow));
             }
 
@@ -267,7 +266,7 @@ public class MessageCountService(IUnitOfWork uow, ILogger<MessageCountService> l
 
     private (DateOnly CurrentDate, DateOnly StartDate) GetDates(int numOfDays, string timezoneString)
     {
-        var timezone = TZConvert.GetTimeZoneInfo(timezoneString);
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById(timezoneString);
         var userDateTimeNow = DateTime.UtcNow + timezone.GetUtcOffset(DateTime.UtcNow);
         var currentDate = DateOnly.FromDateTime(userDateTimeNow);
         var startDate = currentDate.AddDays((numOfDays - 1) * -1);

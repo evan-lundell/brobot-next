@@ -1,5 +1,3 @@
-using TimeZoneConverter;
-
 namespace Brobot.Tests.MessageCountServiceTests;
 
 public class GetUsersTopDaysTests : MessageCountServiceTestBase
@@ -7,7 +5,7 @@ public class GetUsersTopDaysTests : MessageCountServiceTestBase
     [Test]
     public async Task UserTimezoneExists_ReturnsCorrectCounts()
     {
-        var timezone = TZConvert.GetTimeZoneInfo("america/chicago");
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
         var offset = timezone.GetUtcOffset(DateTime.UtcNow);
         var user = await Context.DiscordUsers.FindAsync((ulong)1);
         if (user == null)

@@ -4,8 +4,6 @@ using Brobot.Repositories;
 using Brobot.Services;
 using Discord;
 using Discord.Interactions;
-using Discord.WebSocket;
-using TimeZoneConverter;
 
 namespace Brobot.Modules;
 
@@ -15,7 +13,6 @@ public class BrobotModule(
     IGiphyService giphyService,
     IRandomFactService randomFactService,
     IDictionaryService dictionaryService,
-    IHotOpService hotOpService,
     IScheduledMessageService scheduledMessageService,
     IAssemblyService assemblyService,
     ILogger<BrobotModule> logger)
@@ -328,7 +325,7 @@ public class BrobotModule(
             var lastOnline = discordUserModel.LastOnline.Value;
             if (!string.IsNullOrWhiteSpace(callingUser?.Timezone))
             {
-                var timezone = TZConvert.GetTimeZoneInfo(callingUser.Timezone);
+                var timezone = TimeZoneInfo.FindSystemTimeZoneById(callingUser.Timezone);
                 var offset = timezone.GetUtcOffset(DateTime.Now);
                 lastOnline = lastOnline + offset;
             }
@@ -339,28 +336,6 @@ public class BrobotModule(
         {
             logger.LogError(ex, "LastOnline command failed");
             await RespondAsync(text: "Failed to get last online", ephemeral: true);
-        }
-    }
-
-    [SlashCommand("hotop", "Gets the scores for the active hot ops")]
-    public async Task HotOp()
-    {
-        try
-        {
-            var activeHotOps = (await uow.HotOps.GetActiveHotOpsWithSessions(Context.Channel.Id)).ToArray();
-            if (activeHotOps.Length == 0)
-            {
-                await RespondAsync("No active hot ops");
-                return;
-            }
-
-            await RespondAsync(embeds: activeHotOps.Select(hotOpService.CreateScoreboardEmbed).ToArray());
-
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "HotOp command failed");
-            await RespondAsync(text: "Failed to get hot op scores", ephemeral: true);
         }
     }
 
@@ -399,4 +374,5 @@ public class BrobotModule(
             await RespondAsync(text: "Failed to get birthday", ephemeral: true);
         }
     }
+    
 }
