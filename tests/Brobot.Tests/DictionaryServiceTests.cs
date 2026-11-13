@@ -143,7 +143,7 @@ public class DictionaryServiceTests
     }
     
     [Test]
-    public void GetDefinition_ThrowsJsonReaderExceptionForInvalidJson()
+    public async Task GetDefinition_ThrowsJsonReaderExceptionForInvalidJson()
     {
         // Arrange
         var word = "test";
@@ -163,7 +163,7 @@ public class DictionaryServiceTests
             .ReturnsAsync(httpResponse);
 
         // Act & Assert
-        Assert.ThrowsAsync<JsonReaderException>(() => _dictionaryService.GetDefinition(word));
+        await Assert.ThrowsAsync<JsonReaderException>(() => _dictionaryService.GetDefinition(word));
     }
     
     [Test]

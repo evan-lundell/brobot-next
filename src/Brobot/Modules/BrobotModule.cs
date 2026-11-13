@@ -329,8 +329,8 @@ public class BrobotModule(
             if (!string.IsNullOrWhiteSpace(callingUser?.Timezone))
             {
                 var timezone = TZConvert.GetTimeZoneInfo(callingUser.Timezone);
-                var offset = timezone.GetUtcOffset(DateTime.Now);
-                lastOnline = lastOnline + offset;
+                var offset = timezone.GetUtcOffset(lastOnline);
+                lastOnline = TimeZoneInfo.ConvertTime(lastOnline, timezone);
             }
 
             await RespondAsync(text: $"{discordUserModel.Username} was last online at {lastOnline:yyyy-MM-dd hh:mm tt}", ephemeral: true);

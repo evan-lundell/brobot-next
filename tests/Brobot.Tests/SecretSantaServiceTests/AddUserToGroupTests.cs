@@ -28,7 +28,7 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
     }
     
     [Test]
-    public void ThrowsExceptionWhenGroupDoesNotExist()
+    public async Task ThrowsExceptionWhenGroupDoesNotExist()
     {
         var user = new DiscordUserResponse
         {
@@ -36,14 +36,14 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
             Username = "User 7"
         };
         
-        Assert.ThrowsAsync<ModelNotFoundException<SecretSantaGroupModel, int>>(async () =>
+        await Assert.ThrowsAsync<ModelNotFoundException<SecretSantaGroupModel, int>>(async () =>
         {
             await SecretSantaService.AddUserToGroup(3, user);
         });
     }
     
     [Test]
-    public void ThrowsExceptionWhenUserAlreadyInGroup()
+    public async Task ThrowsExceptionWhenUserAlreadyInGroup()
     {
         var user = new DiscordUserResponse
         {
@@ -51,14 +51,14 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
             Username = "User 1"
         };
         
-        Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             await SecretSantaService.AddUserToGroup(1, user);
         });
     }
     
     [Test]
-    public void ThrowsExceptionWhenUserDoesNotExist()
+    public async Task ThrowsExceptionWhenUserDoesNotExist()
     {
         var user = new DiscordUserResponse
         {
@@ -66,7 +66,7 @@ public class AddUserToGroupTests : SecretSantaServiceTestsBase
             Username = "User 15"
         };
         
-        Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             await SecretSantaService.AddUserToGroup(1, user);
         });

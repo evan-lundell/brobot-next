@@ -27,7 +27,7 @@ public class CheckForVersionUpdateTests : VersionServiceTestsBase
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Current version not in database")),
+                    It.Is<It.IsAnyType>((v, t) => $"{v}".Contains("Current version not in database")),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
                 Times.Once);
@@ -67,7 +67,7 @@ public class CheckForVersionUpdateTests : VersionServiceTestsBase
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Updated to")),
+                    It.Is<It.IsAnyType>((v, t) => $"{v}".Contains("Updated to")),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -244,7 +244,7 @@ public class CheckForVersionUpdateTests : VersionServiceTestsBase
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Equals("Error checking for version update")),
+                It.Is<It.IsAnyType>((v, t) => $"{v}".Equals("Error checking for version update")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

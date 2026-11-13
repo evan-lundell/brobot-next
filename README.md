@@ -4,7 +4,7 @@ Brobot is a fun Discord bot and companion web app for community engagement, sche
 
 ## Prerequisites
 
-- .NET 10 SDK
+- .NET 11 SDK
 - PostgreSQL and Seq running locally, or the development compose stack from this repo
 - A GitHub personal access token with access to the private Blazored.Toast package source in `nuget.config`
 

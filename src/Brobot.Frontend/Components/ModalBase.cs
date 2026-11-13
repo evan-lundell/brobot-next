@@ -6,7 +6,10 @@ namespace Brobot.Frontend.Components;
 public abstract class ModalBase : ComponentBase
 {
     [Inject]
-    public required IJSRuntime JsRuntime { get; set; }
+    private IJSRuntime JsRuntime { get; set; } = default!;
+
+    [Inject]
+    private ILogger<ModalBase> Logger { get; set; } = default!;
     
     [Parameter]
     public required string Id { get; set; }
@@ -22,12 +25,26 @@ public abstract class ModalBase : ComponentBase
 
     public virtual async Task ShowModal()
     {
-        await JsRuntime.InvokeVoidAsync("showModal", $"#{Id}");
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("showModal", $"#{Id}");
+        }
+        catch (JSException ex)
+        {
+            Logger.LogError(ex, "Failed to show modal {ModalId}", Id);
+        }
     }
 
     public virtual async Task HideModal()
     {
-        await JsRuntime.InvokeVoidAsync("hideModal", $"#{Id}");
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("hideModal", $"#{Id}");
+        }
+        catch (JSException ex)
+        {
+            Logger.LogError(ex, "Failed to hide modal {ModalId}", Id);
+        }
         OnModalClosed?.Invoke();
     }
 }

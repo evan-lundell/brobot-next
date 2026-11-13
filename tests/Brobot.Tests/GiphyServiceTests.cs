@@ -117,7 +117,7 @@ public class GiphyServiceTests
     }
     
     [Test]
-    public void GetGif_RequestFails_ThrowsException()
+    public async Task GetGif_RequestFails_ThrowsException()
     {
         // Arrange
         var response = new HttpResponseMessage
@@ -129,6 +129,6 @@ public class GiphyServiceTests
             .ReturnsAsync(response);
         
         // Act & Assert
-        Assert.ThrowsAsync<HttpRequestException>(async () => await _giphyService.GetGif(null));
+        await Assert.ThrowsAsync<HttpRequestException>(async () => await _giphyService.GetGif(null));
     }
 }

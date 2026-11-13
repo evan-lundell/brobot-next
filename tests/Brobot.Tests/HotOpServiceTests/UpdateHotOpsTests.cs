@@ -93,7 +93,7 @@ public class UpdateHotOpsTests : HotOpServiceTestsBase
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("User 100 not found in database")),
+                It.Is<It.IsAnyType>((v, t) => $"{v}".Contains("User 100 not found in database")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Exactly(3));

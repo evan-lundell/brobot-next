@@ -35,7 +35,7 @@ public class CreateSecretSantaGroupTests : SecretSantaServiceTestsBase
     }
     
     [Test]
-    public void ThrowsExceptionWhenUserDoesNotExist()
+    public async Task ThrowsExceptionWhenUserDoesNotExist()
     {
         SecretSantaGroupRequest secretSantaGroup = new()
         {
@@ -60,6 +60,6 @@ public class CreateSecretSantaGroupTests : SecretSantaServiceTestsBase
             }
         };
 
-        Assert.ThrowsAsync<InvalidOperationException>(async () => await SecretSantaService.CreateSecretSantaGroup(secretSantaGroup));
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await SecretSantaService.CreateSecretSantaGroup(secretSantaGroup));
     }
 }

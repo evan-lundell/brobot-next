@@ -73,7 +73,7 @@ public class ThreadCreatedTests : SyncServiceTestsBase
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Thread creation failed. Guild")),
+                    It.Is<It.IsAnyType>((v, t) => $"{v}".Contains("Thread creation failed. Guild")),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
                 Times.Once);
@@ -101,7 +101,7 @@ public class ThreadCreatedTests : SyncServiceTestsBase
                 x => x.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Thread creation failed. Thread with ID")),
+                    It.Is<It.IsAnyType>((v, t) => $"{v}".Contains("Thread creation failed. Thread with ID")),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
                 Times.Once);
@@ -185,7 +185,7 @@ public class ThreadCreatedTests : SyncServiceTestsBase
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Thread creation failed")),
+                It.Is<It.IsAnyType>((v, t) => $"{v}".Contains("Thread creation failed")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
