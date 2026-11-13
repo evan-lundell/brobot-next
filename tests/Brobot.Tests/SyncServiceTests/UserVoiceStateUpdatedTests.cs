@@ -205,7 +205,7 @@ public class UserVoiceStateUpdatedTests : SyncServiceTestsBase
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing user voice state updated for ")),
+                It.Is<It.IsAnyType>((v, t) => $"{v}".Contains("Error processing user voice state updated for ")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);

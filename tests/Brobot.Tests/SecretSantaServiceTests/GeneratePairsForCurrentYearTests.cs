@@ -8,15 +8,15 @@ namespace Brobot.Tests.SecretSantaServiceTests;
 public class GeneratePairsForCurrentYearTests : SecretSantaServiceTestsBase
 {
     [Test]
-    public void ThrowsExceptionWhenGroupDoesNotExist()
+    public async Task ThrowsExceptionWhenGroupDoesNotExist()
     {
-        Assert.ThrowsAsync<ModelNotFoundException<SecretSantaGroupModel, int>>(() => SecretSantaService.GeneratePairsForCurrentYear(3));
+        await Assert.ThrowsAsync<ModelNotFoundException<SecretSantaGroupModel, int>>(() => SecretSantaService.GeneratePairsForCurrentYear(3));
     }
 
     [Test]
-    public void ThrowsExceptionWhenGroupHasCurrentYearPairings()
+    public async Task ThrowsExceptionWhenGroupHasCurrentYearPairings()
     {
-        Assert.ThrowsAsync<InvalidOperationException>(() => SecretSantaService.GeneratePairsForCurrentYear(2));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => SecretSantaService.GeneratePairsForCurrentYear(2));
     }
 
     [Test]

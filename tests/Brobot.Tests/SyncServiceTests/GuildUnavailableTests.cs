@@ -83,7 +83,7 @@ public class GuildUnavailableTests : SyncServiceTestsBase
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing guild unavailable for GuildId")) ,
+                It.Is<It.IsAnyType>((v, t) => $"{v}".Contains("Error processing guild unavailable for GuildId")) ,
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

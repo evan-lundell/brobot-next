@@ -120,7 +120,7 @@ public class ThreadUpdatedTests : SyncServiceTestsBase
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Thread updated failed")),
+                It.Is<It.IsAnyType>((v, t) => $"{v}".Contains("Thread updated failed")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

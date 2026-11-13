@@ -56,7 +56,7 @@ public class DiscordOauthServiceTests
     }
 
     [Test]
-    public void GetToken_ThrowsException_WhenNoAccessToken()
+    public async Task GetToken_ThrowsException_WhenNoAccessToken()
     {
         var json = JsonSerializer.Serialize(new { access_token = "" });
         _handlerMock.Protected()
@@ -70,7 +70,7 @@ public class DiscordOauthServiceTests
             });
 
         var service = new DiscordOauthService(_httpClient, _options, Mock.Of<ILogger<DiscordOauthService>>());
-        Assert.ThrowsAsync<Exception>(async () => await service.GetToken("auth_code", "https://example.com/discord-cb"));
+        await Assert.ThrowsAsync<Exception>(async () => await service.GetToken("auth_code", "https://example.com/discord-cb"));
     }
 
     [Test]
@@ -95,7 +95,7 @@ public class DiscordOauthServiceTests
     }
 
     [Test]
-    public void GetDiscordUserId_ThrowsException_WhenNoId()
+    public async Task GetDiscordUserId_ThrowsException_WhenNoId()
     {
         var json = JsonSerializer.Serialize(new { id = "" });
         var handler = new Mock<HttpMessageHandler>();
@@ -110,7 +110,7 @@ public class DiscordOauthServiceTests
             });
 
         var service = new DiscordOauthService(new HttpClient(handler.Object), _options, Mock.Of<ILogger<DiscordOauthService>>());
-        Assert.ThrowsAsync<Exception>(async () => await service.GetDiscordUserId("token"));
+        await Assert.ThrowsAsync<Exception>(async () => await service.GetDiscordUserId("token"));
     }
     
     [TearDown]

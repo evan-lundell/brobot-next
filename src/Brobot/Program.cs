@@ -83,7 +83,6 @@ public static class Program
         {
             app.UseSwagger();
             app.UseSwaggerUI();
-            app.UseWebAssemblyDebugging();
             app.UseExceptionHandler("/error-development");
         }
         else

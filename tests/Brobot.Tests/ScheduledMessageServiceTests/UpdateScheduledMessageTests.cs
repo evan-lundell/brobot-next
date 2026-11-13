@@ -118,7 +118,7 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
         var dateTimeUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
         var sendDateTimeOffset = new DateTimeOffset(dateTimeUnspecified, offset).AddDays(-1);
         
-        var ex = Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(scheduledMessageId, null, null, sendDateTimeOffset.DateTime));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(scheduledMessageId, null, null, sendDateTimeOffset.DateTime));
         Assert.That(ex.Message, Is.EqualTo("Send date cannot be in the past"));
     }
     
@@ -131,20 +131,20 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
             throw new Exception("Scheduled message not found");
         }
         
-        var ex = Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(1, null, 100));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(1, null, 100));
         Assert.That(ex.Message, Is.EqualTo("Channel not found"));
     }
     
     [Test]
-    public void ScheduledMessageDoesNotExist_ThrowsException()
+    public async Task ScheduledMessageDoesNotExist_ThrowsException()
     { 
-        Assert.ThrowsAsync<ModelNotFoundException<ScheduledMessageModel, int>>(() => ScheduledMessageService.UpdateScheduledMessage(99));
+        await Assert.ThrowsAsync<ModelNotFoundException<ScheduledMessageModel, int>>(() => ScheduledMessageService.UpdateScheduledMessage(99));
     }
 
     [Test]
-    public void UpdateSentMessage_ThrowsError()
+    public async Task UpdateSentMessage_ThrowsError()
     {
-        var ex = Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(4, "Test", 1));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(4, "Test", 1));
         Assert.That(ex.Message, Is.EqualTo("Cannot update a sent message"));
     }
 }

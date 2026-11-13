@@ -8,7 +8,7 @@ namespace Brobot.Tests.StatsServiceTests;
 public class GetStatsTests : StatsServiceTestBase
 {
     [Test]
-    public void EndDateBeforeStartDate_ThrowsException()
+    public async Task EndDateBeforeStartDate_ThrowsException()
     {
         GuildModel guild = new()
         {
@@ -23,7 +23,7 @@ public class GetStatsTests : StatsServiceTestBase
             Guild = guild
         };
         
-        Assert.ThrowsAsync<InvalidOperationException>(() => StatsService.GetStats(channelModel, new DateOnly(2025, 08, 01), new DateOnly(2025, 07, 01)));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => StatsService.GetStats(channelModel, new DateOnly(2025, 08, 01), new DateOnly(2025, 07, 01)));
     }
 
     [Test]

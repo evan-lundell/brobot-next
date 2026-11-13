@@ -58,7 +58,7 @@ public class LastOnlineTests : BrobotModuleTestBase
         callingUserMock.SetupGet(u => u.Id).Returns(callingUserId);
         InteractionContextMock.SetupGet(c => c.User).Returns(callingUserMock.Object);
         Mock<IUserRepository> userRepositoryMock = new();
-        var lastOnline = new DateTime(2026, 4, 19, 12, 0, 0);
+        var lastOnline = new DateTimeOffset(2026, 4, 19, 12, 0, 0, TimeSpan.Zero);
         const string timezone = "America/Chicago";
         var lastOnlineAdjusted = new DateTime(2026, 4, 19, 7, 0, 0);
         userRepositoryMock.Setup(u => u.GetById(userId))

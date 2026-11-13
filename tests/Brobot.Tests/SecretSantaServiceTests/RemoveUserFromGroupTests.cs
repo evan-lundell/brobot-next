@@ -21,18 +21,18 @@ public class RemoveUserFromGroupTests : SecretSantaServiceTestsBase
     }
     
     [Test]
-    public void ThrowsExceptionWhenGroupDoesNotExist()
+    public async Task ThrowsExceptionWhenGroupDoesNotExist()
     {
-        Assert.ThrowsAsync<ModelNotFoundException<SecretSantaGroupModel, int>>(async () =>
+        await Assert.ThrowsAsync<ModelNotFoundException<SecretSantaGroupModel, int>>(async () =>
         {
             await SecretSantaService.RemoveUserFromGroup(3, 1);
         });
     }
     
     [Test]
-    public void ReturnsInvalidOperationExceptionWhenUserNotInGroup()
+    public async Task ReturnsInvalidOperationExceptionWhenUserNotInGroup()
     {
-        Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             await SecretSantaService.RemoveUserFromGroup(1, 7);
         });

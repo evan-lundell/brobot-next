@@ -45,7 +45,7 @@ public class RandomFactServiceTests
     }
     
     [Test]
-    public void GetFact_ThrowsExceptionOnFailedRequest()
+    public async Task GetFact_ThrowsExceptionOnFailedRequest()
     {
         _mockHttpMessageHandler.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
@@ -54,7 +54,7 @@ public class RandomFactServiceTests
                 StatusCode = HttpStatusCode.InternalServerError
             });
         
-        Assert.ThrowsAsync<HttpRequestException>(async () => await _randomFactService.GetFact());
+        await Assert.ThrowsAsync<HttpRequestException>(async () => await _randomFactService.GetFact());
     }
     
     [Test]
@@ -74,7 +74,7 @@ public class RandomFactServiceTests
     }
     
     [Test]
-    public void GetFact_ThrowsExceptionOnInvalidJson()
+    public async Task GetFact_ThrowsExceptionOnInvalidJson()
     {
         _mockHttpMessageHandler.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
@@ -84,7 +84,7 @@ public class RandomFactServiceTests
                 Content = new StringContent("Invalid JSON")
             });
         
-        Assert.ThrowsAsync<JsonReaderException>(async () => await _randomFactService.GetFact());
+        await Assert.ThrowsAsync<JsonReaderException>(async () => await _randomFactService.GetFact());
     }
     
     [TearDown]
