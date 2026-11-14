@@ -252,6 +252,6 @@ public abstract class HotOpServiceTestsBase
             .Include(ho => ho.Channel)
             .ThenInclude(c => c.ChannelUsers)
             .ThenInclude(cu => cu.DiscordUser)
-            .SingleAsync(ho => ho.Id == 5);
+            .SingleAsync(ho => ho.Id == id);
     }
 }

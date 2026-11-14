@@ -1,3 +1,5 @@
+using Brobot.Models;
+
 namespace Brobot.Tests.HotOpServiceTests;
 
 [TestFixture]
@@ -41,5 +43,28 @@ public class GetScoreboardTests : HotOpServiceTestsBase
             Assert.That(scoreboard.Scores.Count(), Is.EqualTo(1));
             Assert.That(scoreboard.Scores.First().Username, Is.EqualTo("Test User 2"));
         });
+    }
+
+    [Test]
+    public async Task OpenSessionOnEndedHotOp_IsCappedAtEndDate()
+    {
+        // HotOp 2 ended 8 days ago. User 1 already has a closed 120 minute session (1200 points).
+        // Simulate a session that was never closed (e.g. the end-of-hot-op race) that started 60 minutes before the end.
+        var hotOp = await GetHotOp(2);
+        var user1 = hotOp.Channel.ChannelUsers.Single(cu => cu.UserId == 1UL).DiscordUser;
+        hotOp.HotOpSessions.Add(new HotOpSessionModel
+        {
+            HotOp = hotOp,
+            HotOpId = hotOp.Id,
+            DiscordUser = user1,
+            DiscordUserId = user1.Id,
+            StartDateTime = hotOp.EndDate.AddMinutes(-60),
+            EndDateTime = null
+        });
+
+        var scoreboard = HotOpService.GetScoreboard(hotOp);
+
+        // 1200 + 600 (capped at EndDate). Uncapped would be 1200 + ~8 days' worth.
+        Assert.That(scoreboard.Scores.Single(s => s.UserId == 1UL).Score, Is.EqualTo(1800));
     }
 }
