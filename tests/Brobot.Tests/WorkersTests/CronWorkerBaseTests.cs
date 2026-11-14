@@ -114,6 +114,42 @@ public class CronWorkerBaseTests
     }
 
     [Test]
+    public async Task ClockSteppedBackwardsAfterRun_DoesNotRunSameOccurrenceAgain()
+    {
+        _timeProvider = new ObservableTimeProvider(Utc(2026, 11, 13, 0, 0, 30));
+        _worker = new TestWorker("* * * * *", _timeProvider);
+        var calls = 0;
+        _worker.OnRun = (_, _) =>
+        {
+            // During the first run, step the clock back 500ms, to just before the occurrence that's running
+            if (Interlocked.Increment(ref calls) == 1)
+            {
+                _timeProvider.ClockOffset = TimeSpan.FromMilliseconds(-500);
+            }
+            return Task.CompletedTask;
+        };
+
+        await _worker.StartAsync(CancellationToken.None);
+        await _timeProvider.WaitForTimerCreated();
+
+        _timeProvider.SetUtcNow(Utc(2026, 11, 13, 0, 1));
+        var first = await NextRun(_worker);
+        // The worker has now scheduled its next run while the clock read 00:00:59.5
+        await _timeProvider.WaitForTimerCreated();
+        _timeProvider.ClockOffset = TimeSpan.Zero;
+
+        // Far enough to fire either a (wrong) re-run of 00:01 or the correct 00:02 run
+        _timeProvider.SetUtcNow(Utc(2026, 11, 13, 0, 2, 1));
+        var second = await NextRun(_worker);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(first.Target, Is.EqualTo(Utc(2026, 11, 13, 0, 1)));
+            Assert.That(second.Target, Is.EqualTo(Utc(2026, 11, 13, 0, 2)), "the 00:01 occurrence ran twice");
+        });
+    }
+
+    [Test]
     public async Task StopAsync_WhileWaiting_StopsWithoutRunning()
     {
         _timeProvider = new ObservableTimeProvider(Utc(2026, 11, 13, 0, 0, 30));

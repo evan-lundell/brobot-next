@@ -24,7 +24,6 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
         logger.LogInformation("Updating active HotOps");
         var now = DateTimeOffset.UtcNow;
         var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && now < ho.EndDate, cancellationToken);
-        var users = (await uow.Users.Find(u => u.Archived == false, cancellationToken)).ToDictionary(u => u.Id);
 
         foreach (var hotOp in activeHotOps)
         {
@@ -38,29 +37,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
                 if (action == UserVoiceStateAction.Connected)
                 {
                     logger.LogInformation("Creating sessions for all other users");
-                    var sessions = connectedUsers
-                        .Where(u => u != userId)
-                        .SelectMany(u =>
-                        {
-                            if (!users.TryGetValue(u, out var discordUser))
-                            {
-                                return Enumerable.Empty<HotOpSessionModel>();
-                            }
-
-                            return
-                            [
-                                new HotOpSessionModel
-                                {
-                                    HotOp = hotOp,
-                                    HotOpId = hotOp.Id,
-                                    DiscordUser = discordUser,
-                                    DiscordUserId = u,
-                                    StartDateTime = now
-                                }
-                            ];
-                        }
-                    );
-                    await uow.HotOpSessions.AddRange(sessions, cancellationToken);
+                    await CreateSessions(hotOp, connectedUsers, now, cancellationToken);
                     logger.LogInformation("Finished creating sessions for all other users");
                 }
                 else
@@ -91,19 +68,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
 
 
                     logger.LogInformation("Creating session for user");
-                    if (!users.TryGetValue(userId, out var discordUser))
-                    {
-                        logger.LogInformation("User {UserId} not found in database", userId);
-                        continue;
-                    }
-                    await uow.HotOpSessions.Add(new HotOpSessionModel
-                    {
-                        HotOp = hotOp,
-                        HotOpId = hotOp.Id,
-                        DiscordUser = discordUser,
-                        DiscordUserId = userId,
-                        StartDateTime = now
-                    }, cancellationToken);
+                    await CreateSessions(hotOp, [userId], now, cancellationToken);
                     logger.LogInformation("Finished creating session for user");
                 }
                 else

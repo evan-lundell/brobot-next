@@ -23,15 +23,19 @@ public abstract class CronWorkerBase : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        DateTimeOffset? lastTarget = null;
         while (!stoppingToken.IsCancellationRequested)
         {
-            var next = _expression.GetNextOccurrence(_timeProvider.GetUtcNow(), TimeZoneInfo.Utc);
+            var now = _timeProvider.GetUtcNow();
+            var from = lastTarget is { } last && last > now ? last : now;
+            var next = _expression.GetNextOccurrence(from, TimeZoneInfo.Utc);
             if (next is null)
             {
                 return;
             }
 
             await WaitUntil(next.Value, stoppingToken);
+            lastTarget = next.Value;
 
             try
             {

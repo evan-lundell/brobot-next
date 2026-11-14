@@ -16,6 +16,14 @@ internal sealed class ObservableTimeProvider(DateTimeOffset start) : FakeTimePro
 
     public int TimersCreated => Volatile.Read(ref _timersCreated);
 
+    /// <summary>
+    /// Shifts what GetUtcNow reports without moving timers, to simulate the wall clock being stepped
+    /// (e.g. backwards by an NTP correction). FakeTimeProvider itself can't move backwards.
+    /// </summary>
+    public TimeSpan ClockOffset { get; set; }
+
+    public override DateTimeOffset GetUtcNow() => base.GetUtcNow() + ClockOffset;
+
     public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
     {
         var timer = base.CreateTimer(callback, state, dueTime, period);
