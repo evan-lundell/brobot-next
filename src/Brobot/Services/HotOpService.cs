@@ -3,6 +3,7 @@ using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Shared;
 using Discord;
+using Microsoft.EntityFrameworkCore;
 
 // ReSharper disable MemberCanBeMadeStatic.Global
 
@@ -22,8 +23,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
         });
         logger.LogInformation("Updating active HotOps");
         var now = DateTimeOffset.UtcNow;
-        var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && ho.EndDate >= now, cancellationToken);
-        var users = (await uow.Users.Find(u => u.Archived == false, cancellationToken)).ToDictionary(u => u.Id);
+        var activeHotOps = await uow.HotOps.Find(ho => ho.StartDate <= now && now < ho.EndDate, cancellationToken);
 
         foreach (var hotOp in activeHotOps)
         {
@@ -37,29 +37,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
                 if (action == UserVoiceStateAction.Connected)
                 {
                     logger.LogInformation("Creating sessions for all other users");
-                    var sessions = connectedUsers
-                        .Where(u => u != userId)
-                        .SelectMany(u =>
-                        {
-                            if (!users.TryGetValue(u, out var discordUser))
-                            {
-                                return Enumerable.Empty<HotOpSessionModel>();
-                            }
-
-                            return
-                            [
-                                new HotOpSessionModel
-                                {
-                                    HotOp = hotOp,
-                                    HotOpId = hotOp.Id,
-                                    DiscordUser = discordUser,
-                                    DiscordUserId = u,
-                                    StartDateTime = now
-                                }
-                            ];
-                        }
-                    );
-                    await uow.HotOpSessions.AddRange(sessions, cancellationToken);
+                    await CreateSessions(hotOp, connectedUsers, now, cancellationToken);
                     logger.LogInformation("Finished creating sessions for all other users");
                 }
                 else
@@ -90,19 +68,7 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
 
 
                     logger.LogInformation("Creating session for user");
-                    if (!users.TryGetValue(userId, out var discordUser))
-                    {
-                        logger.LogInformation("User {UserId} not found in database", userId);
-                        continue;
-                    }
-                    await uow.HotOpSessions.Add(new HotOpSessionModel
-                    {
-                        HotOp = hotOp,
-                        HotOpId = hotOp.Id,
-                        DiscordUser = discordUser,
-                        DiscordUserId = userId,
-                        StartDateTime = now
-                    }, cancellationToken);
+                    await CreateSessions(hotOp, [userId], now, cancellationToken);
                     logger.LogInformation("Finished creating session for user");
                 }
                 else
@@ -163,7 +129,9 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
             }
             else
             {
-                scores[session.DiscordUserId].Score += (int)(Math.Round((DateTime.UtcNow - session.StartDateTime).TotalMinutes, 0) * MinuteMultiplier);
+                var now = DateTimeOffset.UtcNow;
+                var end = now < hotOp.EndDate ? now : hotOp.EndDate;
+                scores[session.DiscordUserId].Score += (int)(Math.Round((end - session.StartDateTime).TotalMinutes, 0) * MinuteMultiplier);
             }
         }
 
@@ -205,5 +173,47 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
 
         logger.LogInformation("Finished creating scoreboard embed");
         return builder.Build();
+    }
+
+    public async Task CreateSessions(HotOpModel hotOpModel, IReadOnlyCollection<ulong> discordUserIds, DateTimeOffset startDateTime, CancellationToken cancellationToken = default)
+    {
+        var sessions = new List<HotOpSessionModel>();
+        // Check the database rather than hotOpModel.HotOpSessions: the model was loaded earlier by the caller, and
+        // UpdateHotOps (running on the background queue with its own DbContext) may have opened sessions since then
+        var openUserIds = (await uow.HotOpSessions.Find(s => s.HotOpId == hotOpModel.Id && s.EndDateTime == null, cancellationToken))
+            .Select(s => s.DiscordUserId)
+            .ToHashSet();
+        var users = await uow.Users.Find(
+            u => u.Id != hotOpModel.UserId
+            && !u.Archived
+            && discordUserIds.Contains(u.Id)
+            && !openUserIds.Contains(u.Id), cancellationToken);
+        foreach (var user in users)
+        {
+            sessions.Add(new HotOpSessionModel
+            {
+                HotOp = hotOpModel,
+                HotOpId = hotOpModel.Id,
+                DiscordUser = user,
+                DiscordUserId = user.Id,
+                StartDateTime = startDateTime
+            });
+        }
+
+        await uow.HotOpSessions.AddRange(sessions, cancellationToken);
+        try
+        {
+            await uow.CompleteAsync(cancellationToken);
+        }
+        catch
+        {
+            // Don't leave the failed inserts tracked: the unit of work is shared with the caller, and the next
+            // CompleteAsync (e.g. closing sessions for a hot op ending this minute) would retry them and fail too
+            foreach (var session in sessions)
+            {
+                uow.DbContext.Entry(session).State = EntityState.Detached;
+            }
+            throw;
+        }
     }
 }

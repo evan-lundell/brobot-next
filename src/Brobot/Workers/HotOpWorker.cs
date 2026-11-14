@@ -11,23 +11,25 @@ namespace Brobot.Workers;
 public class HotOpWorker(
     ICronWorkerConfig<HotOpWorker> config,
     IServiceScopeFactory serviceScopeFactory,
-    IDiscordClient client)
-    : CronWorkerBase(config.CronExpression)
+    IDiscordClient client,
+    ILogger<HotOpWorker> logger,
+    TimeProvider timeProvider)
+    : CronWorkerBase(config.CronExpression, logger, timeProvider)
 {
-    protected override async Task DoWork(CancellationToken cancellationToken)
+    protected override async Task DoWork(DateTimeOffset target, CancellationToken cancellationToken)
     {
         using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var hotOpService = scope.ServiceProvider.GetRequiredService<IHotOpService>();
-        var now = DateTime.UtcNow;
-        var minuteStart = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, now.Kind);
+        var utcTarget = target.ToUniversalTime();
+        var minuteStart = new DateTimeOffset(utcTarget.Year, utcTarget.Month, utcTarget.Day, utcTarget.Hour, utcTarget.Minute, 0, TimeSpan.Zero);
 
-        var newHotOps = await uow.HotOps.Find(
+        var startingHotOps = await uow.HotOps.Find(
             ho => minuteStart <= ho.StartDate && minuteStart.AddMinutes(1) > ho.StartDate,
             cancellationToken);
-        foreach (var newHotOp in newHotOps)
+        foreach (var startingHotOp in startingHotOps)
         {
-            await HandleNewHotOp(newHotOp, cancellationToken);
+            await HandleStartingHotOp(startingHotOp, hotOpService, cancellationToken);
         }
 
         var endingHotOps = await uow.HotOps.Find(
@@ -39,32 +41,94 @@ public class HotOpWorker(
         }
     }
 
-    private async Task HandleNewHotOp(HotOpModel hotOp, CancellationToken cancellationToken)
+    private async Task HandleStartingHotOp(HotOpModel hotOp, IHotOpService hotOpService, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var channel = await client.GetChannelAsync(hotOp.ChannelId);
-        if (channel is ISocketMessageChannel textChannel)
+        // Independent steps: failing to start sessions must not stop the announcement
+        await StartSessionsInOwnersVoiceChannel(hotOp, hotOpService, cancellationToken);
+
+        try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await textChannel.SendMessageAsync($"Operation Hot {hotOp.DiscordUser.Username} has begun!");
+            var channel = await client.GetChannelAsync(hotOp.ChannelId);
+            if (channel is ISocketMessageChannel textChannel)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await textChannel.SendMessageAsync($"Operation Hot {hotOp.DiscordUser.Username} has begun!");
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to announce start of Hot Op {HotOpId}", hotOp.Id);
+        }
+    }
+
+    // If the owner of the hot op is already in a voice channel when it starts, start sessions for everyone else there
+    private async Task StartSessionsInOwnersVoiceChannel(HotOpModel hotOp, IHotOpService hotOpService, CancellationToken cancellationToken)
+    {
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var guild = await client.GetGuildAsync(hotOp.Channel.GuildId);
+            if (guild is null)
+            {
+                logger.LogWarning("Guild {GuildId} not found, skipping sessions for Hot Op {HotOpId}", hotOp.Channel.GuildId, hotOp.Id);
+                return;
+            }
+
+            var owner = await guild.GetUserAsync(hotOp.UserId);
+            if (owner is null)
+            {
+                logger.LogWarning("User {UserId} not found, skipping sessions for Hot Op {HotOpId}", hotOp.UserId, hotOp.Id);
+                return;
+            }
+
+            if (owner.VoiceChannel is null)
+            {
+                return;
+            }
+
+            var connectedUsers = await owner.VoiceChannel.GetConnectedUsersAsync();
+            await hotOpService.CreateSessions(hotOp, [.. connectedUsers.Select(cu => cu.Id)], hotOp.StartDate, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to start sessions for Hot Op {HotOpId}", hotOp.Id);
         }
     }
 
     private async Task HandleEndingHotOp(HotOpModel hotOp, IUnitOfWork uow, IHotOpService hotOpService, CancellationToken cancellationToken)
     {
-        var now = DateTimeOffset.UtcNow;
-        foreach (var openSession in hotOp.HotOpSessions.Where(hos => hos.EndDateTime == null))
+        try
         {
-            openSession.EndDateTime = now;
-        }
-        await uow.CompleteAsync(cancellationToken);
+            foreach (var openSession in hotOp.HotOpSessions.Where(hos => hos.EndDateTime == null))
+            {
+                openSession.EndDateTime = hotOp.EndDate;
+            }
+            await uow.CompleteAsync(cancellationToken);
 
-        var channel = await client.GetChannelAsync(hotOp.ChannelId);
-        if (channel is ISocketMessageChannel textChannel)
+            var channel = await client.GetChannelAsync(hotOp.ChannelId);
+            if (channel is ISocketMessageChannel textChannel)
+            {
+                var scoreboardEmbed = hotOpService.CreateScoreboardEmbed(hotOp);
+                cancellationToken.ThrowIfCancellationRequested();
+                await textChannel.SendMessageAsync(text: $"Operation Hot {hotOp.DiscordUser.Username} has ended!", embed: scoreboardEmbed);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            var scoreboardEmbed = hotOpService.CreateScoreboardEmbed(hotOp);
-            cancellationToken.ThrowIfCancellationRequested();
-            await textChannel.SendMessageAsync(text: $"Operation Hot {hotOp.DiscordUser.Username} has ended!", embed: scoreboardEmbed);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "HandleEndingHotOp failed for Hot Op {HotOpId}", hotOp.Id);
         }
     }
 }

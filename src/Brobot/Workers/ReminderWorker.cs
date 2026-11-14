@@ -9,14 +9,16 @@ namespace Brobot.Workers;
 public class ReminderWorker(
     ICronWorkerConfig<ReminderWorker> config,
     IServiceScopeFactory serviceScopeFactory,
-    IDiscordClient client)
-    : CronWorkerBase(config.CronExpression)
+    IDiscordClient client,
+    ILogger<ReminderWorker> logger,
+    TimeProvider timeProvider)
+    : CronWorkerBase(config.CronExpression, logger, timeProvider)
 {
-    protected override async Task DoWork(CancellationToken cancellationToken)
+    protected override async Task DoWork(DateTimeOffset target, CancellationToken cancellationToken)
     {
         using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var messages = await uow.ScheduledMessages.GetActiveMessages(cancellationToken: cancellationToken);
+        var messages = await uow.ScheduledMessages.GetActiveMessages(target.UtcDateTime, cancellationToken: cancellationToken);
         foreach (var message in messages)
         {
             var channel = await client.GetChannelAsync(message.ChannelId);

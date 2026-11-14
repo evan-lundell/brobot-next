@@ -1,101 +1,69 @@
 using Cronos;
-using Timer = System.Timers.Timer;
 
 namespace Brobot.Workers;
 
-public abstract class CronWorkerBase : IHostedService, IDisposable
+public abstract class CronWorkerBase : BackgroundService
 {
-    private Timer? _timer;
     private readonly CronExpression _expression;
+    private readonly ILogger _logger;
+    private readonly TimeProvider _timeProvider;
 
-    protected CronWorkerBase(string? cronExpression)
+    protected virtual TimeSpan MaxDelay => TimeSpan.FromDays(30);
+
+    protected CronWorkerBase(string? cronExpression, ILogger logger, TimeProvider timeProvider)
     {
         if (string.IsNullOrWhiteSpace(cronExpression))
         {
             throw new ArgumentNullException(nameof(cronExpression), "cron expression cannot be null");
         }
         _expression = CronExpression.Parse(cronExpression);
+        _logger = logger;
+        _timeProvider = timeProvider;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        return ScheduleJob(cancellationToken);
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        _timer?.Stop();
-        return Task.CompletedTask;
-    }
-
-#pragma warning disable CA1816
-    public virtual void Dispose()
-#pragma warning restore CA1816
-    {
-        _timer?.Dispose();
-    }
-
-    private async Task ScheduleJob(CancellationToken cancellationToken)
-    {
-        try
+        DateTimeOffset? lastTarget = null;
+        while (!stoppingToken.IsCancellationRequested)
         {
-            var next = _expression.GetNextOccurrence(DateTime.UtcNow);
-            if (next.HasValue)
+            var now = _timeProvider.GetUtcNow();
+            var from = lastTarget is { } last && last > now ? last : now;
+            var next = _expression.GetNextOccurrence(from, TimeZoneInfo.Utc);
+            if (next is null)
             {
-                var delay = next.Value - DateTime.UtcNow;
-                if (delay.TotalMilliseconds <= 0)
-                {
-                    await ScheduleJob(cancellationToken);
-                }
+                return;
+            }
 
-                // Timer only supports up to int.MaxValue. If delay exceeds that, delay the max value and do nothing
-                if (delay.TotalMilliseconds > int.MaxValue)
-                {
-                    _timer = new Timer(int.MaxValue);
-                    _timer.Elapsed += (_, _) =>
-                    {
-                        _timer.Dispose();
-                        _timer = null;
-                    };
-                }
-                else
-                {
-                    // Sometimes the minutely cron job fires a second early, so adding a second to the timer to offset
-                    _timer = new Timer(delay.TotalMilliseconds + 1000);
-                    _timer.Elapsed += async (_, _) =>
-                    {
-                        _timer.Dispose();
-                        _timer = null;
+            await WaitUntil(next.Value, stoppingToken);
+            lastTarget = next.Value;
 
-                        if (!cancellationToken.IsCancellationRequested)
-                        {
-                            try
-                            {
-                                await DoWork(cancellationToken);
-                            }
-                            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                            {
-                                return;
-                            }
-                        }
-
-                        if (!cancellationToken.IsCancellationRequested)
-                        {
-                            await ScheduleJob(cancellationToken);
-                        }
-                    };
-                }
-
-                _timer.Start();
+            try
+            {
+                await DoWork(next.Value, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to execute job");
             }
         }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
-
-        await Task.CompletedTask;
     }
 
-    protected abstract Task DoWork(CancellationToken cancellationToken);
+    private async Task WaitUntil(DateTimeOffset target, CancellationToken ct)
+    {
+        while (true)
+        {
+            var remaining = target - _timeProvider.GetUtcNow();
+            if (remaining <= TimeSpan.Zero)
+            {
+                return;
+            }
+            await Task.Delay(remaining < MaxDelay ? remaining : MaxDelay, _timeProvider, ct);
+        }
+    }
+
+    protected abstract Task DoWork(DateTimeOffset target, CancellationToken cancellationToken);
 }

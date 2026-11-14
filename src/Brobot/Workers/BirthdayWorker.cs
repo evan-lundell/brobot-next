@@ -9,14 +9,16 @@ namespace Brobot.Workers;
 public class BirthdayWorker(
     ICronWorkerConfig<BirthdayWorker> config,
     IServiceScopeFactory serviceScopeFactory,
-    IDiscordClient client)
-    : CronWorkerBase(config.CronExpression)
+    IDiscordClient client,
+    ILogger<BirthdayWorker> logger,
+    TimeProvider timeProvider)
+    : CronWorkerBase(config.CronExpression, logger, timeProvider)
 {
-    protected override async Task DoWork(CancellationToken cancellationToken)
+    protected override async Task DoWork(DateTimeOffset target, CancellationToken cancellationToken)
     {
         using var scope = serviceScopeFactory.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var now = DateOnly.FromDateTime(DateTime.UtcNow);
+        var now = DateOnly.FromDateTime(target.UtcDateTime);
         var users = await uow.Users.Find(u =>
             u.Birthdate.HasValue
             && u.Birthdate.Value.Month == now.Month
@@ -28,7 +30,7 @@ public class BirthdayWorker(
         foreach (var user in users)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (await client.GetChannelAsync(user.PrimaryChannelId!.Value) is not ISocketMessageChannel channel)
+            if (!user.PrimaryChannelId.HasValue || await client.GetChannelAsync(user.PrimaryChannelId.Value) is not ISocketMessageChannel channel)
             {
                 continue;
             }

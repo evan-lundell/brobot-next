@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAssemblyService, AssemblyService>();
         services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
         services.AddHostedService<QueuedHostedService>();
+        services.AddSingleton(TimeProvider.System);
         return services;
     }
 

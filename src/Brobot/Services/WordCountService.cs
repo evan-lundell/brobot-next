@@ -6,8 +6,14 @@ using TimeZoneConverter;
 
 namespace Brobot.Services;
 
-public class WordCountService(ILogger<WordCountService> logger, IDiscordClient client, IStopWordService stopWordService) : IWordCountService
+public class WordCountService(
+    ILogger<WordCountService> logger,
+    IDiscordClient client,
+    IStopWordService stopWordService,
+    TimeProvider timeProvider) : IWordCountService
 {
+    public static readonly TimeSpan PageDelay = TimeSpan.FromMilliseconds(2500);
+
     private readonly string[] _separators =
         [" ", "\t", "\n", "\r\n", ",", ":", ".", "!", "/", "\\", "%", "&", "?", "\"", "@", "*", "<", ">", "[", "]", "(", ")", "-", ";", "*", "{", "}", "+", "=", "#", "~"];
 
@@ -31,8 +37,15 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
             var done = false;
             Dictionary<string, WordCountDto> wordCounts = new();
 
+            var isFirstPage = true;
             while (!done)
             {
+                if (!isFirstPage)
+                {
+                    await Task.Delay(PageDelay, timeProvider, cancellationToken);
+                }
+                isFirstPage = false;
+
                 if (fromMessageId.HasValue)
                 {
                     logger.LogInformation("Getting messages before {MessageId}",  fromMessageId.Value);
@@ -91,11 +104,6 @@ public class WordCountService(ILogger<WordCountService> logger, IDiscordClient c
                     }
 
                     fromMessageId = message.Id;
-                }
-
-                if (!done)
-                {
-                    await Task.Delay(2500, cancellationToken);
                 }
             }
 

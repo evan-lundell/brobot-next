@@ -8,44 +8,34 @@ namespace Brobot.Workers;
 public class MonthlyStatsWorker(
     ICronWorkerConfig<MonthlyStatsWorker> config,
     IServiceScopeFactory serviceScopeFactory,
-    ILogger<MonthlyStatsWorker> logger) : CronWorkerBase(config.CronExpression)
+    ILogger<MonthlyStatsWorker> logger,
+    TimeProvider timeProvider) : CronWorkerBase(config.CronExpression, logger, timeProvider)
 {
-    protected override async Task DoWork(CancellationToken cancellationToken)
+    protected override async Task DoWork(DateTimeOffset target, CancellationToken cancellationToken)
     {
-        try
+        logger.LogInformation("Starting monthly stats worker");
+        using var scope = serviceScopeFactory.CreateScope();
+        using var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
+        var channels = await uow.Channels.Find(c => c.MonthlyWordCloud, cancellationToken);
+        var now = DateOnly.FromDateTime(target.UtcDateTime);
+        var startDate = now.AddMonths(-1);
+        var endDate = now.AddDays(-1);
+        foreach (var channel in channels)
         {
-            logger.LogInformation("Starting monthly stats worker");
-            using var scope = serviceScopeFactory.CreateScope();
-            using var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var statsService = scope.ServiceProvider.GetRequiredService<IStatsService>();
-            var channels = await uow.Channels.Find(c => c.MonthlyWordCloud, cancellationToken);
-            var now = DateOnly.FromDateTime(DateTime.UtcNow);
-            var startDate = now.AddMonths(-1);
-            var endDate = now.AddDays(-1);
-            foreach (var channel in channels)
+            StatPeriodModel statPeriod = new()
             {
-                StatPeriodModel statPeriod = new()
-                {
-                    Channel = channel,
-                    ChannelId = channel.Id,
-                    StartDate = startDate,
-                    EndDate = endDate
-                };
-                await uow.StatPeriods.Add(statPeriod, cancellationToken);
-                await uow.CompleteAsync(cancellationToken);
-                var stats = await statsService.GetStats(channel, startDate, endDate, statPeriod.Id, cancellationToken);
-                await statsService.SendStats(channel.Id, stats, cancellationToken);
-            }
+                Channel = channel,
+                ChannelId = channel.Id,
+                StartDate = startDate,
+                EndDate = endDate
+            };
+            await uow.StatPeriods.Add(statPeriod, cancellationToken);
+            await uow.CompleteAsync(cancellationToken);
+            var stats = await statsService.GetStats(channel, startDate, endDate, statPeriod.Id, cancellationToken);
+            await statsService.SendStats(channel.Id, stats, cancellationToken);
+        }
 
-            logger.LogInformation("Finished monthly stats worker");
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error occurred during monthly stats worker");
-        }
+        logger.LogInformation("Finished monthly stats worker");
     }
 }

@@ -39,7 +39,9 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
 
     private async Task NewHotOp()
     {
-        var now = DateTime.UtcNow;
+        // Hot Ops must start and end on the minute (the API rejects seconds), so don't seed the form with them
+        var utcNow = DateTime.UtcNow;
+        var now = new DateTime(utcNow.Ticks - utcNow.Ticks % TimeSpan.TicksPerMinute, DateTimeKind.Utc);
         _editHotOpRequest = new HotOpRequest
         {
             StartDate = now,

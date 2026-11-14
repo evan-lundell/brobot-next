@@ -243,6 +243,27 @@ public abstract class HotOpServiceTestsBase
         hotOpModel.HotOpSessions.Add(hotOpSession);
     }
 
+    /// <summary>
+    /// Saves an open session through a separate DbContext, the way UpdateHotOps does from the background queue.
+    /// Models already loaded through UnitOfWork won't see it, which is what makes them stale.
+    /// </summary>
+    protected async Task AddOpenSessionFromAnotherContext(int hotOpId, ulong userId, DateTimeOffset start)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrobotDbContext>();
+        var hotOp = await context.HotOps.SingleAsync(ho => ho.Id == hotOpId);
+        var user = await context.DiscordUsers.SingleAsync(u => u.Id == userId);
+        context.Set<HotOpSessionModel>().Add(new HotOpSessionModel
+        {
+            HotOp = hotOp,
+            HotOpId = hotOpId,
+            DiscordUser = user,
+            DiscordUserId = userId,
+            StartDateTime = start
+        });
+        await context.SaveChangesAsync();
+    }
+
     protected async Task<HotOpModel> GetHotOp(int id)
     {
         return await _context.HotOps
@@ -252,6 +273,6 @@ public abstract class HotOpServiceTestsBase
             .Include(ho => ho.Channel)
             .ThenInclude(c => c.ChannelUsers)
             .ThenInclude(cu => cu.DiscordUser)
-            .SingleAsync(ho => ho.Id == 5);
+            .SingleAsync(ho => ho.Id == id);
     }
 }
