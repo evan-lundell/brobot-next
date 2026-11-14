@@ -38,10 +38,10 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
         switch (type)
         {
             case HotOpQueryType.Completed:
-                query = query.Where(ho => ho.EndDate < utcNow);
+                query = query.Where(ho => ho.EndDate <= utcNow);
                 break;
             case HotOpQueryType.Current:
-                query = query.Where(ho => ho.StartDate < utcNow && ho.EndDate > utcNow);
+                query = query.Where(ho => ho.StartDate <= utcNow && ho.EndDate > utcNow);
                 break;
             case HotOpQueryType.Upcoming:
                 query = query.Where(ho => ho.StartDate > utcNow);

@@ -56,6 +56,18 @@ public class HotOpsController(
             logger.LogWarning("Start date must be before end date");
             return BadRequest("Start date must be before end date");
         }
+
+        if (hotOpRequest.StartDate.Ticks % TimeSpan.TicksPerMinute != 0)
+        {
+            logger.LogWarning("StartDate seconds must be set to 0");
+            return BadRequest("Invalid time, Hot Ops must begin on the minute");
+        }
+
+        if (hotOpRequest.EndDate.Ticks % TimeSpan.TicksPerMinute != 0)
+        {
+            logger.LogWarning("EndDate seconds must be set to 0");
+            return BadRequest("Invalid time, Hot Ops must end on the minute");
+        }
         
         var channel = await uow.Channels.GetById(hotOpRequest.ChannelId, cancellationToken);
         if (channel == null)
@@ -120,6 +132,18 @@ public class HotOpsController(
         {
             logger.LogWarning("Start date must be before end date");
             return BadRequest("Start date must be before end date");
+        }
+
+        if (hotOpRequest.StartDate.Ticks % TimeSpan.TicksPerMinute != 0)
+        {
+            logger.LogWarning("StartDate seconds must be set to 0");
+            return BadRequest("Invalid time, Hot Ops must begin on the minute");
+        }
+
+        if (hotOpRequest.EndDate.Ticks % TimeSpan.TicksPerMinute != 0)
+        {
+            logger.LogWarning("EndDate seconds must be set to 0");
+            return BadRequest("Invalid time, Hot Ops must end on the minute");
         }
         
         var channel = await uow.Channels.GetById(hotOpRequest.ChannelId, cancellationToken);
