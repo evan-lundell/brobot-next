@@ -3,6 +3,7 @@ using Brobot.Models;
 using Brobot.Repositories;
 using Brobot.Shared;
 using Discord;
+using Microsoft.EntityFrameworkCore;
 
 // ReSharper disable MemberCanBeMadeStatic.Global
 
@@ -212,7 +213,11 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
     public async Task CreateSessions(HotOpModel hotOpModel, IReadOnlyCollection<ulong> discordUserIds, DateTimeOffset startDateTime, CancellationToken cancellationToken = default)
     {
         var sessions = new List<HotOpSessionModel>();
-        var openUserIds = hotOpModel.HotOpSessions.Where(s => s.EndDateTime == null).Select(s => s.DiscordUserId).ToHashSet();
+        // Check the database rather than hotOpModel.HotOpSessions: the model was loaded earlier by the caller, and
+        // UpdateHotOps (running on the background queue with its own DbContext) may have opened sessions since then
+        var openUserIds = (await uow.HotOpSessions.Find(s => s.HotOpId == hotOpModel.Id && s.EndDateTime == null, cancellationToken))
+            .Select(s => s.DiscordUserId)
+            .ToHashSet();
         var users = await uow.Users.Find(
             u => u.Id != hotOpModel.UserId
             && !u.Archived
@@ -231,6 +236,19 @@ public class HotOpService(IUnitOfWork uow, ILogger<HotOpService> logger) : IHotO
         }
 
         await uow.HotOpSessions.AddRange(sessions, cancellationToken);
-        await uow.CompleteAsync(cancellationToken);
+        try
+        {
+            await uow.CompleteAsync(cancellationToken);
+        }
+        catch
+        {
+            // Don't leave the failed inserts tracked: the unit of work is shared with the caller, and the next
+            // CompleteAsync (e.g. closing sessions for a hot op ending this minute) would retry them and fail too
+            foreach (var session in sessions)
+            {
+                uow.DbContext.Entry(session).State = EntityState.Detached;
+            }
+            throw;
+        }
     }
 }

@@ -43,32 +43,11 @@ public class HotOpWorker(
 
     private async Task HandleStartingHotOp(HotOpModel hotOp, IHotOpService hotOpService, CancellationToken cancellationToken)
     {
+        // Independent steps: failing to start sessions must not stop the announcement
+        await StartSessionsInOwnersVoiceChannel(hotOp, hotOpService, cancellationToken);
+
         try
         {
-            // If the owner of the hot op is currently in a voice channel, start sessions with everyone else
-            cancellationToken.ThrowIfCancellationRequested();
-            var guild = await client.GetGuildAsync(hotOp.Channel.GuildId);
-            if (guild is not null)
-            {
-                var user = await guild.GetUserAsync(hotOp.UserId);
-                if (user is not null)
-                {
-                    if (user.VoiceChannel != null)
-                    {
-                        var connectedUsers = await user.VoiceChannel.GetConnectedUsersAsync();
-                        await hotOpService.CreateSessions(hotOp, [.. connectedUsers.Select(cu => cu.Id)], hotOp.StartDate, cancellationToken);
-                    }
-                }
-                else
-                {
-                    logger.LogWarning("User {UserId} not found, skipping Hot Op {HotOpId}", hotOp.UserId, hotOp.Id);
-                }
-            }
-            else
-            {
-                logger.LogWarning("Guild {GuildId} not found, skipping Hot Op {HotOpId}", hotOp.Channel.GuildId, hotOp.Id);
-            }
-
             cancellationToken.ThrowIfCancellationRequested();
             var channel = await client.GetChannelAsync(hotOp.ChannelId);
             if (channel is ISocketMessageChannel textChannel)
@@ -83,7 +62,45 @@ public class HotOpWorker(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "HandleStartingHotOp failed for Hot Op {HotOpId}", hotOp.Id);
+            logger.LogError(ex, "Failed to announce start of Hot Op {HotOpId}", hotOp.Id);
+        }
+    }
+
+    // If the owner of the hot op is already in a voice channel when it starts, start sessions for everyone else there
+    private async Task StartSessionsInOwnersVoiceChannel(HotOpModel hotOp, IHotOpService hotOpService, CancellationToken cancellationToken)
+    {
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var guild = await client.GetGuildAsync(hotOp.Channel.GuildId);
+            if (guild is null)
+            {
+                logger.LogWarning("Guild {GuildId} not found, skipping sessions for Hot Op {HotOpId}", hotOp.Channel.GuildId, hotOp.Id);
+                return;
+            }
+
+            var owner = await guild.GetUserAsync(hotOp.UserId);
+            if (owner is null)
+            {
+                logger.LogWarning("User {UserId} not found, skipping sessions for Hot Op {HotOpId}", hotOp.UserId, hotOp.Id);
+                return;
+            }
+
+            if (owner.VoiceChannel is null)
+            {
+                return;
+            }
+
+            var connectedUsers = await owner.VoiceChannel.GetConnectedUsersAsync();
+            await hotOpService.CreateSessions(hotOp, [.. connectedUsers.Select(cu => cu.Id)], hotOp.StartDate, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to start sessions for Hot Op {HotOpId}", hotOp.Id);
         }
     }
 

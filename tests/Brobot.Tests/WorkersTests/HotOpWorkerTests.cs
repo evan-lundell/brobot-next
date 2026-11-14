@@ -146,6 +146,25 @@ public class HotOpWorkerTests
     }
 
     [Test]
+    public async Task StartingHotOp_GuildLookupThrows_CreatesNoSessions_ButStillAnnounces()
+    {
+        // e.g. a Discord outage: the lookup throws rather than returning null
+        var hotOpId = await AddHotOp(start: Now, end: Now.AddHours(2));
+        _clientMock
+            .Setup(c => c.GetGuildAsync(GuildId, It.IsAny<CacheMode>(), It.IsAny<RequestOptions>()))
+            .ThrowsAsync(new InvalidOperationException("Discord is down"));
+
+        await _worker.Run(Now);
+
+        var hotOp = await LoadHotOp(hotOpId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(hotOp.HotOpSessions, Is.Empty);
+            Assert.That(SentMessages(), Has.Member($"Operation Hot {OwnerName} has begun!"));
+        });
+    }
+
+    [Test]
     public async Task EndingHotOp_ClosesOpenSessionsAtEndDate_LeavesClosedSessions_AndAnnounces()
     {
         var closedEnd = Now.AddMinutes(-80);

@@ -55,6 +55,25 @@ public class CreateSessionsTests : HotOpServiceTestsBase
     }
 
     [Test]
+    public async Task SkipsUsersWhoseOpenSessionWasCreatedAfterTheHotOpWasLoaded()
+    {
+        // The worker loads the hot op, then UpdateHotOps (another DbContext) opens a session for User 1
+        // before CreateSessions runs. The loaded model doesn't contain that session; the database does.
+        var hotOp = await GetHotOp(4);
+        await AddOpenSessionFromAnotherContext(4, 1UL, StartDateTime.AddSeconds(1));
+        Assert.That(hotOp.HotOpSessions, Is.Empty, "precondition: the loaded model should be stale");
+
+        await HotOpService.CreateSessions(hotOp, [1UL, 3UL], StartDateTime);
+
+        var openSessions = (await UnitOfWork.HotOpSessions.Find(s => s.HotOpId == 4 && s.EndDateTime == null)).ToList();
+        Assert.Multiple(() =>
+        {
+            Assert.That(openSessions.Count(s => s.DiscordUserId == 1UL), Is.EqualTo(1), "User 1 got a duplicate open session");
+            Assert.That(openSessions.Count(s => s.DiscordUserId == 3UL), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
     public async Task SkipsArchivedUsers()
     {
         var user3 = await UnitOfWork.Users.GetById(3UL);
