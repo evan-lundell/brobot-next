@@ -1,9 +1,11 @@
 using Blazored.Toast.Services;
 using Brobot.Frontend.Components;
 using Brobot.Frontend.Services;
+using Brobot.Shared;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Radzen.Blazor;
 
 namespace Brobot.Frontend.Shared;
@@ -25,11 +27,33 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     [Inject] 
     public required IToastService ToastService { get; set; }
 
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private bool _isAdmin;
+    private ulong? _currentUserId;
+    private DiscordUserResponse[]? _users;
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            if (AuthenticationState is not null)
+            {
+                var user = (await AuthenticationState).User;
+                _isAdmin = user.IsInRole(Constants.AdminRoleName);
+                if (ulong.TryParse(user.FindFirst(Brobot.Shared.Claims.ClaimTypes.DiscordId)?.Value, out var discordId))
+                {
+                    _currentUserId = discordId;
+                }
+            }
+
             _channels = await ApiService.GetChannels();
+            if (_isAdmin)
+            {
+                // The current user is offered as "Me" at the top of the owner list, so leave them out here
+                _users = [.. (await ApiService.GetDiscordUsers()).Where(u => u.Id != _currentUserId)];
+            }
         }
         catch (Exception ex)
         {
@@ -45,7 +69,9 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
         _editHotOpRequest = new HotOpRequest
         {
             StartDate = now,
-            EndDate = now
+            EndDate = now,
+            // Preselect "Me" in the owner dropdown; non-admins never see it and the API treats null as the caller
+            UserId = _isAdmin ? _currentUserId : null
         };
         
         await EditHotOpModal.ShowModal();
@@ -58,7 +84,8 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
             Id = hotOp.Id,
             StartDate = hotOp.StartDate,
             EndDate = hotOp.EndDate,
-            ChannelId = hotOp.Channel.Id
+            ChannelId = hotOp.Channel.Id,
+            UserId = hotOp.DiscordUser.Id
         };
         await EditHotOpModal.ShowModal();
     }
@@ -71,18 +98,16 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
                 ? await ApiService.HotOpService.Create(_editHotOpRequest)
                 : await ApiService.HotOpService.Update(_editHotOpRequest.Id.Value, _editHotOpRequest);
 
-            var existingHotOp = _hotOps?.FirstOrDefault(ho => ho.Id == hotOp.Id);
-            if (existingHotOp == null)
+            var index = _hotOps?.FindIndex(ho => ho.Id == hotOp.Id) ?? -1;
+            if (index >= 0)
             {
-                _hotOps?.Add(hotOp);
-                await Grid.Reload();
+                _hotOps![index] = hotOp;
             }
             else
             {
-                existingHotOp.StartDate = hotOp.StartDate;
-                existingHotOp.EndDate = hotOp.EndDate;
-                existingHotOp.Channel = hotOp.Channel;
+                _hotOps?.Add(hotOp);
             }
+            await Grid.Reload();
         }
         catch (Exception ex)
         {
@@ -123,7 +148,7 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     {
         try
         {
-            _hotOps ??= (await ApiService.HotOpService.GetUpcomingHotOps()).ToList();
+            _hotOps ??= (await ApiService.HotOpService.GetUpcomingHotOps(allUsers: _isAdmin)).ToList();
             StateHasChanged();
         }
         catch (Exception ex)

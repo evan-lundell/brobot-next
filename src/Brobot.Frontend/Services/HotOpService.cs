@@ -7,8 +7,8 @@ namespace Brobot.Frontend.Services;
 public class HotOpService(HttpClient httpClient)
     : ApiServiceBase<HotOpRequest, HotOpResponse, int>("api/HotOps", "Hot Op", httpClient), IHotOpService
 {
-    public Task<IEnumerable<HotOpResponse>> GetUpcomingHotOps()
-        => GetAll($"{BaseUrl}?type=Upcoming");
+    public Task<IEnumerable<HotOpResponse>> GetUpcomingHotOps(bool allUsers = false)
+        => GetAll($"{BaseUrl}?type=Upcoming{(allUsers ? "&allUsers=true" : "")}");
 
     public Task<IEnumerable<HotOpResponse>> GetCurrentHotOps()
         => GetAll($"{BaseUrl}?type=current");

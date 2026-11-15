@@ -28,6 +28,11 @@ else
                     @hotOp.Channel.Name
                 </Template>
             </RadzenDataGridColumn>
+            <RadzenDataGridColumn Width="2px" TItem="HotOpResponse" Title="Owner" Visible="@_isAdmin">
+                <Template Context="hotOp">
+                    @hotOp.DiscordUser.Username
+                </Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn Width="1px" TItem="HotOpResponse">
                 <Template Context="hotOp">
                     <button class="btn btn-primary" @onclick="async () => await EditHotOp(hotOp)">Edit</button>
@@ -67,6 +72,23 @@ else
                     </InputSelect>
                 </div>
             </div>
+            @if (_isAdmin)
+            {
+                <div class="row my-2">
+                    <div class="col-12 form-group">
+                        <label class="form-label">Owner</label>
+                        <InputSelect class="form-select" @bind-Value="_editHotOpRequest.UserId">
+                            @* A real id rather than empty: on update, a null UserId means "keep the current owner",
+                               so an empty "Me" couldn't reassign someone else's hot op to the admin *@
+                            <option value="@_currentUserId">Me</option>
+                            @foreach (var user in _users ?? [])
+                            {
+                                <option value="@user.Id">@user.Username</option>
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+            }
         </ModalBody>
     </FormModal>
     <ConfirmationModal

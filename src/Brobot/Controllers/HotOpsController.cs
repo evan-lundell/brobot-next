@@ -81,12 +81,14 @@ public class HotOpsController(
 
         if (hotOpRequest.UserId is not null && hotOpRequest.UserId != discordUser.Id && !IsAdmin)
         {
+            logger.LogWarning("User {UserId} attempting to create a hot op for {HotOpUserId} and is not an admin", discordUser.Id, hotOpRequest.UserId);
             return Forbid();
         }
 
         var owner = await GetOwner(hotOpRequest, discordUser, cancellationToken);
         if (owner is null)
         {
+            logger.LogWarning("Unable to find user {UserId}", discordUser.Id);
             return BadRequest("Invalid user");
         }
         
@@ -137,12 +139,6 @@ public class HotOpsController(
             return NotFound("Hot Op not found");
         }
 
-        if (hotOpModel.UserId != discordUser.Id && !IsAdmin)
-        {
-            logger.LogWarning("User {UserId} cannot modify hot op", discordUser.Id);
-            return Forbid();
-        }
-
         if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
         {
             logger.LogWarning("Start date must be before end date");
@@ -163,12 +159,14 @@ public class HotOpsController(
 
         if (hotOpRequest.UserId is not null && hotOpRequest.UserId != discordUser.Id && !IsAdmin)
         {
+            logger.LogWarning("User {UserId} cannot modify hot op {HotOpId}", discordUser.Id, id);
             return Forbid();
         }
 
         var owner = await GetOwner(hotOpRequest, discordUser, cancellationToken);
         if (owner is null)
         {
+            logger.LogWarning("Unable to find user {UserId}", discordUser.Id);
             return BadRequest("Invalid user");
         }
         
