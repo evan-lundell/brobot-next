@@ -36,7 +36,7 @@ public static class HttpResponseMessageExtensions
             var root = document.RootElement;
             return root.ValueKind switch
             {
-                JsonValueKind.String => root.GetString(),
+                JsonValueKind.String => NullIfBlank(root.GetString()),
                 JsonValueKind.Object => GetTitle(root),
                 _ => null
             };
@@ -54,12 +54,14 @@ public static class HttpResponseMessageExtensions
         {
             if (string.Equals(property.Name, "title", StringComparison.OrdinalIgnoreCase))
             {
-                return property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : null;
+                return property.Value.ValueKind == JsonValueKind.String ? NullIfBlank(property.Value.GetString()) : null;
             }
         }
 
         return null;
     }
+
+    private static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
     /// <summary>
     /// Builds the exception to throw for a failed response, using the API's message when there is one.

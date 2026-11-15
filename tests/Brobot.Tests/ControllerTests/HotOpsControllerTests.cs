@@ -552,6 +552,45 @@ public class HotOpsControllerTests
         Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
     }
 
+    [Test]
+    public async Task CreateHotOp_ArchivedChannel_ReturnsBadRequest()
+    {
+        _channel.Archived = true;
+
+        var result = await _controller.CreateHotOp(ValidRequest());
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+            _hotOpRepoMock.Verify(r => r.Add(It.IsAny<HotOpModel>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+    }
+
+    [Test]
+    public async Task UpdateHotOp_MovingToArchivedChannel_ReturnsBadRequest()
+    {
+        _usersOnlyChannel.Archived = true;
+
+        var result = await _controller.UpdateHotOp(ExistingHotOpId, ValidRequest() with { ChannelId = _usersOnlyChannel.Id });
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+            Assert.That(_existingHotOp.ChannelId, Is.EqualTo(_channel.Id));
+            _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+    }
+
+    [Test]
+    public async Task UpdateHotOp_KeepingChannelThatWasArchived_Succeeds()
+    {
+        _channel.Archived = true;
+
+        var result = await _controller.UpdateHotOp(ExistingHotOpId, ValidRequest());
+
+        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+    }
+
     // ---- Helpers ----
 
     private static void AddMember(ChannelModel channel, DiscordUserModel user)

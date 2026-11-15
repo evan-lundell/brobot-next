@@ -21,7 +21,8 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     private HotOpResponse? _hotOpToDelete;
     private ChannelResponse[]? _channels;
     private ChannelResponse[]? _modalChannels;
-    private Task _initialization = Task.CompletedTask;
+    private Task _authenticationLoaded = Task.CompletedTask;
+    private int _channelRequest;
     
     [Inject]
     public required ApiService ApiService { get; set; }
@@ -36,25 +37,26 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     private ulong? _currentUserId;
     private DiscordUserResponse[]? _users;
 
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-        _initialization = Initialize();
-        return _initialization;
+        _authenticationLoaded = LoadAuthentication();
+        await _authenticationLoaded;
+        await Task.WhenAll(LoadChannels(), _isAdmin ? LoadUsers() : Task.CompletedTask);
     }
 
-    private async Task Initialize()
+    private async Task LoadAuthentication()
     {
-        if (AuthenticationState is not null)
+        if (AuthenticationState is null)
         {
-            var user = (await AuthenticationState).User;
-            _isAdmin = user.IsInRole(Constants.AdminRoleName);
-            if (ulong.TryParse(user.FindFirst(Brobot.Shared.Claims.ClaimTypes.DiscordId)?.Value, out var discordId))
-            {
-                _currentUserId = discordId;
-            }
+            return;
         }
 
-        await Task.WhenAll(LoadChannels(), _isAdmin ? LoadUsers() : Task.CompletedTask);
+        var user = (await AuthenticationState).User;
+        _isAdmin = user.IsInRole(Constants.AdminRoleName);
+        if (ulong.TryParse(user.FindFirst(Brobot.Shared.Claims.ClaimTypes.DiscordId)?.Value, out var discordId))
+        {
+            _currentUserId = discordId;
+        }
     }
 
     private async Task LoadChannels()
@@ -94,6 +96,7 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
             // Preselect "Me" in the owner dropdown; non-admins never see it and the API treats null as the caller
             UserId = _isAdmin ? _currentUserId : null
         };
+        _channelRequest++;
         _modalChannels = _channels;
 
         await EditHotOpModal.ShowModal();
@@ -110,7 +113,13 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
             UserId = hotOp.DiscordUser.Id
         };
 
+        var request = ++_channelRequest;
         var ownersChannels = await GetChannelsFor(hotOp.DiscordUser.Id);
+        if (request != _channelRequest)
+        {
+            return;
+        }
+
         _modalChannels = ownersChannels.Any(c => c.Id == hotOp.Channel.Id)
             ? ownersChannels
             : [hotOp.Channel, .. ownersChannels];
@@ -120,7 +129,14 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
 
     private async Task OwnerChanged()
     {
-        _modalChannels = await GetChannelsFor(_editHotOpRequest.UserId);
+        var request = ++_channelRequest;
+        var ownersChannels = await GetChannelsFor(_editHotOpRequest.UserId);
+        if (request != _channelRequest)
+        {
+            return;
+        }
+
+        _modalChannels = ownersChannels;
         if (_modalChannels.All(c => c.Id != _editHotOpRequest.ChannelId))
         {
             _editHotOpRequest.ChannelId = 0;
@@ -205,9 +221,9 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     
     public async Task TabSelected()
     {
-        await _initialization;
         try
         {
+            await _authenticationLoaded;
             _hotOps ??= (await ApiService.HotOpService.GetUpcomingHotOps(allUsers: _isAdmin)).ToList();
             StateHasChanged();
         }

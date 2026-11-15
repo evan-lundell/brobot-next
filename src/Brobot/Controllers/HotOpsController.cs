@@ -78,6 +78,12 @@ public class HotOpsController(
             return BadRequest("Invalid channel");
         }
 
+        if (channel.Archived)
+        {
+            logger.LogWarning("Channel {ChannelId} is archived", channel.Id);
+            return BadRequest("Invalid channel");
+        }
+
         if (!IsMember(channel, owner.Id))
         {
             logger.LogWarning("User {OwnerId} is not a member of channel {ChannelId}", owner.Id, channel.Id);
@@ -131,6 +137,12 @@ public class HotOpsController(
         if (channel == null)
         {
             logger.LogWarning("Channel not found");
+            return BadRequest("Invalid channel");
+        }
+
+        if (channel.Id != hotOpModel.ChannelId && channel.Archived)
+        {
+            logger.LogWarning("Channel {ChannelId} is archived", channel.Id);
             return BadRequest("Invalid channel");
         }
 
