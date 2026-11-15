@@ -91,22 +91,14 @@ public class HotOpsController(
             return BadRequest("Invalid channel");
         }
 
-        var hasTimezone = !string.IsNullOrWhiteSpace(discordUser.Timezone);
-        var startDateAdjusted = hasTimezone
-            ? hotOpRequest.StartDate.AdjustToUtc(discordUser.Timezone!)
-            : new DateTimeOffset(hotOpRequest.StartDate.Ticks, TimeSpan.Zero);
-        var endDateAdjusted = hasTimezone
-            ? hotOpRequest.EndDate.AdjustToUtc(discordUser.Timezone!)
-            : new DateTimeOffset(hotOpRequest.EndDate.Ticks, TimeSpan.Zero);
-        
         var hotOpModel = new HotOpModel
         {
             UserId = owner.Id,
             DiscordUser = owner,
             Channel = channel,
             ChannelId = channel.Id,
-            StartDate = startDateAdjusted,
-            EndDate = endDateAdjusted,
+            StartDate = ToUtc(hotOpRequest.StartDate, discordUser),
+            EndDate = ToUtc(hotOpRequest.EndDate, discordUser),
         };
 
         await uow.HotOps.Add(hotOpModel, cancellationToken);
@@ -163,16 +155,10 @@ public class HotOpsController(
             return BadRequest("Invalid channel");
         }
 
-        var adjustedTimes = (hotOpRequest.StartDate, hotOpRequest.EndDate);
-        if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
-        {
-            adjustedTimes.StartDate = adjustedTimes.StartDate.AdjustToUtc(discordUser.Timezone);
-            adjustedTimes.EndDate = adjustedTimes.EndDate.AdjustToUtc(discordUser.Timezone);
-        }
         hotOpModel.ChannelId = hotOpRequest.ChannelId;
         hotOpModel.Channel = channel;
-        hotOpModel.StartDate = adjustedTimes.StartDate;
-        hotOpModel.EndDate = adjustedTimes.EndDate;
+        hotOpModel.StartDate = ToUtc(hotOpRequest.StartDate, discordUser);
+        hotOpModel.EndDate = ToUtc(hotOpRequest.EndDate, discordUser);
         await uow.CompleteAsync(cancellationToken);
         var hotOpResponse = AdjustDateTimes(hotOpModel.ToHotOpResponse(), discordUser);
         return Ok(hotOpResponse);
@@ -233,6 +219,16 @@ public class HotOpsController(
         var owner = await uow.Users.GetById(hotOpRequest.UserId.Value, cancellationToken);
         return owner is { Archived: false } ? owner : null;
     }
+
+    /// <summary>
+    /// Request times are wall-clock times in the caller's timezone, and the offset they arrive with is ignored (the
+    /// browser attaches its own). Without a timezone the wall-clock time is taken as UTC, matching how responses are
+    /// shown to that user. Always returns offset 0, which is the only offset Npgsql will write to timestamptz.
+    /// </summary>
+    private static DateTimeOffset ToUtc(DateTimeOffset requestTime, DiscordUserModel caller)
+        => string.IsNullOrWhiteSpace(caller.Timezone)
+            ? new DateTimeOffset(requestTime.Ticks, TimeSpan.Zero)
+            : requestTime.AdjustToUtc(caller.Timezone);
 
     private HotOpResponse AdjustDateTimes(HotOpResponse hotOpResponse, DiscordUserModel discordUser)
     {

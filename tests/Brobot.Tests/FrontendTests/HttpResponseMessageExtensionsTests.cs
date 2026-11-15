@@ -35,6 +35,22 @@ public class HttpResponseMessageExtensionsTests
         Assert.That(await response.ReadErrorMessage(), Is.EqualTo("One or more validation errors occurred."));
     }
 
+    [Test]
+    public async Task ReadErrorMessage_PascalCaseTitle_ReturnsTitle()
+    {
+        using var response = Response(HttpStatusCode.BadRequest, "{\"Type\":\"error\",\"Title\":\"Channel not found\"}", "application/json");
+
+        Assert.That(await response.ReadErrorMessage(), Is.EqualTo("Channel not found"));
+    }
+
+    [Test]
+    public async Task ReadErrorMessage_NonStringTitle_ReturnsNull()
+    {
+        using var response = Response(HttpStatusCode.BadRequest, "{\"title\":42}", "application/json");
+
+        Assert.That(await response.ReadErrorMessage(), Is.Null);
+    }
+
     [TestCase(HttpStatusCode.Forbidden, "You don't have permission to do that")]
     [TestCase(HttpStatusCode.Unauthorized, "You need to log in again")]
     [TestCase(HttpStatusCode.NotFound, null)]

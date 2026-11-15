@@ -451,6 +451,41 @@ public class HotOpsControllerTests
         }
     }
 
+    private static readonly DateTimeOffset BrowserLocalTime = new(2027, 1, 10, 20, 0, 0, TimeSpan.FromHours(-5));
+    private static readonly DateTimeOffset ExpectedUtc = new(2027, 1, 10, 20, 0, 0, TimeSpan.Zero);
+
+    [Test]
+    public async Task CreateHotOp_NoTimezone_StoresWallClockTimeAsUtc()
+    {
+        HotOpModel? added = null;
+        _hotOpRepoMock
+            .Setup(r => r.Add(It.IsAny<HotOpModel>(), It.IsAny<CancellationToken>()))
+            .Callback<HotOpModel, CancellationToken>((model, _) => added = model);
+
+        await _controller.CreateHotOp(Request(BrowserLocalTime, BrowserLocalTime.AddHours(2)));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(added?.StartDate, Is.EqualTo(ExpectedUtc));
+            Assert.That(added?.StartDate.Offset, Is.EqualTo(TimeSpan.Zero));
+            Assert.That(added?.EndDate, Is.EqualTo(ExpectedUtc.AddHours(2)));
+        }
+    }
+
+    [Test]
+    public async Task UpdateHotOp_NoTimezone_StoresWallClockTimeAsUtc()
+    {
+        var result = await _controller.UpdateHotOp(ExistingHotOpId, Request(BrowserLocalTime, BrowserLocalTime.AddHours(2)));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+            Assert.That(_existingHotOp.StartDate, Is.EqualTo(ExpectedUtc));
+            Assert.That(_existingHotOp.StartDate.Offset, Is.EqualTo(TimeSpan.Zero));
+            Assert.That(_existingHotOp.EndDate, Is.EqualTo(ExpectedUtc.AddHours(2)));
+        }
+    }
+
     // ---- Helpers ----
 
     private void SignInAsAdmin()

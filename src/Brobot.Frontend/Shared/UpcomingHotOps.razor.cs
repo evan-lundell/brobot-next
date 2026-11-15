@@ -36,30 +36,41 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
 
     protected override async Task OnInitializedAsync()
     {
+        if (AuthenticationState is not null)
+        {
+            var user = (await AuthenticationState).User;
+            _isAdmin = user.IsInRole(Constants.AdminRoleName);
+            if (ulong.TryParse(user.FindFirst(Brobot.Shared.Claims.ClaimTypes.DiscordId)?.Value, out var discordId))
+            {
+                _currentUserId = discordId;
+            }
+        }
+
+        await Task.WhenAll(LoadChannels(), _isAdmin ? LoadUsers() : Task.CompletedTask);
+    }
+
+    private async Task LoadChannels()
+    {
         try
         {
-            if (AuthenticationState is not null)
-            {
-                var user = (await AuthenticationState).User;
-                _isAdmin = user.IsInRole(Constants.AdminRoleName);
-                if (ulong.TryParse(user.FindFirst(Brobot.Shared.Claims.ClaimTypes.DiscordId)?.Value, out var discordId))
-                {
-                    _currentUserId = discordId;
-                }
-            }
-
-            // Independent requests, so run them together
-            var channelsTask = ApiService.GetChannels();
-            var usersTask = _isAdmin ? ApiService.GetDiscordUsers() : Task.FromResult<DiscordUserResponse[]>([]);
-            await Task.WhenAll(channelsTask, usersTask);
-
-            _channels = await channelsTask;
-            // The current user is offered as "Me" at the top of the owner list, so leave them out here
-            _users = [.. (await usersTask).Where(u => u.Id != _currentUserId)];
+            _channels = await ApiService.GetChannels();
         }
         catch (Exception ex)
         {
-            ToastService.ShowError($"Failed to initialize. {ex.Message}");
+            ToastService.ShowError($"Failed to load channels. {ex.Message}");
+        }
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            // The current user is offered as "Me" at the top of the owner list, so leave them out here
+            _users = [.. (await ApiService.GetDiscordUsers()).Where(u => u.Id != _currentUserId)];
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to load users. {ex.Message}");
         }
     }
 

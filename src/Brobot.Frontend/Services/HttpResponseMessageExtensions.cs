@@ -37,8 +37,7 @@ public static class HttpResponseMessageExtensions
             return root.ValueKind switch
             {
                 JsonValueKind.String => root.GetString(),
-                JsonValueKind.Object when root.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String
-                    => title.GetString(),
+                JsonValueKind.Object => GetTitle(root),
                 _ => null
             };
         }
@@ -47,6 +46,19 @@ public static class HttpResponseMessageExtensions
             // Not JSON and not labelled as plain text (e.g. an HTML error page); don't show it
             return null;
         }
+    }
+
+    private static string? GetTitle(JsonElement root)
+    {
+        foreach (var property in root.EnumerateObject())
+        {
+            if (string.Equals(property.Name, "title", StringComparison.OrdinalIgnoreCase))
+            {
+                return property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : null;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
