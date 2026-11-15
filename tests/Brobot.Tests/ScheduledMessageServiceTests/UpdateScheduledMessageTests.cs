@@ -157,10 +157,10 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
 
         var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(1, "Updated Message");
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(updatedMessage.MessageText, Is.EqualTo("Updated Message"));
             Assert.That(updatedMessage.SendDate, Is.Null);
-        });
+        }
     }
 }

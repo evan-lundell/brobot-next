@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Brobot.Mappers;
-using TimeZoneConverter;
 
 namespace Brobot.Controllers;
 
@@ -38,21 +37,14 @@ public class HotOpsController(
         var now = DateTimeOffset.UtcNow;
         var hotOps = (type switch
         {
-            HotOpQueryType.Upcoming => await uow.HotOps.Find(ho => (allUsers || ho.UserId == discordUser.Id) && ho.StartDate > now, cancellationToken),
+            HotOpQueryType.Upcoming => await uow.HotOps.GetUpcomingHotOps(allUsers ? null : discordUser.Id, cancellationToken),
             HotOpQueryType.Current => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current, cancellationToken),
             HotOpQueryType.Completed => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed, cancellationToken),
             _ => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id, cancellationToken)
-        }).Select(hotOp => hotOp.ToHotOpResponse());
-        
-        if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
-        {
-            foreach (var hotOp in hotOps)
-            {
-                hotOp.StartDate = hotOp.StartDate.AdjustToUsersTimezone(discordUser.Timezone);
-                hotOp.EndDate = hotOp.EndDate.AdjustToUsersTimezone(discordUser.Timezone);
-            }
-        }
-        
+        })
+            .Select(hotOp => AdjustDateTimes(hotOp.ToHotOpResponse(), discordUser))
+            .ToList();
+
         return Ok(hotOps);
     }
     
@@ -99,18 +91,13 @@ public class HotOpsController(
             return BadRequest("Invalid channel");
         }
 
-        var startOffset = TimeSpan.Zero;
-        var endOffset = TimeSpan.Zero;
-        var startDateUnspecified = new DateTime(hotOpRequest.StartDate.Ticks, DateTimeKind.Unspecified);
-        var endDateUnspecified = new DateTime(hotOpRequest.EndDate.Ticks, DateTimeKind.Unspecified);
-        if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
-        {
-            var timezone = TZConvert.GetTimeZoneInfo(discordUser.Timezone);
-            startOffset = timezone.GetUtcOffset(startDateUnspecified);
-            endOffset = timezone.GetUtcOffset(endDateUnspecified);
-        }
-        var startDateAdjusted = new DateTimeOffset(startDateUnspecified, startOffset).ToUniversalTime();
-        var endDateAdjusted = new DateTimeOffset(endDateUnspecified, endOffset).ToUniversalTime();
+        var hasTimezone = !string.IsNullOrWhiteSpace(discordUser.Timezone);
+        var startDateAdjusted = hasTimezone
+            ? hotOpRequest.StartDate.AdjustToUtc(discordUser.Timezone!)
+            : new DateTimeOffset(hotOpRequest.StartDate.Ticks, TimeSpan.Zero);
+        var endDateAdjusted = hasTimezone
+            ? hotOpRequest.EndDate.AdjustToUtc(discordUser.Timezone!)
+            : new DateTimeOffset(hotOpRequest.EndDate.Ticks, TimeSpan.Zero);
         
         var hotOpModel = new HotOpModel
         {
@@ -163,19 +150,12 @@ public class HotOpsController(
             return BadRequest("Invalid time, Hot Ops must end on the minute");
         }
 
-        if (hotOpRequest.UserId is not null && hotOpRequest.UserId != discordUser.Id && !IsAdmin)
+        if (hotOpRequest.UserId is not null && hotOpRequest.UserId != hotOpModel.UserId)
         {
-            logger.LogWarning("User {UserId} cannot assign hot op {HotOpId} to {OwnerId}", discordUser.Id, id, hotOpRequest.UserId);
-            return Forbid();
+            logger.LogWarning("User {UserId} attempted to reassign hot op {HotOpId} to {OwnerId}", discordUser.Id, id, hotOpRequest.UserId);
+            return BadRequest("Hot Ops can't be reassigned. Delete it and create a new one for the other user.");
         }
 
-        var owner = await GetOwner(hotOpRequest, discordUser, cancellationToken);
-        if (owner is null)
-        {
-            logger.LogWarning("Unable to find user {UserId}", hotOpRequest.UserId);
-            return BadRequest("Invalid user");
-        }
-        
         var channel = await uow.Channels.GetById(hotOpRequest.ChannelId, cancellationToken);
         if (channel == null)
         {
@@ -193,11 +173,6 @@ public class HotOpsController(
         hotOpModel.Channel = channel;
         hotOpModel.StartDate = adjustedTimes.StartDate;
         hotOpModel.EndDate = adjustedTimes.EndDate;
-        if (hotOpRequest.UserId is not null)
-        {
-            hotOpModel.DiscordUser = owner;
-            hotOpModel.UserId = owner.Id;
-        }
         await uow.CompleteAsync(cancellationToken);
         var hotOpResponse = AdjustDateTimes(hotOpModel.ToHotOpResponse(), discordUser);
         return Ok(hotOpResponse);

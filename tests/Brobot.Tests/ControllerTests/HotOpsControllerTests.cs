@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using System.Security.Claims;
 using Brobot.Controllers;
 using Brobot.Models;
@@ -121,11 +120,11 @@ public class HotOpsControllerTests
     {
         var result = await _controller.CreateHotOp(Request(start, end));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
             _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Never);
-        });
+        }
     }
 
     [TestCaseSource(nameof(InvalidTimes))]
@@ -133,11 +132,11 @@ public class HotOpsControllerTests
     {
         var result = await _controller.UpdateHotOp(ExistingHotOpId, Request(start, end));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
             _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Never);
-        });
+        }
     }
 
     [Test]
@@ -145,11 +144,11 @@ public class HotOpsControllerTests
     {
         var result = await _controller.CreateHotOp(Request(OnTheMinute, OnTheMinute.AddHours(2)));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
             _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Once);
-        });
+        }
     }
 
     [Test]
@@ -157,11 +156,11 @@ public class HotOpsControllerTests
     {
         var result = await _controller.UpdateHotOp(ExistingHotOpId, Request(OnTheMinute.AddDays(1), OnTheMinute.AddDays(1).AddHours(3)));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
             _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Once);
-        });
+        }
     }
 
     // ---- Owner assignment on create ----
@@ -177,14 +176,14 @@ public class HotOpsControllerTests
 
         var result = await _controller.CreateHotOp(ValidRequest(userId: _otherUser.Id));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
             Assert.That(added, Is.Not.Null);
             Assert.That(added!.UserId, Is.EqualTo(_otherUser.Id));
             Assert.That(added.DiscordUser, Is.SameAs(_otherUser));
             Assert.That(ResponseOf(result).DiscordUser.Id, Is.EqualTo(_otherUser.Id));
-        });
+        }
     }
 
     [Test]
@@ -192,12 +191,12 @@ public class HotOpsControllerTests
     {
         var result = await _controller.CreateHotOp(ValidRequest(userId: _otherUser.Id));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
             _hotOpRepoMock.Verify(r => r.Add(It.IsAny<HotOpModel>(), It.IsAny<CancellationToken>()), Times.Never);
             _userRepoMock.Verify(r => r.GetById(It.IsAny<ulong>(), It.IsAny<CancellationToken>()), Times.Never);
-        });
+        }
     }
 
     [Test]
@@ -210,12 +209,12 @@ public class HotOpsControllerTests
 
         var result = await _controller.CreateHotOp(ValidRequest(userId: _user.Id));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
             Assert.That(added?.UserId, Is.EqualTo(_user.Id));
             Assert.That(added?.DiscordUser, Is.SameAs(_user));
-        });
+        }
     }
 
     [TestCase(3UL, TestName = "CreateHotOp_RejectsInvalidOwner_Archived")]
@@ -226,12 +225,12 @@ public class HotOpsControllerTests
 
         var result = await _controller.CreateHotOp(ValidRequest(userId: userId));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
             _hotOpRepoMock.Verify(r => r.Add(It.IsAny<HotOpModel>(), It.IsAny<CancellationToken>()), Times.Never);
             _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Never);
-        });
+        }
     }
 
     // ---- Update ----
@@ -241,11 +240,11 @@ public class HotOpsControllerTests
     {
         var result = await _controller.UpdateHotOp(OtherUsersHotOpId, ValidRequest());
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
             _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Never);
-        });
+        }
     }
 
     [Test]
@@ -255,57 +254,63 @@ public class HotOpsControllerTests
 
         var result = await _controller.UpdateHotOp(OtherUsersHotOpId, ValidRequest());
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
             Assert.That(_otherUsersHotOp.UserId, Is.EqualTo(_otherUser.Id));
             Assert.That(_otherUsersHotOp.DiscordUser, Is.SameAs(_otherUser));
             _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Once);
-        });
+        }
     }
 
-    [Test]
-    public async Task UpdateHotOp_AdminCanReassignOwner()
+    [TestCase(true, TestName = "UpdateHotOp_RejectsChangingOwner_Admin")]
+    [TestCase(false, TestName = "UpdateHotOp_RejectsChangingOwner_NonAdmin")]
+    public async Task UpdateHotOp_RejectsChangingOwner(bool isAdmin)
     {
-        SignInAsAdmin();
+        // Hot ops can't be reassigned by anyone; delete and recreate instead
+        if (isAdmin)
+        {
+            SignInAsAdmin();
+        }
 
         var result = await _controller.UpdateHotOp(ExistingHotOpId, ValidRequest(userId: _otherUser.Id));
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-            Assert.That(_existingHotOp.UserId, Is.EqualTo(_otherUser.Id));
-            Assert.That(_existingHotOp.DiscordUser, Is.SameAs(_otherUser));
-            Assert.That(ResponseOf(result).DiscordUser.Id, Is.EqualTo(_otherUser.Id));
-        });
-    }
-
-    [Test]
-    public async Task UpdateHotOp_NonAdminCannotReassignTheirOwnHotOp()
-    {
-        var result = await _controller.UpdateHotOp(ExistingHotOpId, ValidRequest(userId: _otherUser.Id));
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
-            Assert.That(_existingHotOp.UserId, Is.EqualTo(_user.Id));
-            _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Never);
-        });
-    }
-
-    [Test]
-    public async Task UpdateHotOp_RejectsArchivedOwner()
-    {
-        SignInAsAdmin();
-
-        var result = await _controller.UpdateHotOp(ExistingHotOpId, ValidRequest(userId: _archivedUser.Id));
-
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
             Assert.That(_existingHotOp.UserId, Is.EqualTo(_user.Id));
             _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Never);
-        });
+        }
+    }
+
+    [Test]
+    public async Task UpdateHotOp_AcceptsCurrentOwnerAsUserId()
+    {
+        // The frontend sends the existing owner's id on edit
+        SignInAsAdmin();
+
+        var result = await _controller.UpdateHotOp(OtherUsersHotOpId, ValidRequest(userId: _otherUser.Id));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+            Assert.That(_otherUsersHotOp.UserId, Is.EqualTo(_otherUser.Id));
+        }
+    }
+
+    [Test]
+    public async Task UpdateHotOp_AdminCanEditHotOpOwnedByArchivedUser()
+    {
+        SignInAsAdmin();
+        _otherUser.Archived = true;
+
+        var result = await _controller.UpdateHotOp(OtherUsersHotOpId, ValidRequest(userId: _otherUser.Id));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+            _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 
     [Test]
@@ -313,11 +318,11 @@ public class HotOpsControllerTests
     {
         var result = await _controller.UpdateHotOp(12345, ValidRequest(userId: _otherUser.Id));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<NotFoundObjectResult>());
             _userRepoMock.Verify(r => r.GetById(It.IsAny<ulong>(), It.IsAny<CancellationToken>()), Times.Never);
-        });
+        }
     }
 
     // ---- Delete ----
@@ -327,11 +332,11 @@ public class HotOpsControllerTests
     {
         var result = await _controller.DeleteHotOp(OtherUsersHotOpId);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Is.InstanceOf<ForbidResult>());
             _hotOpRepoMock.Verify(r => r.Remove(It.IsAny<HotOpModel>()), Times.Never);
-        });
+        }
     }
 
     [Test]
@@ -341,12 +346,12 @@ public class HotOpsControllerTests
 
         var result = await _controller.DeleteHotOp(OtherUsersHotOpId);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Is.InstanceOf<OkResult>());
             _hotOpRepoMock.Verify(r => r.Remove(_otherUsersHotOp), Times.Once);
             _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Once);
-        });
+        }
     }
 
     // ---- Get (allUsers) ----
@@ -356,39 +361,94 @@ public class HotOpsControllerTests
     {
         var result = await _controller.GetHotOps(HotOpQueryType.Upcoming, allUsers: true);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
-            _hotOpRepoMock.Verify(r => r.Find(It.IsAny<Expression<Func<HotOpModel, bool>>>(), It.IsAny<CancellationToken>()), Times.Never);
-        });
+            _hotOpRepoMock.Verify(r => r.GetUpcomingHotOps(It.IsAny<ulong?>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
     }
 
-    [TestCase(true, true, TestName = "GetHotOps_Upcoming_AdminWithAllUsers_IncludesOtherUsers")]
-    [TestCase(true, false, TestName = "GetHotOps_Upcoming_AdminWithoutAllUsers_OnlyOwnHotOps")]
-    [TestCase(false, false, TestName = "GetHotOps_Upcoming_NonAdmin_OnlyOwnHotOps")]
-    public async Task GetHotOps_Upcoming_FiltersByOwner(bool isAdmin, bool allUsers)
+    [TestCase(true, true, null, TestName = "GetHotOps_Upcoming_AdminWithAllUsers_QueriesEveryOwner")]
+    [TestCase(true, false, 1UL, TestName = "GetHotOps_Upcoming_AdminWithoutAllUsers_QueriesOwnHotOps")]
+    [TestCase(false, false, 1UL, TestName = "GetHotOps_Upcoming_NonAdmin_QueriesOwnHotOps")]
+    public async Task GetHotOps_Upcoming_QueriesByOwner(bool isAdmin, bool allUsers, ulong? expectedOwnerId)
     {
         if (isAdmin)
         {
             SignInAsAdmin();
         }
-        var predicate = CaptureFindPredicate();
+        SetUpUpcoming();
 
         var result = await _controller.GetHotOps(HotOpQueryType.Upcoming, allUsers);
 
-        // Relative to now so these stay "upcoming" no matter when the tests run
-        var tomorrow = DateTimeOffset.UtcNow.AddDays(1);
-        var ownUpcoming = HotOp(_user, tomorrow);
-        var otherUpcoming = HotOp(_otherUser, tomorrow);
-        var otherPast = HotOp(_otherUser, DateTimeOffset.UtcNow.AddDays(-1));
-        var matches = predicate();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-            Assert.That(matches(ownUpcoming), Is.True);
-            Assert.That(matches(otherUpcoming), Is.EqualTo(allUsers));
-            Assert.That(matches(otherPast), Is.False);
-        });
+            _hotOpRepoMock.Verify(r => r.GetUpcomingHotOps(expectedOwnerId, It.IsAny<CancellationToken>()), Times.Once);
+        }
+    }
+
+    // ---- Timezones ----
+    // America/New_York is UTC-5 in winter and UTC-4 in summer. These dates sit on both sides of DST so that using
+    // today's offset instead of the hot op's own date fails at least one case whenever the tests run.
+
+    private static IEnumerable<TestCaseData> WallClockTimes()
+    {
+        yield return new TestCaseData(new DateTime(2027, 1, 10, 20, 0, 0), new DateTimeOffset(2027, 1, 11, 1, 0, 0, TimeSpan.Zero), TimeSpan.FromHours(-5))
+            .SetName("{m}_Winter");
+        yield return new TestCaseData(new DateTime(2027, 4, 10, 20, 0, 0), new DateTimeOffset(2027, 4, 11, 0, 0, 0, TimeSpan.Zero), TimeSpan.FromHours(-4))
+            .SetName("{m}_Summer");
+    }
+
+    [TestCaseSource(nameof(WallClockTimes))]
+    public async Task GetHotOps_ReturnsDatesInUsersTimezone(DateTime _, DateTimeOffset storedUtc, TimeSpan expectedOffset)
+    {
+        _user.Timezone = "America/New_York";
+        SetUpUpcoming(HotOp(_user, storedUtc));
+
+        var result = await _controller.GetHotOps(HotOpQueryType.Upcoming);
+
+        var hotOp = ((IEnumerable<HotOpResponse>)((OkObjectResult)result.Result!).Value!).Single();
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(hotOp.StartDate.Offset, Is.EqualTo(expectedOffset));
+            Assert.That(hotOp.StartDate.Hour, Is.EqualTo(20), "should be 8 PM local");
+            Assert.That(hotOp.StartDate, Is.EqualTo(storedUtc), "should be the same instant");
+        }
+    }
+
+    [TestCaseSource(nameof(WallClockTimes))]
+    public async Task CreateHotOp_ConvertsUsingOffsetOnHotOpsDate(DateTime localStart, DateTimeOffset expectedUtc, TimeSpan expectedOffset)
+    {
+        _user.Timezone = "America/New_York";
+        HotOpModel? added = null;
+        _hotOpRepoMock
+            .Setup(r => r.Add(It.IsAny<HotOpModel>(), It.IsAny<CancellationToken>()))
+            .Callback<HotOpModel, CancellationToken>((model, _) => added = model);
+
+        var result = await _controller.CreateHotOp(WallClockRequest(localStart));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(added?.StartDate, Is.EqualTo(expectedUtc));
+            Assert.That(added?.StartDate.Offset, Is.EqualTo(TimeSpan.Zero));
+            Assert.That(ResponseOf(result).StartDate.Offset, Is.EqualTo(expectedOffset));
+        }
+    }
+
+    [TestCaseSource(nameof(WallClockTimes))]
+    public async Task UpdateHotOp_ConvertsUsingOffsetOnHotOpsDate(DateTime localStart, DateTimeOffset expectedUtc, TimeSpan expectedOffset)
+    {
+        _user.Timezone = "America/New_York";
+
+        var result = await _controller.UpdateHotOp(ExistingHotOpId, WallClockRequest(localStart));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(_existingHotOp.StartDate, Is.EqualTo(expectedUtc));
+            Assert.That(ResponseOf(result).StartDate.Offset, Is.EqualTo(expectedOffset));
+            Assert.That(ResponseOf(result).StartDate.Hour, Is.EqualTo(20), "should round-trip to 8 PM local");
+        }
     }
 
     // ---- Helpers ----
@@ -399,16 +459,17 @@ public class HotOpsControllerTests
             new ClaimsIdentity([new Claim(ClaimTypes.Role, Constants.AdminRoleName)], authenticationType: "Test"));
     }
 
-    // Returns a thunk because the predicate is only captured once the controller calls Find
-    private Func<Func<HotOpModel, bool>> CaptureFindPredicate()
+    private void SetUpUpcoming(params HotOpModel[] hotOps)
     {
-        Expression<Func<HotOpModel, bool>>? captured = null;
         _hotOpRepoMock
-            .Setup(r => r.Find(It.IsAny<Expression<Func<HotOpModel, bool>>>(), It.IsAny<CancellationToken>()))
-            .Callback<Expression<Func<HotOpModel, bool>>, CancellationToken>((expression, _) => captured = expression)
-            .ReturnsAsync(new List<HotOpModel>());
-        return () => captured?.Compile() ?? throw new AssertionException("Find was not called");
+            .Setup(r => r.GetUpcomingHotOps(It.IsAny<ulong?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(hotOps);
     }
+
+    // The frontend sends local wall-clock time; only the ticks matter, the offset is ignored
+    private HotOpRequest WallClockRequest(DateTime localStart) => Request(
+        new DateTimeOffset(localStart, TimeSpan.Zero),
+        new DateTimeOffset(localStart.AddHours(2), TimeSpan.Zero));
 
     private HotOpModel HotOp(DiscordUserModel owner, DateTimeOffset start) => new()
     {

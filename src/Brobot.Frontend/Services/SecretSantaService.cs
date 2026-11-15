@@ -18,8 +18,7 @@ public class SecretSantaService(HttpClient httpClient)
                    ?? throw new Exception($"Failed to parse entity {EntityName}");
         }
         
-        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        throw new Exception(errorResponse?.Title ?? "Failed to add user");
+        throw await response.ToException("Failed to add user");
     }
 
     public async Task RemoveUserFromGroup(int secretSantaGroupId, ulong userId)
@@ -27,8 +26,7 @@ public class SecretSantaService(HttpClient httpClient)
         var response = await HttpClient.DeleteAsync($"{BaseUrl}/{secretSantaGroupId}/members/{userId}");
         if (!response.IsSuccessStatusCode)
         {
-            var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-            throw new Exception(errorResponse?.Title ?? "Failed to remove user");
+            throw await response.ToException("Failed to remove user");
         }
     }
 
@@ -37,8 +35,7 @@ public class SecretSantaService(HttpClient httpClient)
         var response = await HttpClient.PostAsync($"{BaseUrl}/{secretSantaGroupId}/pairings", null);
         if (!response.IsSuccessStatusCode)
         {
-            var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-            throw new Exception(errorResponse?.Title ?? "Failed to generate pairs");
+            throw await response.ToException("Failed to generate pairs");
         }
     }
 }

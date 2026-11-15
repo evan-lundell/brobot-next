@@ -72,14 +72,13 @@ else
                     </InputSelect>
                 </div>
             </div>
-            @if (_isAdmin)
+            @* Owner can only be chosen on create: the API doesn't allow reassigning a hot op *@
+            @if (_isAdmin && !_editHotOpRequest.Id.HasValue)
             {
                 <div class="row my-2">
                     <div class="col-12 form-group">
                         <label class="form-label">Owner</label>
                         <InputSelect class="form-select" @bind-Value="_editHotOpRequest.UserId">
-                            @* A real id rather than empty: on update, a null UserId means "keep the current owner",
-                               so an empty "Me" couldn't reassign someone else's hot op to the admin *@
                             <option value="@_currentUserId">Me</option>
                             @foreach (var user in _users ?? [])
                             {

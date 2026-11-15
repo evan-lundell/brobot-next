@@ -126,12 +126,12 @@ public class CreateSessionsTests : HotOpServiceTestsBase
             .Count(e => e.Entity.HotOpId == 4);
         await UnitOfWork.CompleteAsync();
         var savedSessions = await UnitOfWork.HotOpSessions.Find(s => s.HotOpId == 4);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(thrown!.Message, Is.EqualTo("save failed"));
             Assert.That(trackedSessions, Is.Zero, "failed sessions are still tracked");
             Assert.That(savedSessions, Is.Empty, "failed sessions were saved by the next CompleteAsync");
-        });
+        }
     }
 
     [Test]

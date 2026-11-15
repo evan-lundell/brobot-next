@@ -48,12 +48,14 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
                 }
             }
 
-            _channels = await ApiService.GetChannels();
-            if (_isAdmin)
-            {
-                // The current user is offered as "Me" at the top of the owner list, so leave them out here
-                _users = [.. (await ApiService.GetDiscordUsers()).Where(u => u.Id != _currentUserId)];
-            }
+            // Independent requests, so run them together
+            var channelsTask = ApiService.GetChannels();
+            var usersTask = _isAdmin ? ApiService.GetDiscordUsers() : Task.FromResult<DiscordUserResponse[]>([]);
+            await Task.WhenAll(channelsTask, usersTask);
+
+            _channels = await channelsTask;
+            // The current user is offered as "Me" at the top of the owner list, so leave them out here
+            _users = [.. (await usersTask).Where(u => u.Id != _currentUserId)];
         }
         catch (Exception ex)
         {
