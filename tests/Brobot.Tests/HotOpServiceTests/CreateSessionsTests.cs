@@ -1,3 +1,9 @@
+using Brobot.Models;
+using Brobot.Repositories;
+using Brobot.Services;
+using Microsoft.EntityFrameworkCore;
+using Moq;
+
 namespace Brobot.Tests.HotOpServiceTests;
 
 /*
@@ -97,6 +103,35 @@ public class CreateSessionsTests : HotOpServiceTestsBase
 
         var sessions = await UnitOfWork.HotOpSessions.Find(s => s.HotOpId == 4);
         Assert.That(sessions.Select(s => s.DiscordUserId), Is.EquivalentTo(new[] { 1UL }));
+    }
+
+    [Test]
+    public async Task SaveFails_DetachesNewSessionsAndRethrows()
+    {
+        // Wrap the real unit of work so everything behaves normally except the save inside CreateSessions
+        var uowMock = new Mock<IUnitOfWork>();
+        uowMock.SetupGet(u => u.Users).Returns(UnitOfWork.Users);
+        uowMock.SetupGet(u => u.HotOpSessions).Returns(UnitOfWork.HotOpSessions);
+        uowMock.SetupGet(u => u.DbContext).Returns(UnitOfWork.DbContext);
+        uowMock
+            .Setup(u => u.CompleteAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DbUpdateException("save failed"));
+        var hotOpService = new HotOpService(uowMock.Object, LoggerMock.Object);
+        var hotOp = await GetHotOp(4);
+
+        var thrown = await Assert.ThrowsAsync<DbUpdateException>(() => hotOpService.CreateSessions(hotOp, [1UL, 3UL], StartDateTime));
+
+        // The caller's next save on the shared unit of work must not retry the failed inserts
+        var trackedSessions = UnitOfWork.DbContext.ChangeTracker.Entries<HotOpSessionModel>()
+            .Count(e => e.Entity.HotOpId == 4);
+        await UnitOfWork.CompleteAsync();
+        var savedSessions = await UnitOfWork.HotOpSessions.Find(s => s.HotOpId == 4);
+        Assert.Multiple(() =>
+        {
+            Assert.That(thrown!.Message, Is.EqualTo("save failed"));
+            Assert.That(trackedSessions, Is.Zero, "failed sessions are still tracked");
+            Assert.That(savedSessions, Is.Empty, "failed sessions were saved by the next CompleteAsync");
+        });
     }
 
     [Test]

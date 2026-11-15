@@ -20,16 +20,25 @@ public class HotOpsController(
     IHotOpService hotOpService,
     ILogger<HotOpsController> logger) : ControllerBase
 {
+    private bool IsAdmin => User.IsInRole(Constants.AdminRoleName);
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<HotOpResponse>>> GetHotOps(
         [FromQuery] HotOpQueryType type = HotOpQueryType.All,
+        [FromQuery] bool allUsers = false,
         CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
+
+        if (allUsers && !IsAdmin)
+        {
+            return Forbid();
+        }
+
         var now = DateTimeOffset.UtcNow;
         var hotOps = (type switch
         {
-            HotOpQueryType.Upcoming => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id && ho.StartDate > now, cancellationToken),
+            HotOpQueryType.Upcoming => await uow.HotOps.Find(ho => (allUsers || ho.UserId == discordUser.Id) && ho.StartDate > now, cancellationToken),
             HotOpQueryType.Current => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Current, cancellationToken),
             HotOpQueryType.Completed => await uow.HotOps.GetUsersHotOps(discordUser.Id, HotOpQueryType.Completed, cancellationToken),
             _ => await uow.HotOps.Find(ho => ho.UserId == discordUser.Id, cancellationToken)
@@ -51,6 +60,7 @@ public class HotOpsController(
     public async Task<ActionResult<HotOpResponse>> CreateHotOp(HotOpRequest hotOpRequest, CancellationToken cancellationToken = default)
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
+
         if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
         {
             logger.LogWarning("Start date must be before end date");
@@ -67,6 +77,17 @@ public class HotOpsController(
         {
             logger.LogWarning("EndDate seconds must be set to 0");
             return BadRequest("Invalid time, Hot Ops must end on the minute");
+        }
+
+        if (hotOpRequest.UserId is not null && hotOpRequest.UserId != discordUser.Id && !IsAdmin)
+        {
+            return Forbid();
+        }
+
+        var owner = await GetOwner(hotOpRequest, discordUser, cancellationToken);
+        if (owner is null)
+        {
+            return BadRequest("Invalid user");
         }
         
         var channel = await uow.Channels.GetById(hotOpRequest.ChannelId, cancellationToken);
@@ -91,8 +112,8 @@ public class HotOpsController(
         
         var hotOpModel = new HotOpModel
         {
-            UserId = discordUser.Id,
-            DiscordUser = discordUser,
+            UserId = owner.Id,
+            DiscordUser = owner,
             Channel = channel,
             ChannelId = channel.Id,
             StartDate = startDateAdjusted,
@@ -101,13 +122,7 @@ public class HotOpsController(
 
         await uow.HotOps.Add(hotOpModel, cancellationToken);
         await uow.CompleteAsync(cancellationToken);
-        var hotOpResponse = hotOpModel.ToHotOpResponse();
-        if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
-        {
-            hotOpResponse.StartDate = hotOpResponse.StartDate.AdjustToUsersTimezone(discordUser.Timezone);
-            hotOpResponse.EndDate = hotOpResponse.EndDate.AdjustToUsersTimezone(discordUser.Timezone);
-        }
-
+        var hotOpResponse = AdjustDateTimes(hotOpModel.ToHotOpResponse(), discordUser);
         return Ok(hotOpResponse);
     }
 
@@ -122,10 +137,10 @@ public class HotOpsController(
             return NotFound("Hot Op not found");
         }
 
-        if (hotOpModel.UserId != discordUser.Id)
+        if (hotOpModel.UserId != discordUser.Id && !IsAdmin)
         {
             logger.LogWarning("User {UserId} cannot modify hot op", discordUser.Id);
-            return Unauthorized();
+            return Forbid();
         }
 
         if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
@@ -145,6 +160,17 @@ public class HotOpsController(
             logger.LogWarning("EndDate seconds must be set to 0");
             return BadRequest("Invalid time, Hot Ops must end on the minute");
         }
+
+        if (hotOpRequest.UserId is not null && hotOpRequest.UserId != discordUser.Id && !IsAdmin)
+        {
+            return Forbid();
+        }
+
+        var owner = await GetOwner(hotOpRequest, discordUser, cancellationToken);
+        if (owner is null)
+        {
+            return BadRequest("Invalid user");
+        }
         
         var channel = await uow.Channels.GetById(hotOpRequest.ChannelId, cancellationToken);
         if (channel == null)
@@ -163,14 +189,13 @@ public class HotOpsController(
         hotOpModel.Channel = channel;
         hotOpModel.StartDate = adjustedTimes.StartDate;
         hotOpModel.EndDate = adjustedTimes.EndDate;
-        await uow.CompleteAsync(cancellationToken);
-        var hotOpResponse = hotOpModel.ToHotOpResponse();
-        if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
+        if (hotOpRequest.UserId is not null)
         {
-            hotOpResponse.StartDate = hotOpResponse.StartDate.AdjustToUsersTimezone(discordUser.Timezone);
-            hotOpResponse.EndDate = hotOpResponse.EndDate.AdjustToUsersTimezone(discordUser.Timezone);
-
+            hotOpModel.DiscordUser = owner;
+            hotOpModel.UserId = owner.Id;
         }
+        await uow.CompleteAsync(cancellationToken);
+        var hotOpResponse = AdjustDateTimes(hotOpModel.ToHotOpResponse(), discordUser);
         return Ok(hotOpResponse);
     }
     
@@ -185,10 +210,10 @@ public class HotOpsController(
             return NotFound("Hot Op not found");
         }
 
-        if (hotOpModel.UserId != discordUser.Id)
+        if (hotOpModel.UserId != discordUser.Id && !IsAdmin)
         {
             logger.LogWarning("User {UserId} cannot modify hot op", discordUser.Id);
-            return Unauthorized();
+            return Forbid();
         }
 
         uow.HotOps.Remove(hotOpModel);
@@ -215,5 +240,28 @@ public class HotOpsController(
         var scoreboard = hotOpService.GetScoreboard(hotOp);
         var scoreboardResponse = scoreboard.ToScoreboardResponse();
         return Ok(scoreboardResponse);
+    }
+
+    private async Task<DiscordUserModel?> GetOwner(
+        HotOpRequest hotOpRequest,
+        DiscordUserModel callingUser,
+        CancellationToken cancellationToken)
+    {
+        if (hotOpRequest.UserId is null || hotOpRequest.UserId == callingUser.Id)
+        {
+            return callingUser;
+        }
+        var owner = await uow.Users.GetById(hotOpRequest.UserId.Value, cancellationToken);
+        return owner is { Archived: false } ? owner : null;
+    }
+
+    private HotOpResponse AdjustDateTimes(HotOpResponse hotOpResponse, DiscordUserModel discordUser)
+    {
+        if (!string.IsNullOrWhiteSpace(discordUser.Timezone))
+        {
+            hotOpResponse.StartDate = hotOpResponse.StartDate.AdjustToUsersTimezone(discordUser.Timezone);
+            hotOpResponse.EndDate = hotOpResponse.EndDate.AdjustToUsersTimezone(discordUser.Timezone);
+        }
+        return hotOpResponse;
     }
 }

@@ -131,4 +131,18 @@ public class AddToDailyCountTests : MessageCountServiceTestBase
         Assert.That(async () => await MessageCountService.AddToDailyCount(1, 1, DateOnly.FromDateTime(DateTime.UtcNow), cts.Token),
             Throws.InstanceOf<OperationCanceledException>());
     }
+
+    [TestCase(false, TestName = "UserDoesNotExist_NoCountDate_NothingAdded")]
+    [TestCase(true, TestName = "UserDoesNotExist_WithCountDate_NothingAdded")]
+    public async Task UserDoesNotExist_NothingAdded(bool withCountDate)
+    {
+        // With no count date the user is looked up to find their timezone; with one it's only looked up
+        // when a new count has to be created. Both lookups have to handle a missing user.
+        DateOnly? countDate = withCountDate ? DateOnly.FromDateTime(DateTime.UtcNow) : null;
+        var count = await Context.DailyMessageCounts.CountAsync();
+
+        await MessageCountService.AddToDailyCount(999UL, 1UL, countDate);
+
+        Assert.That(await Context.DailyMessageCounts.CountAsync(), Is.EqualTo(count));
+    }
 }

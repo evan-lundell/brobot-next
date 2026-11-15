@@ -19,9 +19,9 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
         }
         
         var updatedMessageText = "Updated Message";
-        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(1, updatedMessageText);
+        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(scheduledMessageId, updatedMessageText);
 
-        var messageModel = await Context.ScheduledMessages.FindAsync(1);
+        var messageModel = await Context.ScheduledMessages.FindAsync(scheduledMessageId);
         
         Assert.Multiple(() =>
         {
@@ -44,9 +44,9 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
         }
         
         var updatedChannelId = 2UL;
-        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(1, null, updatedChannelId);
+        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(scheduledMessageId, null, updatedChannelId);
 
-        var messageModel = await Context.ScheduledMessages.FindAsync(1);
+        var messageModel = await Context.ScheduledMessages.FindAsync(scheduledMessageId);
         
         Assert.Multiple(() =>
         {
@@ -146,5 +146,21 @@ public class UpdateScheduledMessageTests : ScheduledMessageServiceTestBase
     {
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ScheduledMessageService.UpdateScheduledMessage(4, "Test", 1));
         Assert.That(ex.Message, Is.EqualTo("Cannot update a sent message"));
+    }
+
+    [Test]
+    public async Task WhenMessageHasNoSendDate_UpdatesWithoutSettingOne()
+    {
+        var scheduledMessage = await Context.ScheduledMessages.FindAsync(1);
+        scheduledMessage!.SendDate = null;
+        await Context.SaveChangesAsync();
+
+        var updatedMessage = await ScheduledMessageService.UpdateScheduledMessage(1, "Updated Message");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(updatedMessage.MessageText, Is.EqualTo("Updated Message"));
+            Assert.That(updatedMessage.SendDate, Is.Null);
+        });
     }
 }
