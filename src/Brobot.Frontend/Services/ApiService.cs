@@ -46,8 +46,17 @@ public class ApiService(HttpClient client)
         return discordAuthResponse.Url;
     }
 
-    public async Task<ChannelResponse[]> GetChannels()
-        => await client.GetFromJsonAsync<ChannelResponse[]>("Channels") ?? [];
+    /// <param name="userId">Admins only: get this user's channels instead of the caller's.</param>
+    public async Task<ChannelResponse[]> GetChannels(ulong? userId = null)
+    {
+        var response = await client.GetAsync(userId is null ? "Channels" : $"Channels?userId={userId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await response.ToException("Failed to get channels");
+        }
+
+        return await response.Content.ReadFromJsonAsync<ChannelResponse[]>() ?? [];
+    }
 
     public async Task<UserSettingsResponse> GetUserSettings()
         => await client.GetFromJsonAsync<UserSettingsResponse>("users/settings") ?? new UserSettingsResponse();
@@ -128,7 +137,15 @@ public class ApiService(HttpClient client)
         => client.PostAsJsonAsync("Messages/send", sendMessageRequest);
 
     public async Task<DiscordUserResponse[]> GetDiscordUsers()
-        => await client.GetFromJsonAsync<DiscordUserResponse[]>("Users/all") ?? [];
+    {
+        var response = await client.GetAsync("Users/all");
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await response.ToException("Failed to get users");
+        }
+
+        return await response.Content.ReadFromJsonAsync<DiscordUserResponse[]>() ?? [];
+    }
 
     public async Task<UserSettingsResponse> GetUserSettingsById(ulong userId)
         => await client.GetFromJsonAsync<UserSettingsResponse>($"Users/{userId}/settings") ?? new UserSettingsResponse();

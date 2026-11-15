@@ -131,4 +131,44 @@ public class GiphyServiceTests
         // Act & Assert
         await Assert.ThrowsAsync<HttpRequestException>(async () => await _giphyService.GetGif(null));
     }
+
+    [Test]
+    public async Task GetGif_NullResponseBody_ReturnsEmptyString()
+    {
+        // Arrange
+        var response = new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent("null") // Deserializes to a null GiphyResponse
+        };
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _giphyService.GetGif(null);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(""));
+    }
+
+    [Test]
+    public async Task GetGif_NoUrl_ReturnsEmptyString()
+    {
+        // Arrange
+        var response = new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent(JsonConvert.SerializeObject(new GiphyResponse { Data = new GiphyData() }))
+        };
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _giphyService.GetGif(null);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(""));
+    }
 }

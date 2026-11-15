@@ -70,4 +70,23 @@ public class JwtServiceTests
             Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.Role).Value, Is.EqualTo(Constants.UserRoleName));
         });
     }
-} 
+
+    [Test]
+    public void CreateJwt_UserWithoutEmail_UsesEmptyEmailClaim()
+    {
+        DiscordUserModel discordUser = new()
+        {
+            Id = 1UL,
+            Archived = false,
+            Username = "Discord User1"
+        };
+        var applicationUserMock = new Mock<ApplicationUserModel>();
+        applicationUserMock.SetupGet(u => u.Id).Returns(new Guid().ToString());
+        applicationUserMock.SetupGet(u => u.Email).Returns((string?)null);
+
+        var token = _jwtService.CreateJwt(applicationUserMock.Object, discordUser, [Constants.UserRoleName]);
+
+        var jwtToken = (JwtSecurityToken)new JwtSecurityTokenHandler().ReadToken(token);
+        Assert.That(jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value, Is.EqualTo(""));
+    }
+}

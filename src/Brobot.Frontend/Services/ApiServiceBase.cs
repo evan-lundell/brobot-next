@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using Brobot.Shared.Responses;
 
 namespace Brobot.Frontend.Services;
 
@@ -20,8 +19,7 @@ public abstract class ApiServiceBase<TRequest, TResponse, TKey>(
             return await response.Content.ReadFromJsonAsync<IEnumerable<TResponse>>() ?? [];
         }
 
-        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        throw new Exception(errorResponse?.Title ?? $"Failed to get data for entity {EntityName}");
+        throw await response.ToException($"Failed to get data for entity {EntityName}");
     }
 
     public virtual Task<IEnumerable<TResponse>> GetAll()
@@ -36,8 +34,7 @@ public abstract class ApiServiceBase<TRequest, TResponse, TKey>(
                    throw new Exception($"Failed to parse entity {EntityName}");
         }
         
-        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        throw new Exception(errorResponse?.Title ?? $"Failed to get data for entity {EntityName}");
+        throw await response.ToException($"Failed to get data for entity {EntityName}");
     }
     
     public virtual Task<TResponse> Get(TKey id)
@@ -52,8 +49,7 @@ public abstract class ApiServiceBase<TRequest, TResponse, TKey>(
                    throw new Exception($"Failed to parse entity {EntityName}"); 
         }
         
-        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        throw new Exception(errorResponse?.Title ?? $"Failed to create entity {EntityName}");
+        throw await response.ToException($"Failed to create entity {EntityName}");
     }
 
     public virtual Task<TResponse> Create(TRequest request)
@@ -68,8 +64,7 @@ public abstract class ApiServiceBase<TRequest, TResponse, TKey>(
                    throw new Exception($"Failed to parse entity {EntityName}"); 
         }
         
-        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        throw new Exception(errorResponse?.Title ?? $"Failed to update entity {EntityName}");
+        throw await response.ToException($"Failed to update entity {EntityName}");
     }
 
     public virtual Task<TResponse> Update(TKey id, TRequest request)
@@ -83,8 +78,7 @@ public abstract class ApiServiceBase<TRequest, TResponse, TKey>(
             return;
         }
         
-        var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        throw new Exception(errorResponse?.Title ?? $"Failed to delete entity {EntityName}");
+        throw await response.ToException($"Failed to delete entity {EntityName}");
     }
 
     public virtual Task Delete(TKey id)

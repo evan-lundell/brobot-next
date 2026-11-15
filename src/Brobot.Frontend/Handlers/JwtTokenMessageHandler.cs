@@ -1,8 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using Brobot.Frontend.Providers;
-using Brobot.Shared.Responses;
+using Brobot.Frontend.Services;
 
 namespace Brobot.Frontend.Handlers;
 
@@ -22,14 +21,7 @@ public class JwtTokenMessageHandler(Uri allowedBaseAddress, JwtAuthenticationSta
         var httpResponseMessage = await base.SendAsync(request, cancellationToken);
         if (httpResponseMessage is { IsSuccessStatusCode: false, StatusCode: HttpStatusCode.InternalServerError })
         {
-            var errorResponse = await httpResponseMessage.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: cancellationToken);
-            if (errorResponse != null)
-            {
-                throw new Exception(errorResponse.Title);
-            }
-
-            var message = await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken: cancellationToken);
-            throw new Exception(string.IsNullOrWhiteSpace(message) ? "Something went wrong" : message);
+            throw await httpResponseMessage.ToException("Something went wrong", cancellationToken);
         }
 
         return httpResponseMessage;

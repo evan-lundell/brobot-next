@@ -55,6 +55,22 @@ public class HotOpRepository(BrobotDbContext context) : RepositoryBase<HotOpMode
         return await query.ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<HotOpModel>> GetUpcomingHotOps(ulong? ownerId, CancellationToken cancellationToken = default)
+    {
+        var utcNow = DateTimeOffset.UtcNow;
+        IQueryable<HotOpModel> query = Context.HotOps
+            .AsNoTracking()
+            .Include(ho => ho.DiscordUser)
+            .Include(ho => ho.Channel)
+            .Where(ho => ho.StartDate > utcNow);
+        if (ownerId.HasValue)
+        {
+            query = query.Where(ho => ho.UserId == ownerId.Value);
+        }
+
+        return await query.ToListAsync(cancellationToken);
+    }
+
     public override async Task<IEnumerable<HotOpModel>> Find(Expression<Func<HotOpModel, bool>> expression, CancellationToken cancellationToken = default)
     {
         return await Context.HotOps

@@ -37,14 +37,14 @@ public static class Extensions
         {
             var dateTimeUnspecified = new DateTime(dateTimeOffset.Ticks, DateTimeKind.Unspecified);
             var timezone = TZConvert.GetTimeZoneInfo(timezoneName);
-            var offset = timezone.GetUtcOffset(DateTime.UtcNow);
+            var offset = timezone.GetUtcOffset(dateTimeUnspecified);
             return new DateTimeOffset(dateTimeUnspecified, offset).ToUniversalTime();
         }
 
         public DateTimeOffset AdjustToUsersTimezone(string timezoneName)
         {
             var timezone = TZConvert.GetTimeZoneInfo(timezoneName);
-            var offset = timezone.GetUtcOffset(DateTime.UtcNow);
+            var offset = timezone.GetUtcOffset(dateTimeOffset);
             return dateTimeOffset.ToOffset(offset);
         }
     }

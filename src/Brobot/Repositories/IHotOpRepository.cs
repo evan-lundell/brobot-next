@@ -7,4 +7,5 @@ public interface IHotOpRepository : IRepository<HotOpModel, int>
 {
     Task<IEnumerable<HotOpModel>> GetActiveHotOpsWithSessions(ulong channelId, CancellationToken cancellationToken = default);
     Task<IEnumerable<HotOpModel>> GetUsersHotOps(ulong userId, HotOpQueryType type = HotOpQueryType.All, CancellationToken cancellationToken = default);
+    Task<IEnumerable<HotOpModel>> GetUpcomingHotOps(ulong? ownerId, CancellationToken cancellationToken = default);
 }

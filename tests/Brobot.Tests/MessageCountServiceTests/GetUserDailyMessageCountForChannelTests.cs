@@ -31,4 +31,11 @@ public class GetUserDailyMessageCountForChannelTests : MessageCountServiceTestBa
         var counts = (await MessageCountService.GetUsersDailyMessageCountForChannel(4, 1, 10)).ToList();
         Assert.That(counts.Count, Is.EqualTo(0));
     }
+
+    [Test]
+    public async Task WhenUserDoesNotExist_ReturnsEmptyArray()
+    {
+        var counts = (await MessageCountService.GetUsersDailyMessageCountForChannel(999, 1, 10)).ToList();
+        Assert.That(counts, Is.Empty);
+    }
 }

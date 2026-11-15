@@ -217,4 +217,29 @@ public class DictionaryServiceTests
         // Assert
         Assert.That(result, Is.EqualTo("An error occurred"));
     }
+
+    [Test]
+    public async Task GetDefinition_ReturnsErrorMessageForNullMeanings()
+    {
+        // Arrange
+        var word = "test";
+        _mockHttpMessageHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent("[{\"word\":\"test\"}]") // No meanings property, so Meanings is null
+            });
+
+        // Act
+        var result = await _dictionaryService.GetDefinition(word);
+
+        // Assert
+        Assert.That(result, Is.EqualTo("An error occurred"));
+    }
 }

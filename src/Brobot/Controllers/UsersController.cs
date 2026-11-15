@@ -67,9 +67,9 @@ public class UsersController(
 
     [HttpGet("all")]
     [Authorize(Roles = Constants.AdminRoleName)]
-    public async Task<ActionResult<IEnumerable<DiscordUserModel>>> GetAllUsers(CancellationToken cancellationToken = default)
+    public async Task<ActionResult<IEnumerable<DiscordUserResponse>>> GetAllUsers(CancellationToken cancellationToken = default)
     {
-        var users = await uow.Users.GetAll(cancellationToken);
+        var users = await uow.Users.Find(u => !u.Archived, cancellationToken);
         return Ok(users.Select(u => u.ToUserResponse()));
     }
 

@@ -1,9 +1,11 @@
 using Blazored.Toast.Services;
 using Brobot.Frontend.Components;
 using Brobot.Frontend.Services;
+using Brobot.Shared;
 using Brobot.Shared.Requests;
 using Brobot.Shared.Responses;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Radzen.Blazor;
 
 namespace Brobot.Frontend.Shared;
@@ -18,6 +20,9 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     private HotOpRequest _editHotOpRequest = new();
     private HotOpResponse? _hotOpToDelete;
     private ChannelResponse[]? _channels;
+    private ChannelResponse[]? _modalChannels;
+    private Task _authenticationLoaded = Task.CompletedTask;
+    private int _channelRequest;
     
     [Inject]
     public required ApiService ApiService { get; set; }
@@ -25,7 +30,36 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     [Inject] 
     public required IToastService ToastService { get; set; }
 
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private bool _isAdmin;
+    private ulong? _currentUserId;
+    private DiscordUserResponse[]? _users;
+
     protected override async Task OnInitializedAsync()
+    {
+        _authenticationLoaded = LoadAuthentication();
+        await _authenticationLoaded;
+        await Task.WhenAll(LoadChannels(), _isAdmin ? LoadUsers() : Task.CompletedTask);
+    }
+
+    private async Task LoadAuthentication()
+    {
+        if (AuthenticationState is null)
+        {
+            return;
+        }
+
+        var user = (await AuthenticationState).User;
+        _isAdmin = user.IsInRole(Constants.AdminRoleName);
+        if (ulong.TryParse(user.FindFirst(Brobot.Shared.Claims.ClaimTypes.DiscordId)?.Value, out var discordId))
+        {
+            _currentUserId = discordId;
+        }
+    }
+
+    private async Task LoadChannels()
     {
         try
         {
@@ -33,7 +67,20 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
         }
         catch (Exception ex)
         {
-            ToastService.ShowError($"Failed to initialize. {ex.Message}");
+            ToastService.ShowError($"Failed to load channels. {ex.Message}");
+        }
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            // The current user is offered as "Me" at the top of the owner list, so leave them out here
+            _users = [.. (await ApiService.GetDiscordUsers()).Where(u => u.Id != _currentUserId)];
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to load users. {ex.Message}");
         }
     }
 
@@ -45,9 +92,13 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
         _editHotOpRequest = new HotOpRequest
         {
             StartDate = now,
-            EndDate = now
+            EndDate = now,
+            // Preselect "Me" in the owner dropdown; non-admins never see it and the API treats null as the caller
+            UserId = _isAdmin ? _currentUserId : null
         };
-        
+        _channelRequest++;
+        _modalChannels = _channels;
+
         await EditHotOpModal.ShowModal();
     }
     
@@ -58,9 +109,60 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
             Id = hotOp.Id,
             StartDate = hotOp.StartDate,
             EndDate = hotOp.EndDate,
-            ChannelId = hotOp.Channel.Id
+            ChannelId = hotOp.Channel.Id,
+            UserId = hotOp.DiscordUser.Id
         };
+
+        var request = ++_channelRequest;
+        var ownersChannels = await GetChannelsFor(hotOp.DiscordUser.Id);
+        if (request != _channelRequest)
+        {
+            return;
+        }
+
+        _modalChannels = ownersChannels.Any(c => c.Id == hotOp.Channel.Id)
+            ? ownersChannels
+            : [hotOp.Channel, .. ownersChannels];
+
         await EditHotOpModal.ShowModal();
+    }
+
+    private async Task OwnerChanged()
+    {
+        var request = ++_channelRequest;
+        var ownersChannels = await GetChannelsFor(_editHotOpRequest.UserId);
+        if (request != _channelRequest)
+        {
+            return;
+        }
+
+        _modalChannels = ownersChannels;
+        if (_modalChannels.All(c => c.Id != _editHotOpRequest.ChannelId))
+        {
+            _editHotOpRequest.ChannelId = 0;
+        }
+    }
+
+    /// <summary>
+    /// The channels a hot op owned by <paramref name="ownerId"/> can be put in. Uses the already loaded list for the
+    /// current user, and asks the API (admin only) for anyone else's.
+    /// </summary>
+    private async Task<ChannelResponse[]> GetChannelsFor(ulong? ownerId)
+    {
+        if (ownerId is null || ownerId == _currentUserId)
+        {
+            return _channels ?? [];
+        }
+
+        try
+        {
+            return await ApiService.GetChannels(ownerId);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to load the owner's channels. {ex.Message}");
+            return [];
+        }
     }
 
     private async Task SubmitHotOp()
@@ -71,18 +173,16 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
                 ? await ApiService.HotOpService.Create(_editHotOpRequest)
                 : await ApiService.HotOpService.Update(_editHotOpRequest.Id.Value, _editHotOpRequest);
 
-            var existingHotOp = _hotOps?.FirstOrDefault(ho => ho.Id == hotOp.Id);
-            if (existingHotOp == null)
+            var index = _hotOps?.FindIndex(ho => ho.Id == hotOp.Id) ?? -1;
+            if (index >= 0)
             {
-                _hotOps?.Add(hotOp);
-                await Grid.Reload();
+                _hotOps![index] = hotOp;
             }
             else
             {
-                existingHotOp.StartDate = hotOp.StartDate;
-                existingHotOp.EndDate = hotOp.EndDate;
-                existingHotOp.Channel = hotOp.Channel;
+                _hotOps?.Add(hotOp);
             }
+            await Grid.Reload();
         }
         catch (Exception ex)
         {
@@ -123,7 +223,8 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     {
         try
         {
-            _hotOps ??= (await ApiService.HotOpService.GetUpcomingHotOps()).ToList();
+            await _authenticationLoaded;
+            _hotOps ??= (await ApiService.HotOpService.GetUpcomingHotOps(allUsers: _isAdmin)).ToList();
             StateHasChanged();
         }
         catch (Exception ex)
