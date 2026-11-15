@@ -29,6 +29,7 @@ public class HotOpsControllerTests
     private DiscordUserModel _otherUser = null!;
     private DiscordUserModel _archivedUser = null!;
     private ChannelModel _channel = null!;
+    private ChannelModel _usersOnlyChannel = null!;
     private HotOpModel _existingHotOp = null!;
     private HotOpModel _otherUsersHotOp = null!;
 
@@ -46,6 +47,16 @@ public class HotOpsControllerTests
         };
         _otherUser = new DiscordUserModel { Id = 2, Username = "Other", Timezone = null };
         _archivedUser = new DiscordUserModel { Id = 3, Username = "Archived", Timezone = null, Archived = true };
+        _usersOnlyChannel = new ChannelModel
+        {
+            Id = 200,
+            Name = "User's Channel",
+            Guild = _channel.Guild,
+            GuildId = 1
+        };
+        AddMember(_channel, _user);
+        AddMember(_channel, _otherUser);
+        AddMember(_usersOnlyChannel, _user);
         _existingHotOp = new HotOpModel
         {
             Id = ExistingHotOpId,
@@ -76,8 +87,11 @@ public class HotOpsControllerTests
             .ReturnsAsync(_otherUsersHotOp);
         var channelRepoMock = new Mock<IChannelRepository>();
         channelRepoMock
-            .Setup(r => r.GetById(_channel.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdWithChannelUsers(_channel.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_channel);
+        channelRepoMock
+            .Setup(r => r.GetByIdWithChannelUsers(_usersOnlyChannel.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_usersOnlyChannel);
         _userRepoMock = new Mock<IUserRepository>();
         _userRepoMock
             .Setup(r => r.GetById(_otherUser.Id, It.IsAny<CancellationToken>()))
@@ -486,7 +500,68 @@ public class HotOpsControllerTests
         }
     }
 
+    // ---- Channel membership ----
+
+    [Test]
+    public async Task CreateHotOp_OwnerNotInChannel_ReturnsBadRequest()
+    {
+        SignInAsAdmin();
+
+        var result = await _controller.CreateHotOp(ValidRequest(userId: _otherUser.Id) with { ChannelId = _usersOnlyChannel.Id });
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+            _hotOpRepoMock.Verify(r => r.Add(It.IsAny<HotOpModel>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+    }
+
+    [Test]
+    public async Task CreateHotOp_OwnerInChannel_Succeeds()
+    {
+        SignInAsAdmin();
+
+        var result = await _controller.CreateHotOp(ValidRequest(userId: _otherUser.Id));
+
+        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateHotOp_MovingToChannelOwnerIsNotIn_ReturnsBadRequest()
+    {
+        SignInAsAdmin();
+
+        var result = await _controller.UpdateHotOp(OtherUsersHotOpId, ValidRequest() with { ChannelId = _usersOnlyChannel.Id });
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+            Assert.That(_otherUsersHotOp.ChannelId, Is.EqualTo(_channel.Id));
+            _uowMock.Verify(u => u.CompleteAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+    }
+
+    [Test]
+    public async Task UpdateHotOp_KeepingChannelOwnerHasLeft_Succeeds()
+    {
+        SignInAsAdmin();
+        _channel.ChannelUsers.Remove(_channel.ChannelUsers.Single(cu => cu.UserId == _otherUser.Id));
+
+        var result = await _controller.UpdateHotOp(OtherUsersHotOpId, ValidRequest());
+
+        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+    }
+
     // ---- Helpers ----
+
+    private static void AddMember(ChannelModel channel, DiscordUserModel user)
+        => channel.ChannelUsers.Add(new ChannelDiscordUserModel
+        {
+            Channel = channel,
+            ChannelId = channel.Id,
+            DiscordUser = user,
+            UserId = user.Id
+        });
 
     private void SignInAsAdmin()
     {

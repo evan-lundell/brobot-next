@@ -21,7 +21,7 @@ public class JwtTokenMessageHandler(Uri allowedBaseAddress, JwtAuthenticationSta
         var httpResponseMessage = await base.SendAsync(request, cancellationToken);
         if (httpResponseMessage is { IsSuccessStatusCode: false, StatusCode: HttpStatusCode.InternalServerError })
         {
-            throw await httpResponseMessage.ToException("Something went wrong");
+            throw await httpResponseMessage.ToException("Something went wrong", cancellationToken);
         }
 
         return httpResponseMessage;

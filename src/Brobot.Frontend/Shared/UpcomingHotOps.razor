@@ -65,7 +65,7 @@ else
                     <label class="form-label">Channel</label>
                     <InputSelect class="form-select" @bind-Value="_editHotOpRequest.ChannelId">
                         <option value="">Select a channel...</option>
-                        @foreach (var channel in _channels ?? [])
+                        @foreach (var channel in _modalChannels ?? [])
                         {
                             <option value="@channel.Id">@channel.Name</option>
                         }
@@ -73,12 +73,12 @@ else
                 </div>
             </div>
             @* Owner can only be chosen on create: the API doesn't allow reassigning a hot op *@
-            @if (_isAdmin && !_editHotOpRequest.Id.HasValue)
+            @if (_isAdmin && _currentUserId.HasValue && !_editHotOpRequest.Id.HasValue)
             {
                 <div class="row my-2">
                     <div class="col-12 form-group">
                         <label class="form-label">Owner</label>
-                        <InputSelect class="form-select" @bind-Value="_editHotOpRequest.UserId">
+                        <InputSelect class="form-select" @bind-Value="_editHotOpRequest.UserId" @bind-Value:after="OwnerChanged">
                             <option value="@_currentUserId">Me</option>
                             @foreach (var user in _users ?? [])
                             {

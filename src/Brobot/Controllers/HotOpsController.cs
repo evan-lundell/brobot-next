@@ -53,22 +53,9 @@ public class HotOpsController(
     {
         var discordUser = HttpContext.Features.GetRequiredFeature<DiscordUserModel>();
 
-        if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
+        if (ValidateTimes(hotOpRequest) is { } invalidTimes)
         {
-            logger.LogWarning("Start date must be before end date");
-            return BadRequest("Start date must be before end date");
-        }
-
-        if (hotOpRequest.StartDate.Ticks % TimeSpan.TicksPerMinute != 0)
-        {
-            logger.LogWarning("StartDate seconds must be set to 0");
-            return BadRequest("Invalid time, Hot Ops must begin on the minute");
-        }
-
-        if (hotOpRequest.EndDate.Ticks % TimeSpan.TicksPerMinute != 0)
-        {
-            logger.LogWarning("EndDate seconds must be set to 0");
-            return BadRequest("Invalid time, Hot Ops must end on the minute");
+            return invalidTimes;
         }
 
         if (hotOpRequest.UserId is not null && hotOpRequest.UserId != discordUser.Id && !IsAdmin)
@@ -84,11 +71,17 @@ public class HotOpsController(
             return BadRequest("Invalid user");
         }
         
-        var channel = await uow.Channels.GetById(hotOpRequest.ChannelId, cancellationToken);
+        var channel = await uow.Channels.GetByIdWithChannelUsers(hotOpRequest.ChannelId, cancellationToken);
         if (channel == null)
         {
             logger.LogWarning("Channel not found");
             return BadRequest("Invalid channel");
+        }
+
+        if (!IsMember(channel, owner.Id))
+        {
+            logger.LogWarning("User {OwnerId} is not a member of channel {ChannelId}", owner.Id, channel.Id);
+            return BadRequest("The owner isn't a member of that channel");
         }
 
         var hotOpModel = new HotOpModel
@@ -118,28 +111,14 @@ public class HotOpsController(
             return NotFound("Hot Op not found");
         }
 
-        if (hotOpModel.UserId != discordUser.Id && !IsAdmin)
+        if (!CanModify(hotOpModel, discordUser))
         {
-            logger.LogWarning("User {UserId} cannot modify hot op {HotOpId}", discordUser.Id, id);
             return Forbid();
         }
 
-        if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
+        if (ValidateTimes(hotOpRequest) is { } invalidTimes)
         {
-            logger.LogWarning("Start date must be before end date");
-            return BadRequest("Start date must be before end date");
-        }
-
-        if (hotOpRequest.StartDate.Ticks % TimeSpan.TicksPerMinute != 0)
-        {
-            logger.LogWarning("StartDate seconds must be set to 0");
-            return BadRequest("Invalid time, Hot Ops must begin on the minute");
-        }
-
-        if (hotOpRequest.EndDate.Ticks % TimeSpan.TicksPerMinute != 0)
-        {
-            logger.LogWarning("EndDate seconds must be set to 0");
-            return BadRequest("Invalid time, Hot Ops must end on the minute");
+            return invalidTimes;
         }
 
         if (hotOpRequest.UserId is not null && hotOpRequest.UserId != hotOpModel.UserId)
@@ -148,11 +127,17 @@ public class HotOpsController(
             return BadRequest("Hot Ops can't be reassigned. Delete it and create a new one for the other user.");
         }
 
-        var channel = await uow.Channels.GetById(hotOpRequest.ChannelId, cancellationToken);
+        var channel = await uow.Channels.GetByIdWithChannelUsers(hotOpRequest.ChannelId, cancellationToken);
         if (channel == null)
         {
             logger.LogWarning("Channel not found");
             return BadRequest("Invalid channel");
+        }
+
+        if (channel.Id != hotOpModel.ChannelId && !IsMember(channel, hotOpModel.UserId))
+        {
+            logger.LogWarning("User {OwnerId} is not a member of channel {ChannelId}", hotOpModel.UserId, channel.Id);
+            return BadRequest("The owner isn't a member of that channel");
         }
 
         hotOpModel.ChannelId = hotOpRequest.ChannelId;
@@ -175,9 +160,8 @@ public class HotOpsController(
             return NotFound("Hot Op not found");
         }
 
-        if (hotOpModel.UserId != discordUser.Id && !IsAdmin)
+        if (!CanModify(hotOpModel, discordUser))
         {
-            logger.LogWarning("User {UserId} cannot modify hot op", discordUser.Id);
             return Forbid();
         }
 
@@ -206,6 +190,47 @@ public class HotOpsController(
         var scoreboardResponse = scoreboard.ToScoreboardResponse();
         return Ok(scoreboardResponse);
     }
+
+    private ActionResult? ValidateTimes(HotOpRequest hotOpRequest)
+    {
+        if (hotOpRequest.StartDate >= hotOpRequest.EndDate)
+        {
+            logger.LogWarning("Start date must be before end date");
+            return BadRequest("Start date must be before end date");
+        }
+
+        if (hotOpRequest.StartDate.Ticks % TimeSpan.TicksPerMinute != 0)
+        {
+            logger.LogWarning("StartDate seconds must be set to 0");
+            return BadRequest("Invalid time, Hot Ops must begin on the minute");
+        }
+
+        if (hotOpRequest.EndDate.Ticks % TimeSpan.TicksPerMinute != 0)
+        {
+            logger.LogWarning("EndDate seconds must be set to 0");
+            return BadRequest("Invalid time, Hot Ops must end on the minute");
+        }
+
+        return null;
+    }
+
+    private bool CanModify(HotOpModel hotOpModel, DiscordUserModel discordUser)
+    {
+        if (hotOpModel.UserId == discordUser.Id || IsAdmin)
+        {
+            return true;
+        }
+
+        logger.LogWarning("User {UserId} cannot modify hot op {HotOpId}", discordUser.Id, hotOpModel.Id);
+        return false;
+    }
+
+    /// <summary>
+    /// Only checked when a channel is chosen or changed, so an owner who has since left a hot op's channel can
+    /// still have its times edited.
+    /// </summary>
+    private static bool IsMember(ChannelModel channel, ulong userId)
+        => channel.ChannelUsers.Any(cu => cu.UserId == userId);
 
     private async Task<DiscordUserModel?> GetOwner(
         HotOpRequest hotOpRequest,

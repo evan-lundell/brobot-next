@@ -20,6 +20,8 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     private HotOpRequest _editHotOpRequest = new();
     private HotOpResponse? _hotOpToDelete;
     private ChannelResponse[]? _channels;
+    private ChannelResponse[]? _modalChannels;
+    private Task _initialization = Task.CompletedTask;
     
     [Inject]
     public required ApiService ApiService { get; set; }
@@ -34,7 +36,13 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     private ulong? _currentUserId;
     private DiscordUserResponse[]? _users;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
+    {
+        _initialization = Initialize();
+        return _initialization;
+    }
+
+    private async Task Initialize()
     {
         if (AuthenticationState is not null)
         {
@@ -86,7 +94,8 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
             // Preselect "Me" in the owner dropdown; non-admins never see it and the API treats null as the caller
             UserId = _isAdmin ? _currentUserId : null
         };
-        
+        _modalChannels = _channels;
+
         await EditHotOpModal.ShowModal();
     }
     
@@ -100,7 +109,44 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
             ChannelId = hotOp.Channel.Id,
             UserId = hotOp.DiscordUser.Id
         };
+
+        var ownersChannels = await GetChannelsFor(hotOp.DiscordUser.Id);
+        _modalChannels = ownersChannels.Any(c => c.Id == hotOp.Channel.Id)
+            ? ownersChannels
+            : [hotOp.Channel, .. ownersChannels];
+
         await EditHotOpModal.ShowModal();
+    }
+
+    private async Task OwnerChanged()
+    {
+        _modalChannels = await GetChannelsFor(_editHotOpRequest.UserId);
+        if (_modalChannels.All(c => c.Id != _editHotOpRequest.ChannelId))
+        {
+            _editHotOpRequest.ChannelId = 0;
+        }
+    }
+
+    /// <summary>
+    /// The channels a hot op owned by <paramref name="ownerId"/> can be put in. Uses the already loaded list for the
+    /// current user, and asks the API (admin only) for anyone else's.
+    /// </summary>
+    private async Task<ChannelResponse[]> GetChannelsFor(ulong? ownerId)
+    {
+        if (ownerId is null || ownerId == _currentUserId)
+        {
+            return _channels ?? [];
+        }
+
+        try
+        {
+            return await ApiService.GetChannels(ownerId);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to load the owner's channels. {ex.Message}");
+            return [];
+        }
     }
 
     private async Task SubmitHotOp()
@@ -159,6 +205,7 @@ public partial class UpcomingHotOps : ComponentBase, ITabbable
     
     public async Task TabSelected()
     {
+        await _initialization;
         try
         {
             _hotOps ??= (await ApiService.HotOpService.GetUpcomingHotOps(allUsers: _isAdmin)).ToList();

@@ -11,9 +11,9 @@ public static class HttpResponseMessageExtensions
     /// or an empty body (e.g. Forbid()). Returns null when there's nothing usable, so callers can fall back
     /// to their own message instead of surfacing a JSON parsing error.
     /// </summary>
-    public static async Task<string?> ReadErrorMessage(this HttpResponseMessage response)
+    public static async Task<string?> ReadErrorMessage(this HttpResponseMessage response, CancellationToken cancellationToken = default)
     {
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(body))
         {
             return response.StatusCode switch
@@ -64,6 +64,6 @@ public static class HttpResponseMessageExtensions
     /// <summary>
     /// Builds the exception to throw for a failed response, using the API's message when there is one.
     /// </summary>
-    public static async Task<Exception> ToException(this HttpResponseMessage response, string fallbackMessage)
-        => new(await response.ReadErrorMessage() ?? fallbackMessage);
+    public static async Task<Exception> ToException(this HttpResponseMessage response, string fallbackMessage, CancellationToken cancellationToken = default)
+        => new(await response.ReadErrorMessage(cancellationToken) ?? fallbackMessage);
 }
